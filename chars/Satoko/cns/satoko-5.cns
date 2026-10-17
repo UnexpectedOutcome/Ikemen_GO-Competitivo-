@@ -1,0 +1,560 @@
+;===========================================================================
+; 常時監視ステート（－２）
+;===========================================================================
+;---------------------------------------------------------------------------
+; 通常の食らい状態（Statedef 5000～5199間）でも、
+; 相手に（「P2StateNo」や「TargetState」等で）制御を奪われても、
+; 常に登録したステートコントローラが有効になります。
+; サブシステム等を制御する時に重宝するでしょう。
+;---------------------------------------------------------------------------
+
+[Statedef -2]
+[State -2, 変数設定]
+type = varset
+trigger1 = command = "h-jump"
+trigger1 = var(59) = 0
+trigger1 = ctrl = 1
+trigger1 = statetype = S
+v = 55
+value = 1
+
+[State -2, 変数設定]
+type = PlaySnd
+trigger1 = command = "h-jump"
+trigger1 = var(59) = 0
+trigger1 = ctrl = 1
+trigger1 = statetype = S
+value = 2, 32
+
+[State -2, 変数解除]
+type = varset
+triggerall = var(59) = 0
+trigger1 = stateno = 50
+trigger1 = time = 2
+trigger2 = prevstateno = 100
+trigger2 = command != "holdfwd"
+trigger3 = prevstateno = 105
+trigger3 = command != "holdback"
+trigger4 = prevstateno = [100,105]
+trigger4 = command = "holddown"
+v = 55
+value = 0
+
+[State -2, 動きＹ]
+type = veladd
+trigger1 = var(59) = 0
+trigger1 = var(55) = 1
+trigger1 = stateno = 50
+y = -3
+persistent=0
+
+[State -2, 動きＸ１]
+type = veladd
+trigger1 = var(59) = 0
+trigger1 = var(55) = 1
+trigger1 = stateno = 50
+trigger1 = command = "holdfwd"
+x = 1.8
+persistent=0
+
+[State -2, 動きＸ２]
+type = veladd
+trigger1 = var(59) = 0
+trigger1 = var(55) = 1
+trigger1 = stateno = 50
+trigger1 = command = "holdback"
+x = -1.8
+persistent=0
+
+[State -2, 残像]
+type = AfterImage
+trigger1 = var(55) = 1
+trigger1 = Time = 0
+Time = 30
+PalContrast = 120,120,120
+Trans = Add1
+TimeGap  = 3
+FrameGap = 1
+length = 3
+
+
+;---------------------------------------------------------------------------
+[State -2, AssertSpecial]
+type = AssertSpecial
+triggerall = roundno = 1
+trigger1 = roundstate < 2
+flag = NoMusic
+
+[State -2, 二人目のイントロ]
+type = ChangeState
+value = 190
+triggerall = RoundsExisted = 0
+triggerall = TeamMode = Turns
+trigger1 = stateno = 5900
+
+[State -2, クリップボード]
+type = DisplayToClipboard
+trigger1 = 1
+text = "Cancel=%d, Throw=%d, Button=%d, Body-Distance X=%d,Y=%d \n"
+params = var(1),var(2),var(5),floor(P2BodyDist X),floor(P2BodyDist Y) 
+
+[State -2, クリップボード（追加専用）]
+type = AppendToClipboard
+trigger1 = 1
+text = "Position X=%d,Y=%d, Velocity X=%f,Y=%f, Hit=%d \n"
+params = floor(Pos X),floor(Pos Y),(Vel X),(Vel Y),(MoveHit)
+
+;-----------------------------------
+;ここは「パワー溜め」のステートで発生させた「Explod」のエフェクト画像を
+;特定の条件が有効になれば消す、という処理をしています。
+
+[State -2, エフェクトを消す];パワー溜めステート用
+type = RemoveExplod
+triggerall = NumExplod(130) > 0
+trigger1 = StateNo != 780
+trigger2 = MoveType != I  ;MoveTypeが「I（何もしてない）」以外の時
+ID = 130                  ;消すExplodの特定のＩＤナンバーを指定
+
+[State -2]
+Type = LifeAdd
+TriggerAll = Enemy,AuthorName = "⑨" && Enemy,Name = "Akiha_Vermilion"
+Trigger1 = Enemy,Var(47) = 1
+Value = -5
+Kill = 0
+
+[State -2]
+Type = PowerAdd
+TriggerAll = Enemy,AuthorName = "⑨" && Enemy,Name = "Akiha_Vermilion"
+Trigger1 = Enemy,Var(47) = 1
+Value = -26
+
+[State -2,被さば折]
+type = PlaySnd
+triggerall = p2name = "cvshonda"
+triggerall = stateno = 826
+trigger1 = time = 19 || time = 39 || time = 59 || time = 79 || time = 99 
+trigger2 = time = 119 || time = 139 || time = 159 
+value = 4218,21 + (Random%2)
+channel = 3
+
+[State -2,被オーラ握り]
+type = PlaySnd
+triggerall = p2name = "Rasputin"
+triggerall = stateno = 9000
+trigger1 = Time = 4
+trigger2 = Time = 24
+trigger3 = Time = 44
+trigger4 = Time = 64
+trigger5 = Time = 84
+trigger6 = Time = 104
+trigger7 = Time = 124
+trigger8 = Time = 144
+trigger9 = Time = 164
+trigger10 = Time = 184
+trigger11 = Time = 204
+value = 4218, 90
+channel = 1
+
+[State -2,被せっかんストーム]
+type = PlaySnd
+triggerall = p2name = "Rasputin"
+triggerall = stateno = 9010
+trigger1 = AnimElem = 6
+trigger2 = AnimElem = 10
+value = 4218, 22
+channel = 1
+
+[State -2,被秘密の花園]
+type = PlaySnd
+triggerall = p2name = "Rasputin"
+triggerall = stateno = 9050
+trigger1 = Time = 4
+trigger2 = Time = 34
+trigger3 = Time = 64
+trigger4 = Time = 94
+trigger5 = Time = 124
+trigger6 = Time = 154
+trigger7 = Time = 184
+trigger8 = Time = 214
+trigger9 = Time = 244
+value = 4218, 90
+channel = 1
+
+[State -2,外道の烙印押し]
+type = PlaySnd
+triggerall = p2name = "kusaregedo"
+triggerall = stateno = 1121
+trigger1 = AnimElem = 1
+trigger2 = AnimElem = 5
+value = 4218,21
+channel = 1
+
+[State -2,外道の烙印押し]
+type = PlaySnd
+triggerall = p2name = "kusaregedo"
+triggerall = stateno = 1121
+trigger1 = AnimElem = 11
+value = 4218,23
+channel = 1
+
+;---------------------------------------------------------------------------
+; ブロッキング用処理
+;---------------------------------------------------------------------------
+[State -2, 食らい上書き];立ちブロッキング
+type = HitOverRide
+triggerall = (StateNo < 200)
+triggerall = (MoveType = I)
+trigger1 = (StateType = S) && (var(56) > 0)
+time = 2
+attr = SA, NA,SA,HA,NP,SP,HP
+stateno = 701
+IgnoreHitPause = 1
+
+[State -2, 食らい上書き];しゃがみブロッキング
+type = HitOverRide
+triggerall = (StateNo < 200)
+triggerall = (MoveType = I)
+trigger1 = (StateType = C) && (var(57) > 0)
+time = 2
+attr = C, NA,SA,HA,NP,SP,HP
+stateno = 701
+IgnoreHitPause = 1
+
+[State -2, 食らい上書き];空中ブロッキング
+type = HitOverRide
+triggerall = (StateNo < 200)
+triggerall = (MoveType = I)
+trigger1 = (StateType = A) && (var(56) > 0)
+time = 2
+;attr = SCA, NA,SA,HA,NP,SP,HP
+attr = SCA, AA,AP
+stateno = 701
+IgnoreHitPause = 1
+
+;---------------------------------------------------------------------------
+; ブロッキング用処理
+;---------------------------------------------------------------------------
+[State -2, リセット];立ちと空中
+type = VarSet
+trigger1 = (var(56) <= 0)
+trigger2 = (MoveType != I)
+trigger3 = (var(56) <= 8) && (command = "blocking-001")
+trigger4 = (StateType = C)
+v = 56
+value = 0
+IgnoreHitPause = 1
+
+[State -2, 前に入力]
+type = VarSet
+trigger1 = (command = "blocking-000")
+trigger1 = var(59) = 0
+v = 56
+value = 12
+IgnoreHitPause = 1
+
+[State -2, 効果時間減少]
+type = VarAdd
+trigger1 = (var(56) > 0)
+v = 56
+value = -1
+IgnoreHitPause = 1
+
+;***********************************
+[State -2, リセット];しゃがみ
+type = VarSet
+trigger1 = (var(57) <= 0)
+trigger2 = (MoveType != I)
+trigger3 = (var(57) <= 8) && (command = "blocking-003")
+trigger4 = (StateType = A)
+v = 57
+value = 0
+IgnoreHitPause = 1
+
+[State -2, 下に入力]
+type = VarSet
+trigger1 = (command = "blocking-002")
+trigger1 = Var(59) = 0
+v = 57
+value = 12
+IgnoreHitPause = 1
+
+[State -2, 効果時間減少]
+type = VarAdd
+trigger1 = (var(57) > 0)
+v = 57
+value = -1
+IgnoreHitPause = 1
+
+[State -2, ダメージボイス]
+type = PlaySnd
+triggerall = Time = 1
+triggerall = Alive
+trigger1 = stateno=5000 || stateno=5010 || stateno=5020
+trigger2 = stateno = 5070 || stateno = 5080
+value = 4,0+(Random % 2)
+channel = 4
+
+;[State -2, 叩きつけられボイス]
+;type = PlaySnd
+;triggerall = Time = 1
+;triggerall = Alive
+;trigger1 = stateno = 5100
+;value = 4,11
+;channel = 4
+
+[State -2, 起き上がりボイス]
+type = PlaySnd
+triggerall = Time = 1
+triggerall = Alive
+Trigger1 = life > 700
+trigger1 = stateno = 5120
+value = 4,10
+channel = 4
+
+[State -2, 起き上がりボイス]
+type = PlaySnd
+triggerall = Time = 1
+triggerall = Alive
+Trigger1 = life = [500,700]
+trigger1 = stateno = 5120
+value = 4,13
+channel = 4
+
+[State -2, 起き上がりボイス]
+type = PlaySnd
+triggerall = Time = 1
+triggerall = Alive
+Trigger1 = life = [300,499]
+trigger1 = stateno = 5120
+value = 4,8
+channel = 4
+
+[State -2, 起き上がりボイス]
+type = PlaySnd
+triggerall = Time = 1
+triggerall = Alive
+Trigger1 = life = [1,299]
+trigger1 = stateno = 5120
+value = 4,9
+channel = 4
+
+;---------------------------------------------------------------------------
+[State -2, デバック用]
+Type = DisplayToClipboard
+Trigger1 = 1
+Text = "oya:%d AI:%d,armour:%d, Pos X:%f, Pos Y:%f"
+Params = Var(30), Var(59), Var(34), P2BodyDist X, P2BodyDist Y
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;---------------------------------------------------------------------------
+[State -2, AIヘルパー]
+type = Explod
+triggerall = Var(59) != 0
+triggerall = RoundState = 2
+triggerall = NumExplod(10000) = 0
+trigger1 = 1
+anim = 10000
+scale = 1, 1
+postype = left
+pos = ifelse(TeamSide=2, 286, 28 ),230
+sprpriority = 6
+OnTop = 1
+supermove = 1
+supermovetime = 99999999
+pausemovetime = 99999999
+bindtime = -1
+removetime = -1
+ownpal = 1
+ID = 10000
+IgnoreHitPause = 1
+Persistent = 1
+
+[State -2, エフェクトを消す]
+type = RemoveExplod
+trigger1 = Var(59) = 0
+ID = 10000
+IgnoreHitPause = 1
+Persistent = 1
+
+;---------------------------------------------------------------------------
+[State -2, 変数減少] 
+type = VarAdd
+trigger1 = var(30) >= 1
+var(30) = -1
+IgnoreHitPause = 1 
+
+[State -2, 攻撃力加算]
+type = AttackMulSet
+trigger1 = var(30) >= 2
+value = 1.2
+IgnoreHitPause = 1
+
+[State -2, 防御力加算]
+type = DefenceMulSet
+trigger1 = var(30) >=2
+value = 0.8
+IgnoreHitPause = 1
+
+[State -2, ジャグル]
+type = AssertSpecial
+trigger1 = var(30) >= 1
+flag = nojugglecheck
+
+[State -2, オヤシロモードの色]
+type = PalFX
+trigger1 = var(30) > 0
+time = 1
+add = 95,30,50
+sinadd = 30,30,30,15
+color = 256
+IgnoreHitPause = 1
+
+[State -2, 攻撃力を戻す]
+type = AttackMulSet
+trigger1 = var(30) = 1
+value = 1
+IgnoreHitPause = 1
+
+[State -2, 防御力を戻す]
+type = DefenceMulSet
+trigger1 = var(30) =1
+value = 1
+IgnoreHitPause = 1
+
+;---------------------------------------------------------------------------
+;オヤシロゲージ
+[State -2, 枠]
+type = Explod
+triggerall = Var(30) != 0
+triggerall = NumExplod(10010) = 0
+trigger1 = 1
+anim = 10010
+scale = .5, .5
+postype = left
+pos = ifelse(TeamSide=2, 280, 37 ),215
+sprpriority = 6
+OnTop = 1
+supermove = 1
+supermovetime = 99999999
+pausemovetime = 99999999
+bindtime = -1
+removetime = -1
+ownpal = 1
+ID = 10010
+IgnoreHitPause = 1
+Persistent = 1
+
+[State -2, 枠を消す]
+type = RemoveExplod
+trigger1 = Var(30) = 0
+ID = 10010
+IgnoreHitPause = 1
+Persistent = 1 
+
+[State -2, ゲージ]
+type = Explod
+triggerall = Var(30) != 0
+triggerall = NumExplod(10011) = 0
+trigger1 = 1
+anim = 10011
+scale = 0, .5
+postype = left
+pos = ifelse(TeamSide=2, 316, 73 ),215
+sprpriority = 6
+OnTop = 1
+supermove = 1
+supermovetime = 99999999
+pausemovetime = 99999999
+bindtime = -1
+removetime = -1
+ownpal = 1
+ID = 10011
+IgnoreHitPause = 1
+Persistent = 1
+
+[State 30001, バー伸縮]
+type = ModifyExplod
+trigger1 = var(30) != 0
+scale = 0 + (var(30)*0.001), 0.5
+supermovetime = 99999999
+pausemovetime = 99999999
+sprpriority = 7
+ID = 10011
+IgnoreHitPause = 1
+
+[State -2, ゲージを消す]
+type = RemoveExplod
+trigger1 = Var(30) = 0
+ID = 10011
+IgnoreHitPause = 1
+Persistent = 1 
+;---------------------------------------------------------------------------
+[State -2, ステートの保存]
+type = VarSet
+trigger1 = MoveType != H
+trigger1 = StateNo != 9999
+var(31) = StateNo
+
+[State -2, コントロールの状態の保存]
+type = VarSet
+trigger1 = MoveType != H
+trigger1 = StateNo != 9999
+var(32) = Ctrl
+
+;-------------------------------------------------------------------------------------------------------------------------
+[State -2,Var(34)のセット(ステートタイプを奪うタイプの技から追い討ちをすると起こるバグ防止)]
+type = VarSet
+trigger1 = Anim = [5000, 5080]
+v = 34
+value = 1
+
+[State -2, Var(34)のリセット]
+type = VarSet
+trigger1 = EnemyNear,MoveType != A
+trigger1 = Pos Y = 0
+v = 34
+value = 0
+
+;-------------------------------------------------------------------------------------------------------------------------
+[State -2, 速度Ｘ軸];Ｘ軸の移動速度を記憶
+type = VarSet
+triggerall = (StateType = A)
+trigger1 = Time = 0
+trigger1 = MoveType != H
+trigger1 = StateNo != 9999
+fv = 10
+value = (Vel X)
+IgnoreHitPause = 1
+Persistent = 1
+
+[State -2, 速度Ｙ軸];Ｙ軸の移動速度を記憶
+type = VarSet
+triggerall = (StateType = A)
+trigger1 = Time = 0
+trigger1 = MoveType != H
+trigger1 = StateNo != 9999
+fv = 11
+value = (Vel Y)
+IgnoreHitPause = 1
+Persistent = 1
+
+[State -2, 移動速度]
+type = VelSet
+triggerall = (StateType = A)
+trigger1 = Time = 0
+trigger1 = MoveType != H
+trigger1 = StateNo != 9999
+x = (fvar(10)/1.5)
+y = ifelse((fvar(11)<0),(fvar(11)/1.2),ifelse((fvar(11)>0),(fvar(11)/3.4),0))
+pausemovetime = 99999999
+
+[State -2 アニメが何枚目かを保存]
+type = VarSet
+trigger1 = MoveType != H
+trigger1 = StateNo != 9999
+trigger1 = time <= 0
+v = 33
+value = AnimElemNo(1)
+ignorehitpause = 1

@@ -1,0 +1,4519 @@
+;---------------------------------------------------------------------------------
+[Statedef 3000, カーネージナター呼び出し]    
+type     = S       
+movetype = I        ;このステートの「行動内容」を指定。
+physics  = S        ;このステートの「実際の物理的な体勢」を指定。「小ネタ.txt」参照。
+anim     = 3004    ;アニメを指定（アクションナンバー）。この場合airの[Begin Action 1000]を呼び出し使う。
+poweradd = 0
+velset   = 0,0      ;このステートを開始した瞬間の移動速度（Ｘ軸,Ｙ軸）。効果は「VelSet」を参照
+SprPriority = 3
+ctrl = 0
+
+[State 1,リバサ変数リセット]
+type       = Varset
+trigger1 = time = 1
+v          = 0
+value      = 0
+
+[State 3000,制限時間];テス
+type = Varset
+trigger1 = var(10) = 0
+trigger1 = animelemTime(1) = 1
+ignorehitpause = 1
+v = 10
+value = 1
+
+[State 3000, 1]
+type = NotHitBy
+Trigger1 = animelemTime(1) = 0
+value = SCA,NA,SA,HA
+time = 18
+
+[State 3000, 移動速度]
+type = VelSet
+trigger1 = Time = [3,33]
+x = -1  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 3000, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0
+value = 6,9     ;sndファイルか
+volume = 255
+
+[State 3000, 0]
+type = Helper
+trigger1 = var(10) = 0
+trigger1 = time = 0
+helpertype = normal
+name = "rena"
+ID = 3000
+stateno = 3010
+pos = 0,0
+postype = p1    ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+supermovetime = 0
+pausemovetime = 0
+
+[State 3000, 1]
+type = Poweradd
+Trigger1 = animelem = 3
+value = -1000
+
+[State 3000, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 5120
+ctrl = 0
+
+;============================================================================
+;ヘルパーレナのステート
+[Statedef 3010]
+type     = S
+movetype = A
+physics  = S
+ctrl     = 0
+anim     = 3000
+SprPriority = 2
+
+[State 3010];コンボ補正
+type = null;Varset
+trigger1 = P2Movetype = H
+var(4) = ceil(EnemyNear,GetHitVar(hitcount))
+
+[State 3010]
+type = VarSet
+trigger1 = var(4) >= 8
+var(4) = 8
+
+[State 3010, 0]
+type = PlayerPush
+trigger1 = 1
+value = 1
+
+[State 3010, 0]
+type = Width
+trigger1 = 1
+edge = 15,15
+player = 15,15
+
+[State 3010, 0]
+type = AttackDist
+trigger1 = 1
+value = 160
+
+[State 3010, 0]
+type = ScreenBound
+trigger1 = 1
+value = 1
+movecamera = 1,0
+
+[State 3010, ランダムに変数を選ぶ]
+type = VarRandom
+trigger1 = Time= 0
+v = 22
+range = 0,1  ;範囲を決定、これだと0～1という意味
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = AnimElemTime(2) = 1
+trigger1 = var(22) = 0
+value = 10,0
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElemTime(2) = 1 
+trigger1 = var(22) = 1
+value = 10,2     ;sndファイルか
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElemTime(4) = 1 
+value = 0,22    ;sndファイルか
+
+[State 3010, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NA, SA, HA, NP, SP, HP, NT, ST, HT, AA, AT, AP
+time = -1
+stateno = 3020
+IgnoreHitPause = 1
+
+[State 3010, 1]
+type = NotHitBy
+Trigger1 = animelemTime(1) = 0
+value = SCA,NA,SA,HA
+time = 24
+
+[State 3010, 3];暗転
+type = SuperPause
+trigger1 = AnimElemTime(2) = 4
+time = 30
+anim = s10010
+sound = s10,12
+pos = 0,-30
+postype = p1
+sprpriority = -1
+movetime = 0
+darken = 1
+p2defmul = 1
+unhittable = 1
+
+[State 3010, エフェクト画像]
+type = Explod
+trigger1 = AnimElemTime(2) = 4
+anim = 10005       ;エフェクトのアニメ（アクションナンバー）
+pos = 50,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = back       ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.5,0.5    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = -2   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 0         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 1      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 30    ;このエフェクトが消えるまでの時間（フレーム）
+supermove = 1      ;「SuperPause」による時間停止中にもこのアニメが動くかどうか。
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 1.7,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = -0.02,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0    ;エフェクトの影（赤,緑,青）
+
+
+[State 3010, エフェクト画像]
+type = Explod
+trigger1 = AnimElemTime(2) = 4
+anim = 7000        ;エフェクトのアニメ（アクションナンバー）
+pos = 0,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = left       ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 1,1    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = -3   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 0         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 100      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 100    ;このエフェクトが消えるまでの時間（フレーム）
+supermove = 1      ;「SuperPause」による時間停止中にもこのアニメが動くかどうか。
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0.5,0.5    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 7000
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,100     ;エフェクトの影（赤,緑,青）
+;trans = Add1   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+alpha = 256,256    ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+
+[State 3010, 残像]
+type = AfterImage
+trigger1 = Time = 0
+Time = 999
+PalBright   = 128,128,256
+PalContrast = 128,128,256
+Trans = Add
+TimeGap  = 1
+FrameGap = 3
+length = 13
+
+[State 3010, 残像表示時間]
+type = AfterImageTime
+trigger1 = AnimTime = 0
+time = 0
+
+[State 3010, 移動速度]
+type = VelSet
+trigger1 = AnimElem = 4
+x = 20  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 3010, 移動速度]
+type = VelSet
+trigger1 = AnimElem = 5
+x = 7  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 3010, 基本]
+type = HitDef
+trigger1 = AnimElem = 6
+attr = S,HA
+damage = ceil(100*(1-(Root,var(4)*0.05))),10
+hitflag = MAFD
+guardflag = MA
+Animtype = high
+air.Animtype = high
+ground.type = high
+air.type = high
+priority = 4,Hit
+sparkno = S6005
+sparkxy = -30,-20
+hitsound   = s10,11
+guardsound = s10,10
+pauseTime = 5,10
+guard.pauseTime = 15,5
+ground.slideTime = 17
+guard.slideTime = 7
+ground.hitTime = 17
+guard.hitTime = 15
+air.hitTime = 22
+ground.velocity = -2,10
+guard.velocity = -10
+air.velocity = -2,10
+airguard.velocity = -4,2
+down.bounce = 1
+yaccel = .6
+air.fall = 1
+fall = 1
+fall.recoverTime = 60
+ground.cornerpush.veloff = 0;-14 -fvar(21)*2
+air.cornerpush.veloff = 0;-14 -fvar(21)*2
+getpower = 0,0
+envshake.time = 12       ;攻撃がヒットした時に「画面が揺れる時間」を設定。
+envshake.freq = 100      ;攻撃がヒットした時の「画面が揺れる速度」を設定。デフォルトは60。
+envshake.ampl = 6        ;攻撃がヒットした時の「画面が揺れる縦の幅（範囲）」を設定。デフォルトは-4。
+envshake.phase = 70
+givepower = 0,0
+p1sprpriority = 2 
+affectteam = B
+guard.dist = 180 
+ID = 3010
+
+[State 2000, 0]
+type = TargetState
+trigger1 = MoveHit
+trigger1 = NumTarget(3010) >= 1
+trigger1 = !Target,IsHelper
+value = 3030
+ctrl = 0
+IgnoreHitPause = 1
+persistent = 0
+
+[State 2000, 0]
+type = ChangeState
+trigger1 = MoveHit = 1
+trigger1 = NumTarget(3010) >= 1
+trigger1 = P2movetype = H
+value = 3011
+
+;===========================================================================
+;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+;超必ＫＯエフェクト関係
+
+[State 3011,カットイン]
+type = Varset
+trigger1 = Win
+var(20) = 1
+ignorehitpause=1
+
+[State 3011,1]
+type = PlaySnd
+trigger1 = var(20) = 1
+value = 10,16
+volume = 255
+persistent = 0
+ignorehitpause=1
+
+[State 3011, 1]
+type = AssertSpecial
+trigger1 = var(20) = 1
+ignorehitpause = 1
+flag = NoFG
+flag2 = NoBG
+flag3= NoMusic
+PauseMoveTime = 999
+
+[State 3010, 4]
+type = explod
+trigger1 = var(20) = 1
+anim = 10050
+pos = 0,0
+postype = left
+sprpriority = -2
+supermove = 1
+bindtime = 33
+removetime = 33    ;このエフェクトが消えるまでの時間（フレーム）
+ID = 10050
+persistent = 0
+ignorehitpause = 1
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定
+
+[State 3011, 4]
+type = RemoveExplod
+trigger1 = var(20) = 1
+ID = 7000
+ignorehitpause=1
+
+[State -2,カットイン]
+type = Varset
+trigger1 = var(20) = 1
+var(20) = -1
+;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[State 3010, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 3002
+ctrl = 0
+
+;==================================================================
+;ヘルパーレナのステート
+[Statedef 3011];カーネージ2段目
+type     = S
+movetype = A
+physics  = S
+ctrl     = 0
+anim     = 3001
+SprPriority = -1
+
+[State 3011, 0]
+type = PlayerPush
+trigger1 = 1
+value = 1
+
+[State 3011, 0]
+type = AttackDist
+trigger1 = 1
+value = 170
+
+[State 3001, ]
+type = PlaySnd
+trigger1 = AnimElemTime(2) = 1
+trigger1 = var(22) = 0
+value = 10,1
+
+[State 3011, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 1 
+trigger1 = var(22) = 1
+value = 10,3     ;sndファイルか
+
+[State 3011, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NA, SA, HA, NP, SP, HP, NT, ST, HT, AA, AT, AP
+time = -1
+stateno = 3020
+IgnoreHitPause = 1
+
+[State 3011, 残像]
+type = AfterImage
+trigger1 = Time = 0
+Time = 60
+PalBright   = 128,128,256
+PalContrast = 128,128,256
+Trans = Add
+TimeGap  = 4
+FrameGap = 2
+length = 4
+
+[State 3011, 残像表示時間]
+type = AfterImageTime
+trigger1 = AnimTime = 0
+time = 0
+
+[State 3011, エフェクト画像]
+type = Explod
+trigger1 = AnimElemTime(8) = 1 
+anim = 4002        ;エフェクトのアニメ（アクションナンバー）
+pos = 50,-20         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = p1       ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.5,0.5    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = -1    ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 0         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 37      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 37    ;このエフェクトが消えるまでの時間（フレーム）
+supermovetime = 0;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 0  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0.5,0.5    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0     ;エフェクトの影（赤,緑,青）
+;trans = AddAlpha   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+alpha = 100,100    ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+
+[State 3011, エフェクト画像]
+type = Explod
+trigger1 = MoveHit = 1
+trigger1 = AnimElemTime(12) = 1
+anim = 6007       ;エフェクトのアニメ（アクションナンバー）
+pos = 80,-80         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = p1       ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 1,0.5   ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = 1    ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 0         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 12      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 12    ;このエフェクトが消えるまでの時間（フレーム）
+supermove = 1      ;「SuperPause」による時間停止中にもこのアニメが動くかどうか。
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0.5,0.5    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0     ;エフェクトの影（赤,緑,青）
+trans = AddAlpha   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+alpha = 256,256    ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+
+[State 3011, 基本]
+type = HitDef
+trigger1 = AnimElem = 12
+attr = S, HA
+damage = ceil(75+110*(1-(Root,var(4)*0.14))),25
+attr = S,HA
+hitflag = MAFD
+guardflag = M
+Animtype = DiagUp
+air.Animtype = DiagUp
+ground.type = high
+air.type = high
+priority = 4,Hit
+sparkno = -1
+sparkxy = -30,-20
+hitsound   = s10,8
+guardsound = s10,9
+pauseTime = 15,10
+guard.pauseTime = 15,15
+ground.slideTime = 19
+guard.slideTime = 17
+ground.hitTime = 19
+guard.hitTime = 17
+air.hitTime = 22
+ground.velocity = -12,-10
+guard.velocity = -10
+air.velocity = -12,-10
+airguard.velocity = -2,2
+yaccel = .52
+air.fall = 1
+fall = 1
+fall.recoverTime = 72
+ground.cornerpush.veloff = 0
+air.cornerpush.veloff = 0
+getpower = 0,0
+givepower = 0,0
+p1sprpriority = 2 
+p2facing = 1
+affectteam = B
+ID = 3011
+
+[State 2000, 0]
+type = TargetState
+trigger1 = MoveHit
+trigger1 = NumTarget(3011) >= 1
+trigger1 = !Target,IsHelper
+value = 3040
+ctrl = 0
+IgnoreHitPause = 1
+persistent = 0
+
+
+;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+;超必ＫＯエフェクト関係
+
+[State 3011,カットイン]
+type = Varset
+trigger1 = Win
+var(20) = 1
+ignorehitpause=1
+
+[State 3011,1]
+type = PlaySnd
+trigger1 = var(20) = 1
+value = 10,16
+volume = 255
+persistent = 0
+ignorehitpause=1
+
+[State 3011, 1]
+type = AssertSpecial
+trigger1 = var(20) = 1
+ignorehitpause = 1
+flag = NoFG
+flag2 = NoBG
+flag3= NoMusic
+PauseMoveTime = 999
+
+[State 3010, 4]
+type = explod
+trigger1 = var(20) = 1
+anim = 10050
+pos = 0,0
+postype = left
+sprpriority = -2
+supermove = 1
+bindtime = 33
+removetime = 33    ;このエフェクトが消えるまでの時間（フレーム）
+ID = 10050
+persistent = 0
+ignorehitpause = 1
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定
+
+[State 3011, 4]
+type = RemoveExplod
+trigger1 = var(20) = 1
+ID = 7000
+ignorehitpause=1
+
+[State -2,カットイン]
+type = Varset
+trigger1 = var(20) = 1
+var(20) = -1
+;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[State 3011, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 3002
+ctrl = 0
+
+;====================================================================
+;ヘルパーレナのステート
+[Statedef 3002];飛び去り
+type     = S
+movetype = I
+physics  = S
+ctrl     = 0
+anim     = 3002
+SprPriority = -1
+
+[State 3002, ]
+type = PlaySnd
+trigger1 = AnimElemTime(2) = 1
+value = 10,4
+
+[State 3002, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 1 
+value = 105,0     ;sndファイルか
+
+[State 3002, 移動速度]
+type = VelSet
+trigger1 = 1
+x = -13  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+y = -7  ;Ｙ軸。縦の移動速度を指定。0よりも上なら下降、0よりも下なら上昇。
+
+[State 3002]
+type = Varset
+trigger1 = 1
+var(20) = 0
+
+[State 3002, 3]
+type = StateTypeSet
+trigger1 = Time = 2
+statetype = A
+physics  = N
+
+[State 3002]
+type = ParentVarSet
+trigger1 = BackEdgeBodyDist < -30
+var(10) = 0
+
+[State 3002, このヘルパーを消す]
+type = DestroySelf
+trigger1 = BackEdgeBodyDist < -30
+
+[State 3002, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NA, SA, HA, NP, SP, HP, NT, ST, HT, AA, AT, AP
+time = -1
+stateno = 3020
+IgnoreHitPause = 1
+
+;=================================================================
+[Statedef 3020];レナやられ吹っ飛び
+type     = A
+movetype = H
+physics  = N
+ctrl     = 0
+anim     = 3003
+velset   = -8,-5
+SprPriority = -1
+
+[State 3020, ]
+type = PlaySnd
+trigger1 = Time = 1 
+trigger1 = var(22) = 0
+value = 10,5
+
+[State 3020, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 1 
+trigger1 = var(22) = 1
+value = 10,7 
+
+[State 3020]
+type = Varset
+trigger1 = 1
+var(20) = 0
+
+[State 3020]
+type = ParentVarSet
+trigger1 = BackEdgeBodyDist < -30
+var(10) = 0
+
+[State 3020, このヘルパーを消す]
+type = DestroySelf
+trigger1 = BackEdgeBodyDist < -30
+
+;=================================================================
+[Statedef 3100, 詩音崩天刃呼び出し]    
+type     = S       
+movetype = I        ;このステートの「行動内容」を指定。
+physics  = S        ;このステートの「実際の物理的な体勢」を指定。「小ネタ.txt」参照。
+anim     = 3004    ;アニメを指定（アクションナンバー）。この場合airの[Begin Action 1000]を呼び出し使う。
+poweradd = 0
+velset   = 0,0      ;このステートを開始した瞬間の移動速度（Ｘ軸,Ｙ軸）。効果は「VelSet」を参照
+SprPriority = 3
+ctrl = 0
+
+[State 1,リバサ変数リセット]
+type       = Varset
+trigger1 = time = 1
+v          = 0
+value      = 0
+
+[State 3000,制限時間];テス
+type = Varset
+trigger1 = var(10) = 0
+trigger1 = animelemTime(1) = 2
+ignorehitpause = 1
+v = 10
+value = 1
+
+[State 3000, 1]
+type = NotHitBy
+Trigger1 = animelemTime(1) = 0
+value = SCA,NA,SA,HA
+time = 6
+
+[State 3000, 移動速度]
+type = VelSet
+trigger1 = Time = [3,33]
+x = -1  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 3000, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0
+value = 7,2     ;sndファイルか
+volume = 255
+
+[State 3000, 0]
+type = Helper
+trigger1 = var(10) = 0
+trigger1 = time = 0
+helpertype = normal
+name = "sion"
+ID = 3100
+stateno = 3110
+pos = 0,0
+postype = p1    ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+supermovetime = 999
+pausemovetime = 999
+
+[State 3000, 1]
+type = Poweradd
+Trigger1 = animelem = 1
+value = -1000
+
+[State 3000, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 5120
+ctrl = 0
+
+;=====================================================================================
+;============================================================================
+;ヘルパー詩音のステート
+[Statedef 3110]
+type     = S
+movetype = A
+physics  = S
+ctrl     = 0
+anim     = 3100
+movehitpersist = 1
+SprPriority = 4
+
+
+[State 3110, 0]
+type = AttackDist
+trigger1 = time = [0,60]
+value = 130
+
+[State 3010];コンボ補正
+type = null;Varset
+trigger1 = P2Movetype = H
+var(4) = ceil(EnemyNear,GetHitVar(hitcount))
+
+[State 3010]
+type = Trans
+trigger1 = time = [0,35];< 35
+trans = addalpha
+alpha = 256-(time*6),time*6
+
+[State 3100,]
+type = Helper
+trigger1 = time = 0
+ID = 3103
+stateno = 3103
+pos = 0,0
+ownpal = 1
+supermovetime = 999
+pausemovetime = 999
+
+[State 3100,]
+type = Helper
+trigger1 = time = 0
+ID = 3104
+stateno = 3103
+pos = 0,0
+ownpal = 1
+supermovetime = 999
+pausemovetime = 999
+
+[State 3010]
+type = VarSet
+trigger1 = var(4) >= 8
+var(4) = 8
+
+[State 3010, 0]
+type = PlayerPush
+trigger1 = 1
+value = 1
+
+[State 3010, 0]
+type = ScreenBound
+trigger1 = 1
+value = 1
+movecamera = 1,0
+
+[State 3010, ランダムに変数を選ぶ]
+type = VarRandom
+trigger1 = Time= 0
+v = 22
+range = 0,3  ;範囲を決定
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 0
+trigger1 = var(22) = 0
+value = 12,0
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElemTime(3) = 1 
+trigger1 = var(22) = 1
+value = 12,1     
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0 
+trigger1 = var(22) = 2
+value = 12,2     
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0 
+trigger1 = var(22) = 3
+value = 12,6     
+
+[State 3010, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NA, SA, HA, NP, SP, HP, NT, ST, HT, AA, AT, AP
+time = -1
+stateno = 3102
+IgnoreHitPause = 1
+
+[State 3010, 1]
+type = NotHitBy
+Trigger1 = time = 0
+value = SCA,NA,SA,HA
+time = 40
+
+[State 3010, 3];暗転
+type = SuperPause
+trigger1 = AnimElemTime(1) = 5
+time = 34
+anim = s10010
+sound = s10,12
+pos = 0,-30
+postype = p1
+sprpriority = -1
+movetime = 34
+darken = 1
+p2defmul = 1
+unhittable = 1
+
+[State 3010, エフェクト画像]
+type = Explod
+trigger1 = AnimElemTime(1) = 5
+anim = 10004       ;エフェクトのアニメ（アクションナンバー）
+pos = 170,20         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = back       ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = -1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.75,0.75    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = -1   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 0         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 1      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 30    ;このエフェクトが消えるまでの時間（フレーム）
+supermove = 1      ;「SuperPause」による時間停止中にもこのアニメが動くかどうか。
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,-1.7         ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0.02    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0    ;エフェクトの影（赤,緑,青）
+trans = AddAlpha   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+alpha = 256-(time*6),time*6    ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+
+[State 3010, エフェクト画像]
+type = Explod
+trigger1 = AnimElemTime(1) = 5
+anim = 7000        ;エフェクトのアニメ（アクションナンバー）
+pos = 0,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = left       ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 1,1    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = -3   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 0         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 100      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 100    ;このエフェクトが消えるまでの時間（フレーム）
+supermove = 1      ;「SuperPause」による時間停止中にもこのアニメが動くかどうか。
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0.5,0.5    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 7000
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,100     ;エフェクトの影（赤,緑,青）
+;trans = Add1   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+alpha = 256,256    ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+
+[State 3110, 移動速度]
+type = VelSet
+trigger1 = time = [36,40]
+x = 10  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 3110, 移動速度]
+type = VelSet
+trigger1 = time = 5
+x = 0  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 3110, 基本]
+type = HitDef
+trigger1 = AnimElem = 5
+attr = S,HA
+damage = ceil(200*(1-(Root,var(4)*0.05))),10
+hitflag = MAFD
+guardflag = MA
+Animtype = up
+air.Animtype = up
+ground.type = High
+air.type = high
+priority = 8,Hit
+sparkno = S6005
+sparkxy = -20,-50
+hitsound   = s0,27
+guardsound = s10,10
+pauseTime = 40,39
+guard.pauseTime = 25,24
+ground.slideTime = 24
+guard.slideTime = 24
+ground.hitTime = 24
+guard.hitTime = 24
+air.hitTime = 22
+ground.velocity = 0,-24
+guard.velocity = -4
+air.velocity = 0,-24
+airguard.velocity = -4,2
+down.bounce = 1
+yaccel = .36
+air.fall = 1
+fall = 1
+fall.recover = 0 
+ground.cornerpush.veloff = 0;-14 -fvar(21)*2
+air.cornerpush.veloff = 0;-14 -fvar(21)*2
+getpower = 0,0
+envshake.time = 20       ;攻撃がヒットした時に「画面が揺れる時間」を設定。
+envshake.freq = 100      ;攻撃がヒットした時の「画面が揺れる速度」を設定。デフォルトは60。
+envshake.ampl = -5        ;攻撃がヒットした時の「画面が揺れる縦の幅（範囲）」を設定。デフォルトは-4。
+envshake.phase = 30
+givepower = 0,0
+p1sprpriority = 2 
+affectteam = B
+persistent=0
+guard.dist = 180 
+
+
+[State 3110, 0];蛇翼エフェクト
+type = Helper
+trigger1 = AnimElem = 5
+helpertype = normal
+name = "jayoku"
+ID = 3104
+stateno = 3104
+pos = 40,0
+postype = p1    ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+size.xscale = 0.75
+size.yscale = 1
+;supermovetime = 0
+;pausemovetime = 0
+ignorehitpause = 0
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = AnimElemTime(5) = 1 
+;trigger1 = MoveContact
+trigger1 = var(22) = 0
+value = 12,4
+persistent=0
+ignorehitpause=1
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElemTime(5) = 1 
+;trigger1 = MoveContact
+trigger1 = var(22) = 2
+value = 12,3  
+persistent=0 
+ignorehitpause=1
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElemTime(10) = 1 
+value = 0,19    ;sndファイルか
+
+;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+;超必ＫＯエフェクト関係
+[State 3010,カットイン]
+type = Varset
+trigger1 = Win 
+var(20) = 1
+ignorehitpause=1
+
+[State 3010,1]
+type = PlaySnd
+trigger1 = var(20) = 1
+value = 10,16
+volume = 255
+persistent = 0
+ignorehitpause=1
+
+[State 3010, 1]
+type = AssertSpecial
+trigger1 = var(20) = 1
+ignorehitpause = 1
+flag = NoFG
+flag2 = NoBG
+flag3= NoMusic
+PauseMoveTime = 999
+ignorehitpause=1
+
+[State 3010, 4]
+type = explod
+trigger1 = var(20) = 1
+anim = 10050
+pos = 0,0
+postype = left
+sprpriority = -2
+supermove = 1
+bindtime = 33
+removetime = 33    ;このエフェクトが消えるまでの時間（フレーム）
+ID = 10050
+persistent = 0
+ignorehitpause = 1
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+
+[State 3010, 4]
+type = RemoveExplod
+trigger1 = var(20) = 1
+ID = 7000
+ignorehitpause=1
+
+[State -2,カットイン]
+type = Varset
+trigger1 = var(20) = 1
+var(20) = -1
+;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[State 3010, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 3101
+ctrl = 0
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;詩音残像
+[Statedef 3103]
+ctrl = 0
+sprpriority = 5
+velset = 0,0
+
+[State 3103]
+type = ChangeAnim
+trigger1 = 1
+value = 3100
+elem = 1
+
+[State 3103]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 3103]
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 3103]
+type = VelSet
+trigger1 = Time = 0
+x = 1*(-IsHelper(3103)+IsHelper(3104))
+
+[State 3103]
+type = VelAdd
+trigger1 = 1
+x = .08*(-IsHelper(3103)+IsHelper(3104))
+
+[State 3103]
+type = AssertSpecial
+trigger1 = 1
+flag = noshadow
+
+[State 3103]
+type = trans
+trigger1 = 1
+trans = addalpha
+alpha = 256-(time*6),time*6
+
+[State 3103]
+type = DestroySelf
+trigger1 = Time = 35
+
+;---------------------------------------------------------------------------
+;蛇翼エフェクト
+[Statedef 3104]
+ctrl = 0
+sprpriority = 0
+velset = 0,0
+movetype = I
+physics = N
+anim = 3104
+
+[State 2002, 擬似ヒットストップ]
+type = Pause
+trigger1 = Parent,MoveHit
+time = 10
+persistent = 0
+
+[State 2002, 擬似ヒットストップ]
+type = Pause
+trigger1 = Parent,MoveGuarded
+time = 5
+persistent = 0
+
+[state a]
+type = angledraw
+trigger1 = 1
+value = -5.5
+scale = 0.75-(time*0.01),1
+
+[State 3103]
+type = AssertSpecial
+trigger1 = 1
+flag = noshadow
+
+[State 3103]
+type = trans
+trigger1 = 1
+trans = addalpha
+alpha = 224-(time*5),time*8
+
+[State 3103]
+type = DestroySelf
+trigger1 = Time = 60
+
+
+;====================================================================
+;ヘルパー詩音のステート
+[Statedef 3101];去り
+type     = S
+movetype = I
+physics  = S
+ctrl     = 0
+anim     = 3101
+SprPriority = -1
+
+[State 3010, 振り向く]
+type = Turn
+trigger1 = time = 0
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 10
+value = 12,8
+
+[State 3002, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 1 
+value = 105,0     ;sndファイルか
+
+[State 3002, 移動速度]
+type = VelSet
+trigger1 = 1
+x = 8  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+y = 0  ;Ｙ軸。縦の移動速度を指定。0よりも上なら下降、0よりも下なら上昇。
+
+[State 3002]
+type = ParentVarSet
+trigger1 = time >= 49
+var(10) = 0
+
+[State 3002]
+type = Varset
+trigger1 = 1
+var(20) = 0
+
+[State 3002, このヘルパーを消す]
+type = DestroySelf
+trigger1 = time >= 110
+
+[State 3002, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NA, SA, HA, NP, SP, HP, NT, ST, HT, AA, AT, AP
+time = -1
+stateno = 3102
+IgnoreHitPause = 1
+
+;=================================================================
+[Statedef 3102];詩音やられ吹っ飛び
+type     = A
+movetype = H
+physics  = N
+ctrl     = 0
+anim     = 3102
+velset   = -7,-6
+SprPriority = -1
+
+[State 3020, ]
+type = PlaySnd
+trigger1 = Time = 1 
+value = 12,7
+
+[State 3020]
+type = Varset
+trigger1 = 1
+var(20) = 0
+
+[State 3020]
+type = ParentVarSet
+trigger1 = BackEdgeBodyDist < -29
+trigger2 = FrontEdgeBodyDist < -29
+var(10) = 0
+
+[State 3020, このヘルパーを消す]
+type = DestroySelf
+trigger1 = BackEdgeBodyDist < -30
+trigger2 = FrontEdgeBodyDist < -30
+
+;=================================================================
+[Statedef 3200,ハリケーンミキサー呼び出し]    
+type     = S       
+movetype = I        ;このステートの「行動内容」を指定。
+physics  = S        ;このステートの「実際の物理的な体勢」を指定。「小ネタ.txt」参照。
+anim     = 3004    ;アニメを指定（アクションナンバー）。この場合airの[Begin Action 1000]を呼び出し使う。
+poweradd = 0
+velset   = 0,0      ;このステートを開始した瞬間の移動速度（Ｘ軸,Ｙ軸）。効果は「VelSet」を参照
+SprPriority = 3
+ctrl = 0
+
+[State 1,リバサ変数リセット]
+type       = Varset
+trigger1 = time = 1
+v          = 0
+value      = 0
+
+[State 3000,制限時間];テス
+type = Varset
+trigger1 = var(10) = 0
+trigger1 = animelemTime(1) = 2
+ignorehitpause = 1
+v = 10
+value = 1
+
+[State 3000, 1]
+type = NotHitBy
+Trigger1 = animelemTime(1) = 0
+value = SCA,NA,SA,HA
+time = 12
+
+[State 3000, 移動速度]
+type = VelSet
+trigger1 = Time = [3,33]
+x = -1  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 3000, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0
+value = 7,2     ;sndファイルか
+volume = 255
+
+[State 3000, 0]
+type = Helper
+trigger1 = var(10) = 0
+trigger1 = animelemTime(1) = 1
+helpertype = normal
+name = "hanyuu"
+ID = 3200
+stateno = 3210
+pos = 0,0
+postype = p1    ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+supermovetime = 999
+pausemovetime = 999
+
+[State 3000, 1]
+type = Poweradd
+Trigger1 = animelem = 1
+value = -1000
+
+[State 3000, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 5120
+ctrl = 0
+
+;=====================================================================================
+;============================================================================
+;ヘルパー羽入のステート
+[Statedef 3210]
+type     = S
+movetype = A
+physics  = S
+ctrl     = 0
+;anim     = 3200
+SprPriority = 4
+
+[State 3210, 0]
+type = AttackDist
+trigger1 = 1
+value = 100
+
+[State 3210, アニメ]
+type = changeanim
+trigger1 = prevstateno != 3211
+trigger1 = Time = 0
+value = 3200
+
+[State 3010]
+type = VarSet
+trigger1 = var(4) >= 8
+var(4) = 8
+
+[State 3010, 0]
+type = PlayerPush
+trigger1 = time = [0,74]
+value = 1
+
+[State 3010, 0]
+type = PlayerPush
+trigger1 =  time >= 75
+value = 0
+
+[State 3010, 0]
+type = ScreenBound
+trigger1 = 1
+value = 1
+movecamera = 1,0
+
+[State 3010, ランダムに変数を選ぶ]
+type = VarRandom
+trigger1 = Time= 0
+v = 22
+range = 0,1  ;範囲を決定
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 0
+trigger1 = var(22) = 0
+value = 13,2
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0
+trigger1 = var(22) = 1
+value = 13,3     
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 9 
+value = 13,5     
+
+[State 3010, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, AA,AP,AT
+time = -1
+stateno = 3202
+IgnoreHitPause = 1
+slot = 2
+
+[State 3010, 1]
+type = NotHitBy
+Trigger1 = time = 0
+value = SCA,NA,SA,HA
+time = 63
+
+[State 3010, 3];暗転
+type = SuperPause
+trigger1 = AnimElemTime(1) = 5
+time = 35
+anim = s10010
+sound = s10,12
+pos = 0,-30
+postype = p1
+sprpriority = -1
+movetime = 35
+darken = 1
+p2defmul = 1
+unhittable = 1
+
+[State 2000, カットイン画像]
+type = Explod
+trigger1 = AnimElem = 1 
+anim = 10003        ;エフェクトのアニメ（アクションナンバー）
+pos = 70,70         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = back     ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.5,0.5    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = -1    ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 0         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 1     ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 60   ;このエフェクトが消えるまでの時間（フレーム）
+supermove = 1      ;「SuperPause」による時間停止中にもこのアニメが動くかどうか。
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,-1         ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0     ;エフェクトの影（赤,緑,青）
+trans = AddAlpha   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+alpha = 256-(time*8),time*8
+
+[State 3010, エフェクト画像]
+type = Explod
+trigger1 = AnimElemTime(1) = 5
+anim = 7000        ;エフェクトのアニメ（アクションナンバー）
+pos = 0,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = left       ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 1,1    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = -3   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 0         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 100      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 100    ;このエフェクトが消えるまでの時間（フレーム）
+supermove = 1      ;「SuperPause」による時間停止中にもこのアニメが動くかどうか。
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0.5,0.5    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 7000
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,100     ;エフェクトの影（赤,緑,青）
+;trans = Add1   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+alpha = 256,256    ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+
+[State 3210, 移動速度]
+type = VelSet
+trigger1 = time = [49,86]
+x = 4  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 3210, 移動速度]
+type = Veladd
+trigger1 = time = [49,79]
+x = 2.8  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 32110, 移動速度]
+type = VelSet
+trigger1 = AnimElem = 18
+x = 0  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 3210, 突進]
+type = HitDef
+trigger1 = AnimElem = 11
+trigger2 = AnimElem = 12
+trigger3 = AnimElem = 13
+trigger4 = AnimElem = 14
+attr = S,HA
+damage = ceil(20*(1-(Root,var(4)*0.01))),10
+hitflag = MAFDP
+guardflag = MA
+Animtype = High
+air.Animtype = High
+ground.type = High
+air.type = high
+priority = 4,Hit
+sparkno = S6005
+sparkxy = -20,-50
+hitsound   = s0,5
+guardsound = s0,10
+pauseTime = 10,9
+guard.pauseTime = 10,9
+ground.slideTime = 18
+guard.slideTime = 18
+ground.hitTime = 18
+guard.hitTime = 20
+air.hitTime = 25
+ground.velocity = -5,0
+guard.velocity = -3
+air.velocity = -3,-1
+airguard.velocity = -4,-4
+down.bounce = 1
+yaccel = .4
+air.fall = 1
+fall = 0
+fall.recover = 1 
+fall.recovertime = 23
+ground.cornerpush.veloff = 0;-14 -fvar(21)*2
+air.cornerpush.veloff = 0;-14 -fvar(21)*2
+getpower = 0,0
+givepower = 9,3
+p1sprpriority = 2 
+affectteam = B
+forcestand = 1 
+ID = 3209
+
+[State 3210, カチ上げ]
+type = HitDef
+trigger1 = AnimElem = 15
+attr = S,HA
+damage = ceil(95*(1-(Root,var(4)*0.03))),20
+hitflag = MAFDP
+guardflag = M
+Animtype = up
+air.Animtype = up
+ground.type = High
+air.type = high
+priority = 4,Hit
+sparkno = S6005
+sparkxy = -20,-50
+hitsound   = s0,8
+guardsound = s0,10
+pauseTime = 30,29
+guard.pauseTime = 25,24
+ground.slideTime = 24
+guard.slideTime = 24
+ground.hitTime = 24
+guard.hitTime = 24
+air.hitTime = 22
+ground.velocity = 0,-10
+guard.velocity = -8
+air.velocity = 0,-20
+airguard.velocity = -9,2
+down.bounce = 1
+;yaccel = .45
+air.fall = 1
+fall = 1
+fall.recover = 0 
+ground.cornerpush.veloff = 0;-14 -fvar(21)*2
+air.cornerpush.veloff = 0;-14 -fvar(21)*2
+getpower = 0,0
+envshake.time = 30       ;攻撃がヒットした時に「画面が揺れる時間」を設定。
+envshake.freq = 60      ;攻撃がヒットした時の「画面が揺れる速度」を設定。デフォルトは60。
+envshake.ampl = -6        ;攻撃がヒットした時の「画面が揺れる縦の幅（範囲）」を設定。デフォルトは-4。
+envshake.phase = 30
+givepower = 0,0
+p1sprpriority = 2 
+affectteam = B
+ID = 3210
+
+[State 2000, 0]
+type = TargetState
+trigger1 = MoveHit 
+trigger1 = NumTarget(3210) >= 1
+trigger1 = !Target,IsHelper
+value = 3204
+ctrl = 0
+IgnoreHitPause = 1
+persistent = 0
+
+;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+;超必ＫＯエフェクト関係
+[State 3010,カットイン]
+type = Varset
+trigger1 = Win
+var(20) = 1
+persistent = 0
+ignorehitpause=1
+
+[State 3010,1]
+type = PlaySnd
+trigger1 = var(20) = 1
+value = 10,16
+volume = 255
+persistent = 0
+ignorehitpause=1
+
+[State 3010, 1]
+type = AssertSpecial
+trigger1 = var(20) = 1
+ignorehitpause = 1
+flag = NoFG
+flag2 = NoBG
+flag3= NoMusic
+PauseMoveTime = 999
+
+[State 3010, 4]
+type = explod
+trigger1 = var(20) = 1
+anim = 10050
+pos = 0,0
+postype = left
+sprpriority = -2
+supermove = 1
+bindtime = 33
+removetime = 33    ;このエフェクトが消えるまでの時間（フレーム）
+ID = 10050
+persistent = 0
+ignorehitpause = 1
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定
+
+[State 3010, 4]
+type = RemoveExplod
+trigger1 = var(20) = 1
+ID = 7000
+ignorehitpause=1
+
+[State -2,カットイン]
+type = Varset
+trigger1 = var(20) = 1
+var(20) = -1
+;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[State 3210, 0];回転エフェクト
+type = Helper
+trigger1 = p2stateno = [3204,3205]
+trigger2 = Root,stateno = [3204,3205]
+helpertype = normal
+name = "kaiten"
+ID = 3207
+stateno = 3207
+pos = 0,0
+postype = p2    ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+size.xscale = 0.5
+size.yscale = 0.5
+supermovetime = 0
+pausemovetime = 0
+persistent=0
+ignorehitpause = 1
+
+[State 3010, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 3201
+ctrl = 0
+
+;====================================================================
+;ヘルパー羽入のステート
+[Statedef 3201];去り
+type     = S
+movetype = I
+physics  = S
+ctrl     = 0
+anim     = 3201
+SprPriority = -1
+
+[State 3201]
+type = trans
+trigger1 = 1
+trans = addalpha
+alpha = 256-(time*5),time*5
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 0
+value = 13,6
+
+[State 3002, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 1 
+value = 105,0     ;sndファイルか
+
+[State 3002]
+type = Varset
+trigger1 = 1
+var(20) = 0
+
+[State 3002]
+type = ParentVarSet
+trigger1 = Time >= 59
+var(10) = 0
+
+[State 3002, このヘルパーを消す]
+type = DestroySelf
+trigger1 = Time >= 61
+
+[State 3002, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NA, SA, HA, NP, SP, HP, NT, ST, HT, AA, AT, AP
+time = -1
+stateno = 3202
+IgnoreHitPause = 1
+
+;=================================================================
+[Statedef 3202];羽入やられ吹っ飛び
+type     = A
+movetype = H
+physics  = N
+ctrl     = 0
+anim     = 3202
+velset   = -7,-6
+SprPriority = -1
+
+[State 3020, ]
+type = PlaySnd
+trigger1 = Time = 1 
+trigger1 = var(22) = 0
+value = 13,0
+
+[State 3020, ]
+type = PlaySnd
+trigger1 = Time = 1 
+trigger1 = var(22) = 1
+value = 13,4
+
+[State 3020]
+type = Varset
+trigger1 = 1
+var(20) = 0
+
+[State 3020]
+type = ParentVarSet
+trigger1 = BackEdgeBodyDist < -30
+var(10) = 0
+
+[State 3020, このヘルパーを消す]
+type = DestroySelf
+trigger1 = BackEdgeBodyDist < -30
+
+;=================================================================
+[Statedef 3204];ハリケーンミキサーやられ吹っ飛び
+type     = A
+movetype = H
+physics  = N
+ctrl     = 0
+velset   = 0,0
+SprPriority = -1
+
+[State ChangeA, 1]
+type = ChangeAnim2
+trigger1 = time = 0
+value = 3204
+
+[State 3205, 移動速度]
+type = VelSet
+trigger1 = time = [0,35]
+x = 0.5  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+y = -15
+
+[State 3205, 移動速度]
+type = Veladd
+trigger1 = time = [15,38]
+y = 2.8  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 3205, 移動速度]
+type = Velset
+trigger1 = time = [39,51]
+x = 0.5
+y = 0  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 3205, 移動速度]
+type = Veladd
+trigger1 =  time = [52,80]
+y = 1.2  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 3205, 移動速度]
+type = Veladd
+trigger1 =  time >= 0
+x = 0.05  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 3010, ]
+type = EnvShake
+trigger1 = time >= 30
+trigger1 = Pos Y >= 0 
+time = 20
+freq = 60
+ampl = -4
+phase = 0
+persistent=0
+
+[State 3010, ]
+type = LifeAdd
+trigger1 = time >= 30
+trigger1 = Pos Y >= 0 
+value = -70
+kill = 1
+absolute = 1
+persistent=0
+
+[State 3010, ]
+type = ChangeState
+trigger1 = time >= 30
+trigger1 = Pos Y >= 0 
+value = 3205
+ctrl = 0
+
+;=================================================================
+[Statedef 3205];ハリケーンミキサーやられ着地
+type     = A
+movetype = H
+physics  = N
+ctrl     = 0
+velset   = 0,0
+SprPriority = -1
+
+[State 3205, 移動速度]
+type = Veladd
+trigger1 =  time = 0
+x = 0  
+
+[State ChangeA, 1]
+type = ChangeAnim2
+trigger1 = time = 0
+value = 3205
+
+[State 3205, ]
+type = posSet
+trigger1 = time = 0
+y = 2
+
+[State 3205, ]
+type = posSet
+trigger1 = AnimElem <= 22
+y = 0
+
+[State StateTypeS, 1]
+type = StateTypeSet
+Trigger1 = AnimElem = 24
+statetype = S
+
+[State 2052, 相手ステートに戻す]
+type = SelfState
+trigger1 = AnimTime = 0
+trigger1 =  alive = 0
+value = 5150
+ctrl     = 0
+
+[State 2052, 相手ステートに戻す]
+type = SelfState
+trigger1 = AnimTime = 0
+trigger1 =  alive = 1
+value = 5120
+ctrl     = 0
+;===========================================================================
+;---------------------------------------------------------------------------
+;回転エフェクト
+[Statedef 3207]
+ctrl = 0
+sprpriority = 0
+movetype = I
+physics = N
+anim     = 3207
+
+[State 3010, エフェクト画像];回転
+type = Explod
+triggerall = time = [0,40]
+trigger1 = p2stateno = [3204,3205]
+anim = 3203       ;エフェクトのアニメ（アクションナンバー）
+pos = 0,-50         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = p2      ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = -1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.5,0.5    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = 2   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 1         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 40      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 40    ;このエフェクトが消えるまでの時間（フレーム）
+supermovetime = 0 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 0  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 3207
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0     ;エフェクトの影（赤,緑,青）
+persistent=0
+
+
+[State 3010, エフェクト画像];回転
+type = Explod
+triggerall = time = [48,75]
+trigger1 = p2stateno = [3204,3205]
+trigger2 = Root,stateno = [3204,3205]
+anim = 3203       ;エフェクトのアニメ（アクションナンバー）
+pos = 0,-30         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = p2      ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.5,0.5    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = 2   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 1         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 52     ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 52    ;このエフェクトが消えるまでの時間（フレーム）
+supermovetime = 0 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 0  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 3207
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0     ;エフェクトの影（赤,緑,青）
+persistent=0
+
+
+[State 3010, エフェクト画像];岩
+type = Explod
+triggerall = time = 77
+trigger1 = p2stateno = [3204,3205]
+anim = 3208       ;エフェクトのアニメ（アクションナンバー）
+pos = 10,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype =p2   ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = -1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.3,0.3    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = 3   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 1         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 35     ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 35    ;このエフェクトが消えるまでの時間（フレーム）
+supermovetime = 0 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 0  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 3208
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0     ;エフェクトの影（赤,緑,青）
+;trans = AddAlpha   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+;alpha = 256-(time*8),time*8   ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+persistent=0
+
+[State 3010, エフェクト画像];岩
+type = Explod
+triggerall = time = 77
+trigger1 = p2stateno = [3204,3205]
+trigger2 = Root,stateno = [3204,3205]
+anim = 3208       ;エフェクトのアニメ（アクションナンバー）
+pos = -10,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = p2      ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.3,0.3    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = 3   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 1         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 30     ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 30    ;このエフェクトが消えるまでの時間（フレーム）
+supermovetime = 0 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 0  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 3208
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0     ;エフェクトの影（赤,緑,青）
+;trans = AddAlpha   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+;alpha = 256-(time*8),time*8   ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+persistent=0
+
+[State 3010, エフェクト画像];煙
+type = Explod
+triggerall = time = 77
+trigger1 = p2stateno = [3204,3205]
+trigger2 = Root,stateno = [3204,3205]
+anim = 3209       ;エフェクトのアニメ（アクションナンバー）
+pos = -30,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = p2      ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.5,0.5    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = 4   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 1         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 35     ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 35    ;このエフェクトが消えるまでの時間（フレーム）
+supermovetime = 0 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 0  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 3209
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0     ;エフェクトの影（赤,緑,青）
+;trans = AddAlpha   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+;alpha = 256-(time*8),time*8   ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+persistent=0
+
+[State 3010, エフェクト画像];煙
+type = Explod
+triggerall = time = 77
+trigger1 = p2stateno = [3204,3205]
+trigger2 = Root,stateno = [3204,3205]
+anim = 3209       ;エフェクトのアニメ（アクションナンバー）
+pos = 30,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = p2      ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = -1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.5,0.5    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = 4   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 1        ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 35     ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 35    ;このエフェクトが消えるまでの時間（フレーム）
+supermovetime = 0 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 0  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 3209
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0     ;エフェクトの影（赤,緑,青）
+;trans = AddAlpha   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+;alpha = 256-(time*8),time*8   ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+persistent=0
+
+;エフェクト消去
+
+[State 3207];ハリケーンミキサー関係
+type = RemoveExplod
+trigger1 = p2stateno != [3204,3205]
+ID = 3207
+ignorehitpause=1
+
+[State 3207];ハリケーンミキサー関係
+type = RemoveExplod
+trigger1 = p2stateno != [3204,3205]
+ID = 3208
+ignorehitpause=1
+
+[State 3207];ハリケーンミキサー関係
+type = RemoveExplod
+trigger1 = p2stateno != [3204,3205]
+ID = 3209
+ignorehitpause=1
+
+[State 3020, ]
+type = PlaySnd
+trigger1 = time <= 90 && (Time % 12 = 0) 
+value = 0,1
+
+[State 3020, ]
+type = PlaySnd
+triggerall = time = 77
+trigger1 = p2stateno = [3204,3205]
+trigger2 = Root,stateno = [3204,3205]
+value = 0,35
+volume = 255
+persistent = 0
+
+[State 3103]
+type = AssertSpecial
+trigger1 = 1
+flag = noshadow
+
+;超必ＫＯエフェクト関係
+[State 3010,カットイン]
+type = Varset
+trigger1 = Win 
+var(20) = 1
+ignorehitpause=1
+
+[State 3010,1]
+type = PlaySnd
+trigger1 = var(20) = 1
+value = 10,16
+volume = 255
+persistent = 0
+ignorehitpause=1
+
+[State 3010, 1]
+type = AssertSpecial
+trigger1 = var(20) = 1
+ignorehitpause = 1
+flag = NoFG
+flag2 = NoBG
+flag3= NoMusic
+PauseMoveTime = 999
+
+[State 3010, 4]
+type = explod
+trigger1 = var(20) = 1
+anim = 10050
+pos = 0,0
+postype = left
+sprpriority = -2
+supermove = 1
+bindtime = 33
+removetime = 33    ;このエフェクトが消えるまでの時間（フレーム）
+ID = 10050
+persistent = 0
+ignorehitpause = 1
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定
+
+[State 3010, 4]
+type = RemoveExplod
+trigger1 = var(20) = 1
+ID = 7000
+ignorehitpause=1
+
+[State -2,カットイン]
+type = Varset
+trigger1 = var(20) = 1
+var(20) = -1
+
+;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[State 3103]
+type = DestroySelf
+trigger1 = (Time >= 2) && p2stateno != [3204,3205]
+ignorehitpause=1
+;=================================================================
+[Statedef 3300, バスターホームラン呼び出し]    
+type     = S       
+movetype = I        ;このステートの「行動内容」を指定。
+physics  = S        ;このステートの「実際の物理的な体勢」を指定。「小ネタ.txt」参照。
+anim     = 3004    ;アニメを指定（アクションナンバー）。この場合airの[Begin Action 1000]を呼び出し使う。
+poweradd = 0
+velset   = 0,0      ;このステートを開始した瞬間の移動速度（Ｘ軸,Ｙ軸）。効果は「VelSet」を参照
+SprPriority = 3
+ctrl = 0
+
+[State 1,リバサ変数リセット]
+type       = Varset
+trigger1 = time = 1
+v          = 0
+value      = 0
+
+[State 3000,制限時間];テス
+type = Varset
+trigger1 = var(10) = 0
+trigger1 = animelemTime(1) = 2
+ignorehitpause = 1
+v = 10
+value = 1
+
+[State 3000, 1]
+type = NotHitBy
+Trigger1 = animelemTime(1) = 0
+value = SCA,NA,SA,HA
+time = 6
+
+[State 3000, 移動速度]
+type = VelSet
+trigger1 = Time = [3,33]
+x = -1  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 3000, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0
+value = 7,2     ;sndファイルか
+volume = 255
+
+[State 3000, 0]
+type = Helper
+trigger1 = var(10) = 0
+trigger1 = time = 0
+helpertype = normal
+name = "K"
+ID = 3300
+stateno = 3310
+pos = 20,0
+postype = p1    ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+supermovetime = 999
+pausemovetime = 999
+
+[State 3000, 1]
+type = Poweradd
+Trigger1 = animelem = 1
+value = -1000
+
+[State 3000, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 5120
+ctrl = 0
+
+;=====================================================================================
+;============================================================================
+;ヘルパー圭一のステート
+[Statedef 3310]
+type     = S
+movetype = A
+physics  = S
+ctrl     = 0
+anim     = 3300
+SprPriority = 4
+
+[State 3010];コンボ補正
+type = null;Varset
+trigger1 = P2Movetype = H
+var(4) = ceil(EnemyNear,GetHitVar(hitcount))
+
+[State 3010]
+type = VarSet
+trigger1 = var(4) >= 8
+var(4) = 8
+
+[State 3010, 0]
+type = PlayerPush
+trigger1 = 1
+value = 1
+
+[State 3010, 0]
+type = ScreenBound
+trigger1 = 1
+value = 1
+movecamera = 1,0
+
+[State 3010, ランダムに変数を選ぶ]
+type = VarRandom
+trigger1 = Time= 0
+v = 22
+range = 0,2  ;範囲を決定
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = AnimElem = 2
+trigger1 = var(22) = 0
+value = 14,4
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 2 
+trigger1 = var(22) = 1
+value = 14,3  
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 2 
+trigger1 = var(22) = 2
+value = 14,5 
+volume = 255    
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 7
+value = 0,29    
+
+[State 3010, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NA, SA, HA, NP, SP, HP, NT, ST, HT, AA, AT, AP
+time = -1
+stateno = 3302
+IgnoreHitPause = 1
+
+[State 3010, 1]
+type = NotHitBy
+Trigger1 = time = 0
+value = SCA,NA,SA,HA
+time = 38
+
+[State 3010, 3];暗転
+type = SuperPause
+trigger1 = AnimElemTime(1) = 3
+time = 36
+anim = s10010
+sound = s10,12
+pos = 0,-30
+postype = p1
+sprpriority = -1
+movetime = 36
+darken = 1
+p2defmul = 1
+unhittable = 1
+
+[State 3010, エフェクト画像]
+type = Explod
+trigger1 = AnimElemTime(1) = 5
+anim = 10006     ;エフェクトのアニメ（アクションナンバー）
+pos = 300,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = back       ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = -1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.6,0.6    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = -1   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 0         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 1      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 30    ;このエフェクトが消えるまでの時間（フレーム）
+supermove = 1      ;「SuperPause」による時間停止中にもこのアニメが動くかどうか。
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = -1,0         ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = -0.02,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0    ;エフェクトの影（赤,緑,青）
+trans = AddAlpha   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+alpha = 256-(time*6),time*6    ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+
+[State 3010, エフェクト画像]
+type = Explod
+trigger1 = AnimElemTime(1) = 5
+anim = 7000        ;エフェクトのアニメ（アクションナンバー）
+pos = 0,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = left       ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 1,1    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = -3   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 0         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 100      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 100    ;このエフェクトが消えるまでの時間（フレーム）
+supermove = 1      ;「SuperPause」による時間停止中にもこのアニメが動くかどうか。
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0.5,0.5    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 7000
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,100     ;エフェクトの影（赤,緑,青）
+;trans = Add1   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+alpha = 256,256    ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+
+[State 3010, エフェクト画像]
+type = Explod
+trigger1 = AnimElemTime(6) = 0
+anim = 3304       ;エフェクトのアニメ（アクションナンバー）
+pos = 30,-30         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = p1       ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.5,0.5    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = 5   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 0         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 1      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 13    ;このエフェクトが消えるまでの時間（フレーム）     ;「SuperPause」による時間停止中にもこのアニメが動くかどうか。
+supermovetime = 0;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 0  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 3304
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0     ;エフェクトの影（赤,緑,青）
+;trans = Add1   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+alpha = 256-(time*6),time*6    ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+
+[State 3000, 0]
+type = Helper
+trigger1 = AnimElemTime(7) = 0
+helpertype = normal
+name = "BH"
+ID = 3303
+stateno = 3303
+pos = 20,-40
+size.xscale = 0.5
+size.yscale = 0.5
+postype = p1    ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+persistent = 0
+ignorehitpause = 1 
+
+
+;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+;超必ＫＯエフェクト関係
+[State 3010,カットイン]
+type = Varset
+trigger1 = Win 
+var(20) = 1
+ignorehitpause=1
+
+[State 3010,1]
+type = PlaySnd
+trigger1 = var(20) = 1
+value = 10,16
+volume = 255
+persistent = 0
+ignorehitpause=1
+
+[State 3010, 1]
+type = AssertSpecial
+trigger1 = var(20) = 1
+ignorehitpause = 1
+flag = NoFG
+flag2 = NoBG
+flag3= NoMusic
+PauseMoveTime = 999
+ignorehitpause=1
+
+[State 3010, 4]
+type = explod
+trigger1 = var(20) = 1
+anim = 10050
+pos = 0,0
+postype = left
+sprpriority = -2
+supermove = 1
+bindtime = 33
+removetime = 33    ;このエフェクトが消えるまでの時間（フレーム）
+ID = 10050
+persistent = 0
+ignorehitpause = 1
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+
+[State 3010, 4]
+type = RemoveExplod
+trigger1 = var(20) = 1
+ID = 7000
+ignorehitpause=1
+
+[State -2,カットイン]
+type = Varset
+trigger1 = var(20) = 1
+var(20) = -1
+;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[State 3010, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 3301
+ctrl = 0
+;---------------------------------------------------------------------------
+
+;====================================================================
+;ヘルパー圭一のステート
+[Statedef 3301];去り
+type     = S
+movetype = I
+physics  = S
+ctrl     = 0
+anim     = 3301
+SprPriority = -1
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 1
+value = 14,0
+
+[State 3002, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 1 
+value = 105,0     ;sndファイルか
+
+[State 3002, 移動速度]
+type = VelSet
+trigger1 = 1
+x = -8  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+y = 0  ;Ｙ軸。縦の移動速度を指定。0よりも上なら下降、0よりも下なら上昇。
+
+[State 3002]
+type = Varset
+trigger1 = 1
+var(20) = 0
+
+[State 3002]
+type = ParentVarSet
+trigger1 = time >= 49
+var(10) = 0
+
+[State 3002, このヘルパーを消す]
+type = DestroySelf
+trigger1 = time >= 50
+
+[State 3002, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NA, SA, HA, NP, SP, HP, NT, ST, HT, AA, AT, AP
+time = -1
+stateno = 3302
+IgnoreHitPause = 1
+
+;=================================================================
+[Statedef 3302];圭一やられ吹っ飛び
+type     = A
+movetype = H
+physics  = N
+ctrl     = 0
+anim     = 3302
+velset   = -7,-6
+SprPriority = -1
+
+[State 3020, ]
+type = PlaySnd
+trigger1 = Time = 1 
+trigger1 = var(22) = 0
+value = 14,1
+
+[State 3020, ]
+type = PlaySnd
+trigger1 = Time = 1 
+trigger1 = var(22) = 1
+value = 14,2
+
+[State 3020]
+type = Varset
+trigger1 = 1
+var(20) = 0
+
+[State 3020]
+type = ParentVarSet
+trigger1 = BackEdgeBodyDist < -29
+var(10) = 0
+
+[State 3020, このヘルパーを消す]
+type = DestroySelf
+trigger1 = BackEdgeBodyDist < -30
+;============================================================================
+;ヘルパーBHのステート
+[Statedef 3303]
+type     = A
+movetype = A
+physics  = N
+ctrl     = 0
+velset   = 17,-7.7
+anim     = 3306
+SprPriority = 4
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = MoveGuarded
+value = 0,36
+volume = 500
+
+[State 3010, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NA, SA, HA, NT, ST, HT, AA, AT
+time = -1
+stateno = 3304
+slot = 1
+IgnoreHitPause = 1
+
+[State 3010, 対飛び道具用]
+type = HitOverRide
+trigger1 = (Time >= 0)
+trigger1 = NumTarget(3303) >= 1
+trigger1 = Target,IsHelper
+attr = SCA, NP, SP, HP, AP
+time = -1
+stateno = 3303
+slot = 2
+IgnoreHitPause = 1
+
+[State 3010, 対飛び道具用]
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NP, SP, HP, AP
+time = -1
+stateno = 3303
+slot = 3
+IgnoreHitPause = 1
+
+[State 3010, 1]
+type = NotHitBy
+Trigger1 = 1
+value = ,AA,AT
+time = 1
+
+[State 3010, 4]
+type = explod
+triggerall = NumTarget(3303) >= 1
+trigger1 = movehit = 1 && !Target,IsHelper
+anim = 3305
+pos = 0,0
+postype = p1
+sprpriority = 4
+bindtime = 1
+scale = 0.5,0.5
+removetime = 33    ;このエフェクトが消えるまでの時間（フレーム）
+ID = 3305
+persistent = 0
+ignorehitpause = 1 
+supermovetime = 0 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 0  ;「Pause」での時間停止を無視して有効にする時間を設定。
+
+[State 3010, 4]
+type = explod
+;triggerall = NumTarget(3303) >= 1
+trigger1 = MoveGuarded ;&& !Target,IsHelper
+anim = 3303
+pos = 0,0
+postype = p1
+sprpriority = 4
+bindtime = 1
+removetime = 27    ;このエフェクトが消えるまでの時間（フレーム）
+ID = 3303
+persistent = 0
+ignorehitpause = 1 
+supermovetime = 0 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 0  ;「Pause」での時間停止を無視して有効にする時間を設定。
+
+[State 3303, 飛び道具]
+type = hitdef
+trigger1 = 1
+attr             = S, HP
+damage           = ceil(254*(1-(Root,var(4)*0.05))),22
+getpower         = 0,0
+animtype         = DiagUp
+pausetime        = 0,20
+hitflag          = MAFDP
+guardflag        = M
+animtype         = DiagUp
+priority         = 7, Hit
+hitonce          = 0 
+sparkno          = -1;s3305
+guard.sparkno    = -1;s3303
+hitsound         = s0,15
+ground.type      = High
+ground.slidetime = 25
+ground.hittime   = 25
+ground.velocity  = -10,-12
+air.velocity     = -9.2,-9
+air.juggle       = 1 ;Projectileの場合はここで設定しないとヒットした時ジャグルが消費しない
+fall              = 1 
+fall.recovertime = 80
+envshake.time = 20       ;攻撃がヒットした時に「画面が揺れる時間」を設定。
+envshake.freq = 100      ;攻撃がヒットした時の「画面が揺れる速度」を設定。デフォルトは60。
+envshake.ampl = 10        ;攻撃がヒットした時の「画面が揺れる縦の幅（範囲）」を設定。デフォルトは-4。
+envshake.phase = 70
+numhits = 1
+persistent = 0
+ignorehitpause=1
+nochainID = 3303
+ID = 3303
+
+;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+;超必ＫＯエフェクト関係
+[State 3010,カットイン]
+type = Varset
+trigger1 = Win 
+var(20) = 1
+ignorehitpause=1
+
+[State 3010,1]
+type = PlaySnd
+trigger1 = var(20) = 1
+value = 10,16
+volume = 255
+persistent = 0
+ignorehitpause=1
+
+[State 3010, 1]
+type = AssertSpecial
+trigger1 = var(20) = 1
+ignorehitpause = 1
+flag = NoFG
+flag2 = NoBG
+flag3= NoMusic
+PauseMoveTime = 999
+ignorehitpause=1
+
+[State 3010, 4]
+type = explod
+trigger1 = var(20) = 1
+anim = 10050
+pos = 0,0
+postype = left
+sprpriority = -2
+supermove = 1
+bindtime = 33
+removetime = 33    ;このエフェクトが消えるまでの時間（フレーム）
+ID = 10050
+persistent = 0
+ignorehitpause = 1
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+
+[State 3010, 4]
+type = RemoveExplod
+trigger1 = var(20) = 1
+ID = 7000
+ignorehitpause=1
+
+[State -2,カットイン]
+type = Varset
+trigger1 = var(20) = 1
+var(20) = -1
+;^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[State 3002, このヘルパーを消す]
+type = null
+trigger1 = NumTarget(3303) >= 1
+persistent = 0
+ignorehitpause=1
+
+[State 3002, このヘルパーを消す]
+type = DestroySelf
+trigger1 = time >= 50
+trigger2 = NumTarget(3303) >= 1
+trigger2 = movehit = 2 && !Target,IsHelper
+trigger3 = NumTarget(3303) >= 1
+trigger3 = MoveGuarded = 2 && !Target,IsHelper
+ignorehitpause=1
+
+;=================================================================
+[Statedef 3304];BH消滅
+type     = A
+movetype = H
+physics  = N
+ctrl     = 0
+anim     = 3303
+SprPriority = 3
+
+[State 3020, ]
+type = PlaySnd
+trigger1 = Time = 1 
+value = 0,36
+volume = 500
+
+[State 3020, このヘルパーを消す]
+type = DestroySelf
+trigger1 = time >= 20
+;============================================================================
+;=================================================================
+[Statedef 3305];相手飛び道具消滅
+type     = A
+movetype = H
+physics  = N
+ctrl     = 0
+SprPriority = 3
+
+[State 3020, このヘルパーを消す]
+type = DestroySelf
+trigger1 = 1
+;============================================================================
+;=================================================================
+[Statedef 3400, 梨花呼び出し]    
+type     = S       
+movetype = A        ;このステートの「行動内容」を指定。
+physics  = S        ;このステートの「実際の物理的な体勢」を指定。「小ネタ.txt」参照。
+anim     = 3005    ;アニメを指定。
+poweradd = 0
+velset   = 0,0      ;このステートを開始した瞬間の移動速度（Ｘ軸,Ｙ軸）。効果は「VelSet」を参照
+SprPriority = 3
+ctrl = 0
+
+[State 1,リバサ変数リセット]
+type       = Varset
+trigger1 = time = 0
+v          = 0
+value      = 0
+
+[State 3000,制限時間];テス
+type = Varset
+trigger1 = var(11) = 0
+trigger1 = animelemTime(1) = 3
+ignorehitpause = 1
+v = 11
+value = 1
+
+[State 3000, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0
+value = 7,11   
+volume = 255
+
+[State 3000, 0]
+type = Helper
+trigger1 = var(11) = 0
+trigger1 = time = 2
+helpertype = normal
+name = "R"
+ID = 3400
+stateno = 3410
+pos = -100,0
+postype = back   ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+supermovetime = 0
+pausemovetime = 0
+
+[State 3000, 1]
+type = Poweradd
+Trigger1 = animelem = 1
+value = -1000
+
+[State 3000, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+;---------------------------------------------------------------------------
+;============================================================================
+;ヘルパー梨花のステート
+[Statedef 3410]
+type     = S
+movetype = I
+physics  = S
+ctrl     = 0
+anim     = 3400
+SprPriority = -1
+
+[State 20, 1]
+type = VelSet
+trigger1 = 1;Pos x >= 30
+x = 1.2
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 50
+value = 15,4
+volume = 255
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 65
+value = 15,5
+volume = 255
+      
+[State 3010, 1]
+type = NotHitBy
+Trigger1 = 1
+value = SCA
+time = 1
+
+[State 3010, ステート変更]
+type = ChangeState
+trigger1 = time = 210
+value = 3411
+ctrl = 0
+;---------------------------------------------------------------------------
+;============================================================================
+;ヘルパー梨花のステート
+[Statedef 3411]
+type     = S
+movetype = I
+physics  = S
+ctrl     = 0
+anim     = 3401
+SprPriority = -1
+
+[State 3010, 1]
+type = NotHitBy
+Trigger1 = 1
+value = SCA
+time = 1
+
+[State 3010, ランダムに変数を選ぶ]
+type = VarRandom
+trigger1 = Time= 0
+v = 22
+range = 0,2 ;範囲を決定
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 10
+trigger2 = time = 180
+trigger3 = time = 340
+value = 15,0
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 92 
+trigger1 = var(22) = 0
+value = 15,1   
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 102 
+trigger1 = var(22) = 1
+value = 15,2    
+volume = 255
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 132 
+trigger1 = var(22) = 2
+value = 15,3   
+volume = 255 
+
+[State 3010, 1];体力回復用変数
+type = Varset
+trigger1 = ParentDist X = [-50,50]
+var(5) = 1
+
+[State 3010, 1];体力回復用変数
+type = Varset
+trigger1 = ParentDist X != [-50,50]
+var(5) = 0
+
+[State 3010, 3];暗転
+type = SuperPause
+trigger1 = AnimElemTime(1) = 8
+time = 20
+anim = s10010
+sound = s10,12
+pos = 0,-30
+postype = p1
+sprpriority = -1
+movetime = 0
+darken = 1
+p2defmul = 1
+unhittable = 1
+
+[State 3010, エフェクト画像]
+type = Explod
+trigger1 = AnimElemTime(1) = 8
+anim = 10007     ;エフェクトのアニメ（アクションナンバー）
+pos = 70,-20         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = back       ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1       ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.6,0.6   ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = -1   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 0         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 1      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 30    ;このエフェクトが消えるまでの時間（フレーム）
+supermove = 1      ;「SuperPause」による時間停止中にもこのアニメが動くかどうか。
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = -0.1,0         ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = -0.02,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0    ;エフェクトの影（赤,緑,青）
+trans = AddAlpha   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+alpha = 256-(time*6),time*6    ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+
+[State 3010, エフェクト画像]
+type = Explod
+trigger1 = AnimElemTime(1) = 8
+anim = 7000        ;エフェクトのアニメ（アクションナンバー）
+pos = 0,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = left       ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 1,1    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = -3   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 0         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 100      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 100    ;このエフェクトが消えるまでの時間（フレーム）
+supermove = 1      ;「SuperPause」による時間停止中にもこのアニメが動くかどうか。
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0.5,0.5    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 7000
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,100     ;エフェクトの影（赤,緑,青）
+;trans = Add1   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+alpha = 256,256    ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+
+[State 3100,]
+type = Helper
+trigger1 = time = 16
+trigger2 = time = 88
+trigger3 = time = 160
+trigger4 = time = 232
+trigger5 = time = 304
+trigger6 = time = 376
+name = "H"
+ID = 3405
+stateno = 3415
+pos = 30,-30
+postype = p1
+ownpal = 1
+supermovetime = 0
+pausemovetime = 0
+
+[State 3100,]
+type = Helper
+trigger1 = time = 16
+trigger2 = time = 88
+trigger3 = time = 160
+trigger4 = time = 232
+trigger5 = time = 304
+trigger6 = time = 376
+name = "H"
+ID = 3406
+stateno = 3416
+pos = -30,-30
+postype = p1
+ownpal = 1
+supermovetime = 0
+pausemovetime = 0
+
+[State 3010, ステート変更]
+type = ChangeState
+trigger1 = time = 450
+value = 3412
+ctrl = 0
+
+;====================================================================
+;ヘルパー梨花のステート
+[Statedef 3412];去り
+type     = S
+movetype = I
+physics  = S
+ctrl     = 0
+anim     = 3403
+SprPriority = -1
+
+[State 3010, ]
+type = StateTypeSet
+trigger1 = animelemtime(5) = 0
+statetype = A
+movetype = I
+physics = N
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 1
+value = 15,4
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = animelemtime(5) = 0
+trigger1 = P2MoveType != A
+trigger1 = Root,movetype != H
+value = 15,4
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = animelemtime(5) = 0
+trigger1 = P2MoveType = A
+trigger1 = Root,movetype != H
+value = 15,3
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = animelemtime(5) = 0
+trigger1 = P2MoveType = A
+trigger1 = Root,movetype = H
+value = 15,1
+
+[State 3002, 音を鳴らす]
+type = PlaySnd
+trigger1 = animelemtime(5) = 0
+value = 105,0     ;sndファイルか
+
+[State 3002, 移動速度]
+type = VelSet
+trigger1 = animelemtime(5) = 0
+x = 6  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+y = -8  ;Ｙ軸。縦の移動速度を指定。0よりも上なら下降、0よりも下なら上昇。
+
+[State 3010, 1]
+type = Varset
+trigger1 = 1
+var(5) = 0
+
+[State 3002]
+type = ParentVarSet
+trigger1 = time >= 59
+var(11) = 0
+
+[State 3002, このヘルパーを消す]
+type = DestroySelf
+trigger1 = time >= 60
+
+;===========================================================================
+;---------------------------------------------------------------------------
+;梨花ハートエフェクト
+[Statedef 3415]
+ctrl = 0
+sprpriority = -2
+velset = 0,0
+
+[State 3103]
+type = ChangeAnim
+trigger1 = 1
+value = 3405
+elem = 1
+
+[State 3103]
+type = BindToParent
+trigger1 = time = 0
+time =1
+
+[State 3010, ランダムに変数を選ぶ]
+type = VarRandom
+trigger1 = Time= 0
+v = 22
+range = -20,15 ;範囲を決定
+
+[State 3010, ランダムに変数を選ぶ]
+type = VarRandom
+trigger1 = Time= 0
+v = 23
+range = 0,-15 ;範囲を決定
+
+[State 3010, ]
+type = posset
+trigger1 = time = 0
+x = var(22)
+y = var(23)
+
+[State 3103]
+type = VelSet
+trigger1 = Time = 0
+x = 1
+y = -1
+
+[State 3103]
+type = VelAdd
+trigger1 = time >= 36
+x = 0.15
+
+[State 3103]
+type = VelAdd
+trigger1 = time <= 36
+x = -0.1
+
+[State 3103]
+type = AssertSpecial
+trigger1 = 1
+flag = noshadow
+
+[State 3103]
+type = trans
+trigger1 = 1
+trans = addalpha
+alpha = 256-(time*2),time*2
+
+
+[State 3103]
+type = DestroySelf
+trigger1 = Time = 72
+
+;===========================================================================
+;---------------------------------------------------------------------------
+;梨花ハートエフェクト
+[Statedef 3416]
+ctrl = 0
+sprpriority = 0
+velset = 0,0
+
+[State 3103]
+type = ChangeAnim
+trigger1 = 1
+value = 3405
+elem = 1
+
+[State 3103]
+type = BindToParent
+trigger1 = time = 0
+time =1
+
+[State 3010, ランダムに変数を選ぶ]
+type = VarRandom
+trigger1 = Time= 0
+v = 22
+range = -20,15 ;範囲を決定
+
+[State 3010, ランダムに変数を選ぶ]
+type = VarRandom
+trigger1 = Time= 0
+v = 23
+range = 0,-15 ;範囲を決定
+
+[State 3010, ]
+type = posset
+trigger1 = time = 0
+x = var(22)
+y = var(23)
+
+[State 3103]
+type = VelSet
+trigger1 = Time = 0
+x = -1
+y = -1
+
+[State 3103]
+type = VelAdd
+trigger1 = time >= 36
+x = -0.15
+
+[State 3103]
+type = VelAdd
+trigger1 = time <= 36
+x = 0.1
+
+[State 3103]
+type = AssertSpecial
+trigger1 = 1
+flag = noshadow
+
+[State 3103]
+type = trans
+trigger1 = 1
+trans = addalpha
+alpha = 256-(time*2),time*2
+
+[State 3103]
+type = DestroySelf
+trigger1 = Time = 72
+
+;=================================================================
+[Statedef 3500, 沙都子呼び出し] 
+type     = S       
+movetype = A        ;このステートの「行動内容」を指定。
+physics  = S        ;このステートの「実際の物理的な体勢」を指定。「小ネタ.txt」参照。
+anim     = 3005    ;アニメを指定。
+poweradd = 0
+velset   = 0,0      ;このステートを開始した瞬間の移動速度（Ｘ軸,Ｙ軸）。効果は「VelSet」を参照
+SprPriority = 3
+ctrl = 0
+
+[State 1,リバサ変数リセット]
+type       = Varset
+trigger1 = time = 1
+v          = 0
+value      = 0
+
+[State 3000,制限時間];テス
+type = Varset
+trigger1 = var(10) = 0
+trigger1 = animelemTime(1) = 3
+ignorehitpause = 1
+v = 10
+value = 1
+
+[State 3000, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0
+value = 7,11   
+volume = 255
+
+[State 3000, 0]
+type = Helper
+trigger1 = var(10) = 0
+trigger1 = time = 2
+helpertype = normal
+name = "S"
+ID = 3500
+stateno = 3509
+pos = 30,-100
+postype = p1   ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+supermovetime = 0
+pausemovetime = 0
+
+[State 3000, 1]
+type = Poweradd
+Trigger1 = animelem = 1
+value = -1000
+
+[State 3000, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+;---------------------------------------------------------------------------
+;============================================================================
+;ヘルパー沙都子のステート
+[Statedef 3509]
+type     = A
+movetype = I
+physics  = N
+ctrl     = 0
+anim     = 3499
+SprPriority = -1
+
+[State 3010, 1]
+type = NotHitBy
+Trigger1 = 1
+value = SCA
+time = 1
+
+[State 3103]
+type = Velset
+trigger1 = Pos Y <= 0
+y = 7.52
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = Pos Y >= 0 
+value = 0,19
+
+[State 3010, ]
+type = StateTypeSet
+trigger1 = Pos Y >= 0 
+statetype = S
+physics = S
+
+[State 3010, ステート変更]
+type = ChangeState
+trigger1 = Pos Y >= 0 
+value = 3510
+ctrl = 0
+;---------------------------------------------------------------------------
+
+;============================================================================
+;ヘルパー沙都子のステート
+[Statedef 3510]
+type     = S
+movetype = I
+physics  = S
+anim     = 3500
+ctrl     = 0
+SprPriority = -1
+
+[State 3010, 1]
+type = NotHitBy
+trigger1 = time = [0,150]
+value = SCA
+time = 1
+
+[State 3103]
+type = PosSet
+trigger1 = Pos Y >= 0 
+y = 0
+
+[State 3010, ランダムに変数を選ぶ]
+type = VarRandom
+trigger1 = Time= 0
+v = 22
+range = 0,1 ;範囲を決定
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElemTime(7) = 0
+trigger1 = var(22) = 0
+value = 16,3   
+
+[State 3010, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElemTime(7) = 0
+trigger1 = var(22) = 1
+value = 16,4  
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 160
+value = 16,0
+
+[State 3010, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NA, SA, HA, NP, SP, HP, NT, ST, HT, AA, AT, AP
+time = -1
+stateno = 3513
+IgnoreHitPause = 1  
+
+[State 3010, 3];暗転
+type = SuperPause
+trigger1 = Pos Y >= 0
+trigger1 = AnimElemTime(6) = 0
+time = 130
+anim = s10010
+sound = s10,12
+pos = 0,-30
+postype = p1
+sprpriority = -1
+movetime = 130
+darken = 0
+p2defmul = 1
+unhittable = 1
+
+[State 3010, フラッシュ]
+type = AllPalFX
+trigger1 = AnimElemTime(7) = 20
+time = 30; フェードする時間
+add = 255,255,255
+sinadd = 0,0,0, 60;フェードする早さ*1
+;ignorehitpause = 1
+
+
+[State 3010, エフェクト画像]
+type = Explod
+trigger1 = AnimElemTime(6) = 0
+anim = 10008    ;エフェクトのアニメ（アクションナンバー）
+pos = 40,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = back       ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1       ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.85,0.85   ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = -1   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 0         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 1      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 30    ;このエフェクトが消えるまでの時間（フレーム）
+supermove = 1      ;「SuperPause」による時間停止中にもこのアニメが動くかどうか。
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0.7,0        ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0    ;エフェクトの影（赤,緑,青）
+trans = AddAlpha   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+alpha = 256-(time*6),time*6    ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+
+[State 3010, エフェクト画像]
+type = Explod
+trigger1 = AnimElemTime(6) = 0
+anim = 7000        ;エフェクトのアニメ（アクションナンバー）
+pos = 0,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = left       ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 1,1    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = -3   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 0         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 50      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 50    ;このエフェクトが消えるまでの時間（フレーム）
+supermove = 1      ;「SuperPause」による時間停止中にもこのアニメが動くかどうか。
+supermovetime = 999 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 999  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0.5,0.5    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 7000
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,100     ;エフェクトの影（赤,緑,青）
+;trans = Add1   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+alpha = 256,256    ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+
+[State 3010, トラップ判定変数]
+type = VarRandom
+trigger1 = time = 0
+v = 11
+range = 0,12
+
+[state 3010,地雷トラップ位置用変数]
+type = VarRandom
+trigger1 = AnimElemTime(6) = 0
+v = 0
+range = 0,450
+
+[state 3010,ダンボールトラップ位置用変数]
+type = VarRandom
+trigger1 = AnimElemTime(6) = 0
+v = 1
+range = 0,450
+
+[state 3010,アンテナトラップ位置用変数]
+type = VarRandom
+trigger1 = AnimElemTime(6) = 0
+v = 2
+range = 0,450
+
+[state 3010,落とし穴トラップ位置用変数]
+type = VarRandom
+trigger1 = AnimElemTime(6) = 0
+v = 3
+range = 0,450
+
+;----------------------[トラップ設置1]---------------------------
+[State 3000, 0]
+type = Helper
+trigger1 = AnimElemTime(7) = 25
+helpertype = normal
+name = "tp1J"
+ID = 3501
+stateno = 3520
+pos = var(0),0
+postype = left   ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+supermovetime = 0
+pausemovetime = 0
+
+;----------------------[トラップ設置2]---------------------------
+[State 3000, 0]
+type = Helper
+trigger1 = AnimElemTime(7) = 25
+helpertype = normal
+name = "tp2D"
+ID = 3502
+stateno = 3530
+pos = var(1),0
+postype = left   ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+supermovetime = 0
+pausemovetime = 0
+
+;----------------------[トラップ設置3]---------------------------
+[State 3000, 0]
+type = Helper
+trigger1 = AnimElemTime(7) = 25
+helpertype = normal
+name = "tp3A"
+ID = 3503
+stateno = 3540
+pos = var(2),0
+postype = left   ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+supermovetime = 0
+pausemovetime = 0
+
+;----------------------[トラップ設置4]---------------------------
+[State 3000, 0]
+type = Helper
+trigger1 = AnimElemTime(7) = 25
+helpertype = normal
+name = "tp4H"
+ID = 3504
+stateno = 3550
+pos = var(3),0
+postype = left  ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+supermovetime = 0
+pausemovetime = 0
+
+;---------------------------------------------------------------------
+[State 3010, ステート変更]
+type = ChangeState
+trigger1 = time = 250
+value = 3512
+ctrl = 0
+
+;====================================================================
+;ヘルパー沙都子のステート
+[Statedef 3512];去り
+type     = S
+movetype = I
+physics  = S
+ctrl     = 0
+anim     = 3501
+SprPriority = -1
+
+[State 3010, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NA, SA, HA, NP, SP, HP, NT, ST, HT, AA, AT, AP
+time = -1
+stateno = 3513
+IgnoreHitPause = 1 
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 10
+trigger1 = var(22) = 0
+value = 16,2
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 10
+trigger1 = var(22) = 1
+value = 16,5
+
+[State 3002, 音を鳴らす]
+type = PlaySnd
+trigger1 = animelemtime(2) = 0
+value = 105,0     ;sndファイルか
+
+[State 3002, 移動速度]
+type = VelSet
+trigger1 = time = 0
+y = 0
+
+[State 3002, 移動速度]
+type = VelSet
+trigger1 = time >= 4
+x = 7  ;Ｘ軸。横の移動速度を指定。0よりも上なら前進、0よりも下なら後退。
+
+[State 3002]
+type = ParentVarSet
+trigger1 = BackEdgeBodyDist < -29
+trigger2 = FrontEdgeBodyDist < -29
+var(10) = 0
+
+[State 3002, このヘルパーを消す]
+type = DestroySelf
+trigger1 = FrontEdgeBodyDist < -30
+
+
+;=================================================================
+[Statedef 3513];沙都子やられ吹っ飛び
+type     = A
+movetype = H
+physics  = N
+ctrl     = 0
+anim     = 3502
+velset   = -7,-6
+SprPriority = -1
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 0
+trigger1 = var(22) = 0
+value = 16,1
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 0
+trigger1 = var(22) = 1
+value = 16,6
+
+[State 3020]
+type = ParentVarSet
+trigger1 = BackEdgeBodyDist < -29
+trigger2 = FrontEdgeBodyDist < -29
+var(10) = 0
+
+[State 3020, このヘルパーを消す]
+type = DestroySelf
+trigger1 = BackEdgeBodyDist < -30
+trigger2 = FrontEdgeBodyDist < -30
+;============================================================================
+
+;=================================================================
+[Statedef 3520];トラップ地雷
+type     = S
+movetype = I
+physics  = S
+ctrl     = 0
+anim     = 3540
+velset   = 0,0
+SprPriority = 1
+
+[State 3010, 0]
+type = StateTypeSet
+trigger1 = NumHelper(7000) = 1 
+trigger1 = Helper(7000),var(10)= [0,2]
+movetype = A
+
+[State 3010, 0]
+type = AttackDist
+trigger1 = NumHelper(7000) = 1 
+trigger1 = Helper(7000),var(10)!= [0,2]
+value = 0
+
+[State 3010, 0]
+type = Width
+trigger1 = 1
+edge = 15,15
+player = 15,15
+
+[State 3010, 1]
+type = NotHitBy
+Trigger1 = 1
+value = ,AT
+time = 1
+
+[State 3010, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NA, SA, HA, NP, SP, HP, NT, ST, HT, AA, AT, AP
+time = -1
+stateno = 3521
+IgnoreHitPause = 1 
+
+[State 3520, 基本]
+type = HitDef
+trigger1 = NumHelper(7000) = 1 
+trigger1 = Helper(7000),var(10)= [0,2]
+trigger1 = time = 10
+attr = S, HA
+damage = 250,25
+hitflag = MAFD 
+guardflag = MA
+animtype = up
+priority = 1, Hit
+sparkno = s1015
+guard.sparkno =s6012
+sparkxy = 0,0
+hitsound = s0,37
+guardsound = s0,10
+pausetime = 10,10
+guard.pauseTime = 15,15
+ground.slideTime = 19
+guard.slideTime = 17
+ground.hitTime = 19
+guard.hitTime = 17
+air.hitTime = 22
+getpower = 0,0 
+ground.velocity = -1,-10
+guard.velocity = -5
+air.velocity = -2,-10
+airguard.velocity = -4,-3
+givepower = 30,5
+sprpriority = 1
+p1facing = 1
+p2facing = 1
+guard.dist = 10 ;相手のガード態勢に入る距離
+fall = 1
+kill = 1
+guard.kill = 1
+fall.recoverTime = 80
+affectteam = B
+
+
+[State 3002];消滅フラグ用変数
+type = VarSet
+trigger1 = MoveContact
+var(5) = 1
+
+[State 3020, このヘルパーを消す]
+type = DestroySelf
+trigger1 = MoveContact = 5
+trigger2 = time = 600
+
+[State 3010, ステート変更]
+type = ChangeState
+trigger1 = NumHelper(7000) = 1 
+trigger1 = Helper(7000),var(11)= 2
+value = 3521
+ctrl = 0
+
+;============================================================================
+[Statedef 3521];トラップ破壊ステート
+type     = S
+movetype = H
+physics  = S
+ctrl     = 0
+anim     = 6012
+SprPriority = -1
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 0
+value = 0,16
+
+[State 3002, このヘルパーを消す]
+type = DestroySelf
+trigger1 = time = 17
+
+;=================================================================
+[Statedef 3530];トラップダンボール
+type     = S
+movetype = I
+physics  = S
+ctrl     = 0
+velset   = 0,0
+SprPriority = -1
+
+[State 3520, アニメ]
+type = ChangeAnim
+trigger1 = time = 0
+value = 3519
+
+[State 3010, 0]
+type = Width
+trigger1 = 1
+edge = 15,15
+player = 15,15
+
+[State 3010, 1]
+type = NotHitBy
+Trigger1 = 1
+value = ,AT
+time = 1
+
+[State 3010, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NA, SA, HA, NP, SP, HP, NT, ST, HT, AA, AT, AP
+time = -1
+stateno = 3521
+IgnoreHitPause = 1 
+
+[State 3010, ]
+type = ChangeState
+trigger1 = NumHelper(7000) = 1 
+trigger1 = Helper(7000),var(10)= [3,6]
+trigger1 = time >= 50
+trigger1 = P2BodyDist X < 30
+trigger1 = P2BodyDist X > -30
+value = 3531
+ctrl = 0
+
+[State 3020, このヘルパーを消す]
+type = DestroySelf
+trigger1 = time = 600
+
+[State 3010, ステート変更]
+type = ChangeState
+trigger1 = NumHelper(7000) = 1 
+trigger1 = Helper(7000),var(11)= 2
+value = 3521
+ctrl = 0
+
+
+;============================================================================
+[Statedef 3531];ダンボールトラップ発動
+type     = S
+movetype = A
+physics  = S
+ctrl     = 0
+facep2   = 1
+SprPriority = -1
+
+[State 3520, アニメ]
+type = ChangeAnim
+trigger1 = time = 0
+value = 3520
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = animelemtime(4) = 0
+value = 0,16
+
+[State 3520, 基本]
+type = Projectile
+trigger1 = animelemtime(4) = 0
+projID = 3531
+projanim = 3521
+projscale = 1.2, 1.2
+projremove = 0
+projremovetime = 100
+velocity = 9,0
+accel = 1,0
+remvelocity = 0, 0
+velmul = 1, 1
+projpriority = 3
+projsprpriority = 2
+projedgebound = 20
+projstagebound = 20
+projheightbound = -100, 1
+offset = 0, -37
+postype = p1
+supermovetime = 0
+pausemovetime = 0
+attr = A,HP
+hitflag = MAF
+guardflag = MA
+animtype = back
+air.animtype = Back
+priority = 4,Hit
+damage = 200,10
+pausetime = 10, 10
+hitsound = s0,8
+guardsound = s0,10
+sparkno = s6020
+sparkxy = 5,-10
+ground.slidetime = 25
+guard.slidetime = 25
+ground.hittime = 25
+air.hittime = 25
+guard.ctrltime = 25
+yaccel = .45
+ground.velocity = -5, -3
+guard.velocity = -4
+air.velocity = -5, -3
+airguard.velocity = -3, -6
+fall = 1
+fall.recovertime = 45
+Persistent = 0
+affectteam = B
+
+[State 3002];消滅フラグ用変数
+type = VarSet
+trigger1 = time = 29
+var(5) = 1
+
+[State 3002, このヘルパーを消す]
+type = DestroySelf
+trigger1 = time = 30
+
+;=================================================================
+[Statedef 3540];アンテナ
+type     = S
+movetype = I
+physics  = S
+ctrl     = 0
+velset   = 0,0
+SprPriority = -1
+
+[State 3010, 0]
+type = Width
+trigger1 = 1
+edge = 15,15
+player = 15,15
+
+[State 3520, アニメ]
+type = ChangeAnim
+trigger1 = time = 0
+value = 3530
+elem = 0
+
+[State 3010, 1]
+type = NotHitBy
+Trigger1 = 1
+value = ,AT,AP
+time = 1
+
+[State 3010, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NA, SA, HA, NP, SP, HP, NT, ST, HT, AA, AT, AP
+time = -1
+stateno = 3521
+IgnoreHitPause = 1 
+
+;----------------------[アンテナ砲呼び出し]---------------------------
+[State 3000, 0]
+type = Helper
+triggerall = NumHelper(3541) = 0
+trigger1 = NumHelper(7000) = 1 
+trigger1 = Helper(7000),var(10)= [7,9]
+trigger1 = time >= 30
+trigger1 = P2BodyDist X < 20
+trigger1 = P2BodyDist X > -20
+helpertype = normal
+name = "b-m"
+ID = 3541
+stateno = 3541
+pos = 0,-100
+postype = p1   ;p2,front,back,left,right
+facing = 1
+keyctrl = 0
+ownpal = 1
+supermovetime = 0
+pausemovetime = 0
+persistent=0
+;----------------------------------------------------------------------
+[State 3020, このヘルパーを消す]
+type = DestroySelf
+trigger1 = time = 600
+
+[State 3010, ステート変更]
+type = ChangeState
+trigger1 = NumHelper(7000) = 1 
+trigger1 = Helper(7000),var(11)= 2
+value = 3521
+ctrl = 0
+
+;============================================================================
+[Statedef 3541];アンテナトラップ発動
+type     = A
+movetype = A
+physics  = N
+ctrl     = 0
+SprPriority = -1
+
+[State 3520, アニメ]
+type = ChangeAnim
+trigger1 = time = 0
+value = 3531
+
+[State 3000, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0
+value = 0,38    ;sndファイルか
+volume = 255
+
+[State 20000]
+type = varadd
+trigger1 = time = [0,20]
+fvar(0) = 0.2
+
+[State 20000]
+type = varadd
+trigger1 = time = [20,40]
+fvar(0) = -0.2
+
+[State 20005, AssertSpacial]
+Type = AssertSpecial
+Trigger1 = 1
+Flag = Noshadow
+IgnoreHitPause = 1
+
+[state 800]
+type = angledraw
+trigger1 = 1
+scale = fvar(0)*0.1,2
+
+[State 3201]
+type = trans
+trigger1 = 1
+trans = addalpha
+alpha = 256-(time*3),time*6
+
+[State 300 , 2]
+type = HitDef
+trigger1 = AnimElem = 2
+attr = A, HP
+damage = ceil(320*(1-(var(4)*0.1))),45
+animtype = back
+getpower = 0,0
+pausetime  = 12,13
+givepower = 30,15
+guardflag = MA
+hitflag = MAFDP
+priority = 7,Hit
+pausetime = 0,10
+hitsound = s0,36
+sparkno = s6015
+sparkxy = 5,-10
+guard.sparkno =s6018
+ground.type = high
+ground.slidetime = 20
+ground.hittime = 25
+air.hittime = 25
+guard.hittime = 25
+airguard.hittime = 20
+ground.velocity = -4,-5
+air.velocity = -3.8,-4.8
+airguard.velocity = -1.9,-1.2
+yaccel = 0.48
+fall = 1
+Air.fall = 1
+fall.recovertime = 60
+persistent=0
+
+[State 3002];消滅フラグ用変数
+type = VarSet
+trigger1 = MoveContact
+var(5) = 1
+
+[State 3002, このヘルパーを消す]
+type = DestroySelf
+trigger1 = time = 40
+
+;=================================================================
+[Statedef 3550];トラップ落とし穴
+type     = S
+movetype = I
+physics  = S
+ctrl     = 0
+velset   = 0,0
+SprPriority = -1
+
+[State 3520, アニメ]
+type = ChangeAnim
+trigger1 = time = 0
+value = 3552
+
+[State 3010, 0]
+type = StateTypeSet
+trigger1 = NumHelper(7000) = 1 
+trigger1 = Helper(7000),var(10)= [10,12]
+movetype = A
+
+[State 3010, 0]
+type = Width
+trigger1 = 1
+edge = 15,15
+player = 15,15
+
+[State 3010, 1]
+type = NotHitBy
+Trigger1 = 1
+value = SA,AA,AT,AP
+time = 1
+
+[State 3010, 食らい上書き];分身バグ対策
+type = HitOverRide
+trigger1 = (Time >= 0)
+attr = SCA, NA, SA, HA, NP, SP, HP, NT, ST, HT, AA, AT, AP
+time = -1
+stateno = 3521
+IgnoreHitPause = 1 
+
+[State 2000, 基本]
+type = HitDef
+trigger1 = NumHelper(7000) = 1 
+trigger1 = Helper(7000),var(10)= [10,12]
+trigger1 = time = 3
+attr = S, HA
+damage = 0,0
+hitflag = MFD 
+guardflag = 
+priority = 2, Hit
+sparkno = s-1
+sparkxy = 0,0
+hitsound   = s0,31
+pausetime = 5,5
+guard.pauseTime = 5,15
+ground.slideTime = 24
+guard.slideTime =20
+ground.hitTime = 23
+guard.hitTime = 23
+air.hitTime = 25
+getpower = 0,0 
+ground.velocity = 0,0
+guard.velocity = -2
+air.velocity = 0,0
+airguard.velocity = 0,0
+givepower = 450,5
+sprpriority = 1
+p1facing = 1
+p2facing = 1
+guard.dist = 0 ;相手のガード態勢に入る距離
+fall = 1
+kill = 0
+guard.kill = 0
+ID = 3550
+
+[State 801, 掴んだ相手の位置１];TargetBindで相手を一時的に拘束
+type = TargetBind
+trigger1 = MoveHit
+trigger1 = NumTarget(3550) >= 1
+trigger1 = !Target,IsHelper
+pos = 0, 0 ;自分の軸位置から相手の軸をX=28・Y=0の位置にする
+
+[State 2000, 0]
+type = TargetState
+trigger1 = MoveHit
+trigger1 = NumTarget(3550) >= 1
+trigger1 = !Target,IsHelper
+value = 3555
+ctrl = 0
+IgnoreHitPause = 1
+persistent = 0
+
+[State 2000, 0]
+type = ChangeState
+trigger1 = MoveHit = 1
+trigger1 = NumTarget(3550) >= 1
+trigger1 = P2movetype = H
+value = 3551
+
+[State 3020, このヘルパーを消す]
+type = DestroySelf
+trigger1 = time = 600
+trigger2 = MoveHit = 1
+
+[State 3010, ステート変更]
+type = ChangeState
+trigger1 = NumHelper(7000) = 1 
+trigger1 = Helper(7000),var(11)= 2
+value = 3521
+ctrl = 0
+
+
+;============================================================================
+[Statedef 3551];落とし穴トラップ発動
+type     = S
+movetype = A
+physics  = S
+ctrl     = 0
+SprPriority = -2
+
+[State 3002];消滅フラグ用変数
+type = VarSet
+trigger1 = time = 79
+var(5) = 1
+
+[State 3520, アニメ]
+type = ChangeAnim
+trigger1 = time = 0
+value = 3550
+
+[State 20000]
+type = varadd
+trigger1 = time = [0,10]
+fvar(0) = 0.4
+
+[State 20005, AssertSpacial]
+Type = AssertSpecial
+Trigger1 = 1
+Flag = Noshadow
+IgnoreHitPause = 1
+
+[state 800]
+type = angledraw
+trigger1 = 1
+scale = fvar(0)*0.3,fvar(0)*0.3
+
+[State 3010, エフェクト画像];穴前面
+type = Explod
+trigger1 = time = [0,40]
+anim = 3551       ;エフェクトのアニメ（アクションナンバー）
+pos = 0,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = p1      ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1       ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = fvar(0)*0.3,fvar(0)*0.3    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = 2   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 1         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 40      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 40    ;このエフェクトが消えるまでの時間（フレーム）
+supermovetime = 0 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 0  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 3551
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0     ;エフェクトの影（赤,緑,青）
+persistent=0
+
+[State 2001, 掴んだ相手のライフ増減]
+type = TargetLifeAdd
+trigger1 = time = 20
+value = -210
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 5
+value = 0,31
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 20
+value = 0,9
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 50
+value = 0,6
+
+[State 3010, ]
+type = PlaySnd
+trigger1 = time = 70
+value = 0,37
+
+[State 3010, エフェクト画像];煙
+type = Explod
+trigger1 = time = 20
+anim = 3209       ;エフェクトのアニメ（アクションナンバー）
+pos = 0,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = p1      ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.5,0.5    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = 4   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 1         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 35     ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 35    ;このエフェクトが消えるまでの時間（フレーム）
+supermovetime = 0 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 0  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 3209
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0     ;エフェクトの影（赤,緑,青）
+;trans = AddAlpha   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+;alpha = 256-(time*8),time*8   ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+persistent=0
+
+[State 3010, エフェクト画像];煙
+type = Explod
+trigger1 = time = 20
+anim = 3209       ;エフェクトのアニメ（アクションナンバー）
+pos = 0,0         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = p1     ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = -1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1        ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 0.5,0.5    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = 4   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 1        ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 35     ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 35    ;このエフェクトが消えるまでの時間（フレーム）
+supermovetime = 0 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 0  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 3209
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0     ;エフェクトの影（赤,緑,青）
+;trans = AddAlpha   ;エフェクトの透過処理（Add,Add1,Sub,None,AddAlpha）
+;alpha = 256-(time*8),time*8   ;transが「AddAlpha」の時に適用する透過処理の度合（明るさ,コントラスト
+persistent=0
+
+[State 3010, エフェクト画像];爆発
+type = Explod
+trigger1 = time = 70
+anim = 1015       ;エフェクトのアニメ（アクションナンバー）
+pos = 0,-10         ;エフェクトの座標（Ｘ軸,Ｙ軸）
+postype = p1      ;エフェクトの位置属性（p1・p2・front・back・left・right）
+facing = 1         ;エフェクトの左右の向き（1=そのまま,-1=左右反転）
+vfacing = 1       ;エフェクトの上下の向き（1=そのまま,-1=上下反転）
+scale = 1,1    ;エフェクトの大きさ（Ｘ軸,Ｙ軸）
+sprpriority = 3   ;エフェクトの画像表示優先度
+ownpal = 1         ;エフェクトの色を独立させるか否か（0=させない,1=させる）
+ontop = 1         ;エフェクトを常に画面手前に表示させるか否か（0=させない,1=させる）
+bindtime = 40      ;「このエフェクトを発生させた親」に『くっ付ける時間』（フレーム）
+removetime = 40    ;このエフェクトが消えるまでの時間（フレーム）
+supermovetime = 0 ;「SuperPause」での時間停止を無視して有効にする時間を設定。
+pausemovetime = 0  ;「Pause」での時間停止を無視して有効にする時間を設定。
+vel = 0,0          ;エフェクトの移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0    ;エフェクトの加速度（Ｘ軸,Ｙ軸）
+removeongethit = 1 
+ID = 1015
+ignorehitpause = 1 ;「ヒット硬直」を無視して有効にするかどうか。（デフォルトは１）
+shadow = 0,0,0     ;エフェクトの影（赤,緑,青）
+persistent=0
+
+[State 3002, このヘルパーを消す]
+type = DestroySelf
+trigger1 = time = 80
+
+;---------------------------------------------------------------------------
+;============================================================================
+[Statedef 3555];落とし穴に陥った愚か者どもの処置
+type     = S
+movetype = H
+physics  = N
+ctrl     = 0
+SprPriority = -1
+
+[State 3520, アニメ]
+type = ChangeAnim2
+trigger1 = time = 0
+value = 3553
+
+[State 3555, ]
+type = VelSet
+trigger1 = time = [10,19]
+x = 0
+y = 8
+
+[State 3555, ]
+type = VelSet
+trigger1 = time = 20
+x = 0
+y = 0
+
+[State 3555, ]
+type = AssertSpecial
+trigger1 = Pos Y >= 20
+trigger1 = time = [17,70]
+flag = invisible
+
+[State 2001, 画面を揺らす]
+type = EnvShake
+trigger1 = time = 20
+trigger2 = time = 50
+trigger3 = time = 70
+time = 10
+freq = 130
+ampl = 10
+phase = 80
+
+[State 3555, ]
+type = ChangeState
+trigger1 = time = 70
+value = 3556
+ctrl = 0
+
+;============================================================================
+[Statedef 3556];落とし穴に陥った愚か者どもの処置2
+type     = A
+movetype = H
+physics  = N
+ctrl     = 0
+SprPriority = -1
+
+[State 3520, アニメ]
+type = ChangeAnim2
+trigger1 = time = 0
+value = 3554
+
+[State 3520, アニメ]
+type = Gravity
+trigger1 = time <=5
+
+[State 3555, ]
+type = VelSet
+trigger1 = time = 0
+x = 0
+y = -11
+
+[State 3555, ]
+type = SelfState
+trigger1 = time = 40
+value = 5050
+
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+
+[Statedef 900];部位無敵用接触判定
+type    = S
+movetype= I
+physics = S
+juggle  = 0
+velset = 0,0
+ctrl = 0
+anim = 421
+sprpriority = 2
+
+[State 1000, 0]
+type = PlayerPush
+trigger1 = 1
+value = 1
+
+[State 1000, 0]
+type = BindToRoot
+trigger1 = 1
+time = 1
+pos = 0,0
+
+[State 1200, 1];無敵
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 450, 4]
+type = destroyself
+trigger1 = Time >= 50 || root,movetype = H
+
+
+;===========================================================================
+
+
+;----------------------------------------------------------------------------
+;(HELPER)特殊ＫＯ
+[Statedef 7000]
+type = A
+ctrl = 0
+anim = 5602
+velset = 0,0
+movetype = I
+physics = N
+sprpriority = -10
+
+[State -2 ];トラップ判定変数の維持
+type = Varset
+trigger1 = NumHelper(3500) = 1 
+v = 10
+value = Helper(3500),var(11)
+
+[State -2 ];トラップ消滅判定の変数関係
+type = Varset
+trigger1 = parent,stateno = 3500
+v = 11
+value = 0
+
+[State -2 ];トラップ消滅判定の変数関係
+type = Varset
+trigger1 = NumHelper(3501) = 1 
+trigger1 = Helper(3501),var(5)=1
+trigger2 = NumHelper(3502) = 1 
+trigger2 = Helper(3502),var(5)=1
+trigger3 = NumHelper(3541) = 1 
+trigger3 = Helper(3541),var(5)=1
+trigger4 = NumHelper(3504) = 1 
+trigger4 = Helper(3504),var(5)=1
+v = 11
+value = 2
+
+[state a]
+type = AssertSpecial
+trigger1 = 1
+flag = noshadow
+flag2 = invisible
+
+;---------------------[移動関係]
+[state a]
+type = bindtoroot
+trigger1 = 1
+x = 0
+y = 0
+
+[state a]
+type = changestate
+trigger1 = root,loseKO
+trigger2 = root,life = 0
+value = 7001
+
+;----------------------------------------------------------------------------
+;(HELPER)特殊ＫＯ2
+[Statedef 7001]
+type = A
+ctrl = 0
+anim = 5602
+velset = 0,0
+movetype = I
+physics = N
+sprpriority = -10
+
+[state a]
+type = AssertSpecial
+trigger1 = 1
+flag = noshadow
+flag2 = invisible
+
+;---------------------[移動関係]
+[state a]
+type = bindtoroot
+trigger1 = 1
+x = 0
+y = 0
+
+[state a]
+type = varset
+trigger1 = time = 0
+trigger1 = root,var(24) = 1
+trigger1 = enemy,stateno = [2000,4999]
+v = 15
+value = 1
+
+;---------------------[KOボイス]
+[state a]
+type = null;playsnd
+trigger1 = root,var(25) = 1
+trigger1 = time = 0
+;trigger1 = root,loseKO
+trigger1 = enemy,stateno != [2000,4999]
+IgnoreHitPause = 1
+persistent = 0
+value = 11,1
+channel = 4
+
+[state a]
+type = null;playsnd
+trigger1 = root,var(25) = 1
+trigger1 = time = 0
+;trigger1 = root,loseKO
+trigger1 = enemy,stateno = [2000,4999]
+IgnoreHitPause = 1
+persistent = 0
+value = 11,2
+channel = 4
