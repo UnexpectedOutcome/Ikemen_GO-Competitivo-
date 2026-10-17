@@ -1,0 +1,861 @@
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+;AI起動ヘ?パー
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[StateDef 10001]
+anim=9123000
+ctrl=0
+
+[State 10001]
+type = assertspecial
+trigger1 = 1
+flag = invisible
+
+[State 10001,間違いで本体が?たら立ちへ移行]
+type=selfstate
+trigger1=!ishelper
+value=0
+
+[State 10001,プ?イ?ー判定]
+type=varset
+Trigger1=command="a"&&root,command="a"
+Trigger2=command="b"&&root,command="b"
+Trigger3=command="c"&&root,command="c"
+Trigger4=command="x"&&root,command="x"
+Trigger5=command="y"&&root,command="y"
+Trigger6=command="z"&&root,command="z"
+Trigger7=command="start"&&root,command="start"
+var(59)=-1
+
+[State 10001,立ったら消失]
+Type = DestroySelf
+TriggerAll=isHelper
+Trigger1=root,var(59)||var(59)=-1
+Trigger2=command="a"&&root,command="a"
+Trigger3=command="b"&&root,command="b"
+Trigger4=command="c"&&root,command="c"
+Trigger5=command="x"&&root,command="x"
+Trigger6=command="y"&&root,command="y"
+Trigger7=command="z"&&root,command="z"
+Trigger8=command="start"&&root,command="start"
+
+[State 10001,AIﾌﾗｸﾞON]
+Type=varset
+TriggerAll=var(59)!=-1
+Trigger1=root,command="a"
+Trigger2=root,command="b"
+Trigger3=root,command="c"
+Trigger4=root,command="x"
+Trigger5=root,command="y"
+Trigger6=root,command="z"
+Trigger7=root,command="start"
+var(59)=1
+
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+;AI特殊ヘ?パー
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+;==============================================================================
+;ステージ端チェックヘ?パー 右
+;==============================================================================
+[Statedef 30000]; ステージ右端チェックヘ?パー
+type      = A
+movetype  = I
+physics   = N
+velset    = -7, 0
+ctrl      = 0
+anim      = 9123000
+
+[State 30000, 非表示に設定]
+type = AssertSpecial
+trigger1 = 1
+flag = invisible
+
+[State 30000, 無敵状態付加]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 30000, ?一本体がここにきた場?待機?ーシ??へ]
+type = SelfState
+trigger1 = !IsHelper
+value = 0
+
+[State 30000, ステージ端チェック用Projectile]
+type = Projectile
+trigger1 = Time = 0
+projID = 30000
+projanim = 9123000
+projremove = 0
+projremovetime = -1
+velocity = -7.0, 0.0
+projstagebound = -1
+projedgebound = 65535
+supermovetime = 65535
+pausemovetime = 65535
+
+[State 30000, projstageboundの効果でProjectileが消えたら停止]
+type = VelSet
+trigger1 = Root, NumProjID(30000) = 0
+trigger1 = Time > 0
+x = 0
+y = 0
+
+[State 30000, Root(プ?イ?ー)前面からステージ端(ヘ?パー)までの?離を設定]
+type = ParentVarSet
+;triggerall = root,var(59)
+trigger1 = Root, facing = 1
+fvar(32) = Floor(RootDist X) - Const(size.ground.front) + 2
+
+[State 30000, Root(プ?イ?ー)背面からステージ端(ヘ?パー)までの?離を設定]
+type = ParentVarSet
+;triggerall = root,var(59)
+trigger1 = Root, facing = -1
+fvar(33) = Floor(RootDist X) - Const(size.ground.back) - 1
+
+;?手の背丈チェック
+[State -2, set]
+type = VarSet
+triggerall = root,var(59)
+triggerall = roundstate = 2
+trigger1 = enemynear(floor(root,fvar(31))),Const(size.mid.pos.y) >= -45
+v = 3
+value = 1
+ignorehitpause = 1
+
+;固められ?間カウ?ト
+[State -2, timeset]
+type = varadd
+triggerall = root,var(59)
+triggerall = roundstate = 2
+trigger1 = root,movetype = H && (root,stateno = [120,155])
+trigger2 = root,movetype = H && (root,stateno = [4000,4200])
+v = 17
+value = 1
+ignorehitpause = 1
+
+;固められ?間カウ?ト?セット
+[State -2, set]
+type = VarSet
+triggerall = root,var(59)
+triggerall = roundstate = 2
+triggerall = var(17)
+trigger1 = root,statetype = L
+trigger2 = root,movetype = A
+trigger3 = root,stateno = 810
+v = 17
+value = 0
+ignorehitpause = 1
+
+;?手体力計算
+[State -2, p2lifeset]
+type = Varset
+triggerall = root,var(59)
+triggerall = root,life != 0
+triggerall = roundstate = 2
+trigger1 = 1
+v = 21
+value = (100 * enemynear(floor(root,fvar(31))),life / enemynear(floor(root,fvar(31))),lifemax)
+ignorehitpause = 1
+;==============================================================================
+;?段記憶ここから var(4)～var(8)を使用
+;==============================================================================
+[State -2, 寸前にどういう状態で?ったか]
+Type = VarSet
+TriggerAll = Root,var(59)
+TriggerAll = Enemy,TeamMode = Single || Enemy,TeamMode = Turns
+Trigger1 = GameTime%2 = 0
+V = 4
+Value = IfElse(Root,StateType=S,1,IfElse(Root,StateType=C,2,IfElse(Root,StateType=A,3,4)))
+IgnoreHitPause = 1
+
+[State -2, 寸前にガードステートだったかどうか]
+Type = VarSet
+TriggerAll = Root,var(59)
+TriggerAll = Enemy,TeamMode = Single || Enemy,TeamMode = Turns
+TriggerAll = GameTime%2 = 0
+Trigger1 = Root,StateNo = 120
+Trigger2 = Root,StateNo = 140
+Trigger3 = Root,StateNo = 130
+Trigger4 = Root,StateNo = 131
+Trigger5 = Root,StateNo = [150,151]
+Trigger6 = Root,StateNo = [152,153]
+V = 5
+Value = 1
+IgnoreHitPause = 1
+
+[State -2, 違う場?は0に戻す]
+Type = VarSet
+TriggerAll = Root,var(59)
+TriggerAll = Enemy,TeamMode = Single || Enemy,TeamMode = Turns
+TriggerAll = Var(5) > 0
+Trigger1 = Root,StateNo != 120
+Trigger1 = Root,StateNo != 130
+Trigger1 = Root,StateNo != 131
+Trigger1 = Root,StateNo != 140
+Trigger1 = Root,StateNo != [150,151]
+Trigger1 = Root,StateNo != [152,153]
+V = 5
+Value = 0
+IgnoreHitPause = 1
+
+[State -2]
+Type = VarSet
+TriggerAll = Root,var(59)
+TriggerAll = Enemy,TeamMode = Single || Enemy,TeamMode = Turns
+TriggerAll = Root,MoveType = H
+TriggerAll = HelPer(30000),Var(6) = 0
+Trigger1 = root,var(2) > 0
+V = 6
+Value = root,var(2)
+IgnoreHitPause = 1
+
+[State -2]
+Type = VarSet
+TriggerAll = Root,var(59)
+TriggerAll = Enemy,TeamMode = Single || Enemy,TeamMode = Turns
+TriggerAll = Root,MoveType = H
+TriggerAll = HelPer(30000),Var(7) = 0
+Trigger1 = root,var(2) > 0
+V = 7
+Value = EnemyNear,Time
+IgnoreHitPause = 1
+
+[State -2]
+Type = VarAdd
+TriggerAll = Root,var(59)
+TriggerAll = Enemy,TeamMode = Single || Enemy,TeamMode = Turns
+TriggerAll = Root,var(2) > 0
+Trigger1 = HelPer(30000),Var(8) = 0
+Trigger2 = HelPer(30000),Var(8) > 0
+Trigger2 = root,var(2) = HelPer(30000),Var(6)
+V = 8
+Value = 1
+IgnoreHitPause = 1
+;=============================================================================
+;?段記憶ここまで
+;=============================================================================
+;=============================================================================
+;立ち大パ?チカウ?ター不可攻?記憶1
+[State -2, set]
+type = VarSet
+triggerall = root,var(59)
+triggerall = roundstate = 2
+triggerall = !var(11)
+triggerall = EnemyNear(root,var(50)),statetype = S
+trigger1 = root,prevstateno = 220
+trigger1 = EnemyNear(root,var(50)),movehit = 1
+v = 11
+value = enemynear(floor(root,fvar(31))),stateno
+ignorehitpause = 1
+
+;立ち大パ?チカウ?ター不可攻?記憶2
+[State -2, set]
+type = VarSet
+triggerall = root,var(59)
+triggerall = roundstate = 2
+triggerall = var(11)
+triggerall = !var(12)
+triggerall = EnemyNear(root,var(50)),statetype = S
+trigger1 = root,prevstateno = 220
+trigger1 = EnemyNear(root,var(50)),movehit = 1
+v = 12
+value = enemynear(floor(root,fvar(31))),stateno
+ignorehitpause = 1
+
+;立ち大パ?チカウ?ター不可攻?記憶2?セット
+[State -2, set]
+type = VarSet
+triggerall = root,var(59)
+triggerall = roundstate = 2
+triggerall = var(12)
+trigger1 = var(12) = var(11)
+v = 12
+value = 0
+ignorehitpause = 1
+
+;立ち大パ?チカウ?ター不可攻?記憶3
+[State -2, set]
+type = VarSet
+triggerall = root,var(59)
+triggerall = roundstate = 2
+triggerall = var(11)
+triggerall = var(12)
+triggerall = !var(13)
+triggerall = EnemyNear(root,var(50)),statetype = S
+trigger1 = root,prevstateno = 220
+trigger1 = EnemyNear(root,var(50)),movehit = 1
+v = 13
+value = EnemyNear(root,var(50)),stateno
+ignorehitpause = 1
+
+;立ち大パ?チカウ?ター不可攻?記憶3?セット
+[State -2, set]
+type = VarSet
+triggerall = root,var(59)
+triggerall = roundstate = 2
+triggerall = var(13)
+trigger1 = var(13) = var(11)
+trigger2 = var(13) = var(12)
+v = 13
+value = 0
+ignorehitpause = 1
+=
+;ステージ端チェックヘ?パー 左
+;==============================================================================
+[Statedef 31000]; ステージ左端チェックヘ?パー
+type      = A
+movetype  = I
+physics   = N
+velset    = -7, 0
+ctrl      = 0
+anim      = 9123000
+
+[State 31000, 非表示に設定]
+type = AssertSpecial
+trigger1 = 1
+flag = invisible
+
+[State 31000, 無敵状態付加]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 31000, ?一本体がここにきた場?待機?ーシ??へ]
+type = SelfState
+trigger1 = !IsHelper
+value = 0
+
+[State 31000, ステージ端チェック用Projectile]
+type = Projectile
+trigger1 = Time = 0
+projID = 31000
+projanim = 9123000
+projremove = 0
+projremovetime = -1
+velocity = -7.0, 0.0
+projstagebound = 0
+projedgebound = 65535
+supermovetime = 65535
+pausemovetime = 65535
+
+[State 31000, projstageboundの効果でprojectileが消えたら停止]
+type = VelSet
+trigger1 = Root, NumProjID(31000) = 0
+trigger1 = Time > 0
+x = 0
+y = 0
+
+[State 31000, Root(プ?イ?ー)前面からステージ端(ヘ?パー)までの?離を設定]
+type = ParentVarSet
+;triggerall = root,var(59)
+trigger1 = Root, facing = -1
+fvar(32) = Floor(RootDist X) - Const(size.ground.front) + 2
+
+[State 31000, Root(プ?イ?ー)背面からステージ端(ヘ?パー)までの?離を設定]
+type = ParentVarSet
+;triggerall = root,var(59)
+trigger1 = Root, facing = 1
+fvar(33) = Floor(RootDist X) - Const(size.ground.back) - 1
+;==============================================================================
+;*******************************   PlayerIDAdd   ******************************
+;==============================================================================
+;PlayerIDを取得する為のヘ?パー
+;------------------------------------------------------------------------------
+[Statedef 886600]
+anim = 9123000
+
+[STATE PlayerIDSet]
+type=ParentVarSet
+trigger1=Parent,ID=Helper(887700),ID
+var(6)=ID
+
+[state ]
+type=DestroySelf
+trigger1 = 1
+;/Destroy
+
+;==============================================================================
+;*******************************   AIヘ?パー   *******************************
+;==============================================================================
+;めくり対策とヘ?パー監?、超必殺判定を?ねるAI用ヘ?パーを呼び出す
+;------------------------------------------------------------------------------
+; 0          超必殺判定(Enemy,Power)
+; 1          超必殺判定
+; 2          AI開始/0
+; 3          ヘ?パー監?(Enemy,NumHelper)
+; 4          ヘ?パー監?(ト?ガ)
+; 5          ヘ?パー監?(loop用)
+; 6          ヘ?パー監?(現在最大PlayerID)
+; 7          ヘ?パー監?(前回より?加したHelperの?)
+; 11-20      ヘ?パー監?(PlayerID)
+; 21-30      ヘ?パー監?(マーキ?グ)
+; 50         ヘ?パー監?(飛び道具監?、飛び道具1こめ)
+; 51         ヘ?パー監?(飛び道具監?、飛び道具2こめ)
+; 52         ヘ?パー監?(?下飛び道具警戒)
+; 53         ヘ?パー監?(設置近?離警戒)
+; 54         ヘ?パー監?(設置??離警戒)
+;
+;------------------------------------------------------------------------------
+[Statedef 887700]
+type     = S
+movetype = I
+physics  = N
+ctrl     = 0
+velset   = 0,0
+anim     = 0
+sprpriority = -1
+
+; ??
+[STATE BtR]
+type = BindToRoot
+trigger1 = 1
+time = 100000
+pos = 0,0
+
+[STATE Turn]    ;めくり対策にROOTと逆を向かせ、本体の後ろ側のInGuardDistを取得する
+type = Turn
+trigger1 = facing=root,facing   ;BtRのfacingは内?的な向きは変わらないらし
+
+[STATE 非表示]
+type = AssertSpecial
+trigger1 = 1
+flag = invisible
+flag2= noshadow
+
+[STATE 無敵化]
+type = NOTHITBY
+trigger1 = 1
+value = SCA
+time = 999999
+;------------------------------------------------------------------------------
+[STATE AI開始]
+type = VarSet
+trigger1 = 1
+var(2) = 0
+persistent=0
+
+[STATE AI開始]
+type = VarAdd
+trigger1 = RoundState=2
+var(2) = 1
+
+[STATE AI開始]
+type = ChangeState
+trigger1 = var(2)>40
+value = 887701      ;40フ?ー??れば?手の常?監?ヘ?パーは起動してる
+;------------------------------------------------------------------------------
+[Statedef 887701]
+;------------------------------------------------------------------------------
+; ??
+[STATE BtR]
+type = BindToRoot
+trigger1 = 1
+time = 100000
+pos = 0,0
+
+[STATE Turn]    ;めくり対策にROOTと逆を向かせ、本体の後ろ側のInGuardDistを取得する
+type = Turn
+trigger1 = facing=root,facing   ;BtRのfacingは内?的な向きは変わらないらし
+
+[STATE 非表示]
+type = AssertSpecial
+trigger1 = 1
+flag = invisible
+flag2= noshadow
+
+[STATE 無敵化]
+type = NOTHITBY
+trigger1 = 1
+value = SCA
+time = 999999
+
+[STATE 0]
+type = VarSet
+trigger1 = 1
+var(2) = 0
+;------------------------------------------------------------------------------
+;=============================================================================
+;fvar(0)～fvar(33)
+;=============================================================================
+[State -2, P2bodydistY*F]
+type = null
+trigger1 = fvar(32) := (fvar(39) + (root,fvar(36)*6 + floor(root,fvar(37))*21) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger2 = fvar(33) := (fvar(39) + (root,fvar(36)*7 + floor(root,fvar(37))*28) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger3  = fvar(0) := (fvar(39) + (root,fvar(36)*8 + floor(root,fvar(37))*36) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger4  = fvar(1) := (fvar(39) + (root,fvar(36)*9 + floor(root,fvar(37))*45) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger5  = fvar(2) := (fvar(39) + (root,fvar(36)*10 + floor(root,fvar(37))*55) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger6  = fvar(3) := (fvar(39) + (root,fvar(36)*11 + floor(root,fvar(37))*66) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger7  = fvar(4) := (fvar(39) + (root,fvar(36)*12 + floor(root,fvar(37))*78) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger8  = fvar(5) := (fvar(39) + (root,fvar(36)*13 + floor(root,fvar(37))*91) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger9  = fvar(6) := (fvar(39) + (root,fvar(36)*14 + floor(root,fvar(37))*105) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger10 = fvar(7) := (fvar(39) + (root,fvar(36)*15 + floor(root,fvar(37))*120) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger11 = fvar(8) := (fvar(39) + (root,fvar(36)*16 + floor(root,fvar(37))*136) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger12 = fvar(9) := (fvar(39) + (root,fvar(36)*17 + floor(root,fvar(37))*153) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger13 = fvar(10) := (fvar(39) + (root,fvar(36)*18 + floor(root,fvar(37))*171) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger14 = fvar(11) := (fvar(39) + (root,fvar(36)*19 + floor(root,fvar(37))*190) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger15 = fvar(12) := (fvar(39) + (root,fvar(36)*20 + floor(root,fvar(37))*210) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger16 = fvar(13) := (fvar(39) + (root,fvar(36)*21 + floor(root,fvar(37))*231) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger17 = fvar(14) := (fvar(39) + (root,fvar(36)*22 + floor(root,fvar(37))*253) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger18 = fvar(15) := (fvar(39) + (root,fvar(36)*23 + floor(root,fvar(37))*276) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger19 = fvar(16) := (fvar(39) + (root,fvar(36)*24 + floor(root,fvar(37))*300) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger20 = fvar(17) := (fvar(39) + (root,fvar(36)*25 + floor(root,fvar(37))*325) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger21 = fvar(18) := (fvar(39) + (root,fvar(36)*26 + floor(root,fvar(37))*351) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger22 = fvar(19) := (fvar(39) + (root,fvar(36)*27 + floor(root,fvar(37))*378) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger23 = fvar(20) := (fvar(39) + (root,fvar(36)*28 + floor(root,fvar(37))*406) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger24 = fvar(21) := (fvar(39) + (root,fvar(36)*29 + floor(root,fvar(37))*435) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger25 = fvar(22) := (fvar(39) + (root,fvar(36)*30 + floor(root,fvar(37))*465) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger26 = fvar(23) := (fvar(39) + (root,fvar(36)*31 + floor(root,fvar(37))*496) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger27 = fvar(24) := (fvar(39) + (root,fvar(36)*32 + floor(root,fvar(37))*528) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger28 = fvar(25) := (fvar(39) + (root,fvar(36)*33 + floor(root,fvar(37))*561) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger29 = fvar(26) := (fvar(39) + (root,fvar(36)*34 + floor(root,fvar(37))*595) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger30 = fvar(27) := (fvar(39) + (root,fvar(36)*35 + floor(root,fvar(37))*630) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger31 = fvar(28) := (fvar(39) + (root,fvar(36)*36 + floor(root,fvar(37))*666) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger32 = fvar(29) := (fvar(39) + (root,fvar(36)*37 + floor(root,fvar(37))*703) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger33 = fvar(30) := (fvar(39) + (root,fvar(36)*38 + floor(root,fvar(37))*741) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+trigger34 = fvar(31) := (fvar(39) + (root,fvar(36)*39 + floor(root,fvar(37))*780) * (EnemyNear(root,var(50)),StateType = A && root,fvar(36) != 0))
+ignorehitpause = 1
+;=============================================================================
+;fvar(39)
+;=============================================================================
+[STATE 超必殺判定]
+type = VarSet
+trigger1 = 1
+fvar(39) = P2bodydist Y
+ignorehitpause = 1
+;------------------------------------------------------------------------------
+;------------------------------------------------------------------------------
+; AI - 超必殺判定
+;------------------------------------------------------------------------------
+[STATE 超必殺判定]
+type = VarSet
+triggerall = Time
+trigger1 = var(0)>enemy,power
+var(1) = floor((var(0)-enemy,power)*0.001)
+
+[STATE 超必殺判定(?セット)]
+type = VarSet
+triggerall = Time
+trigger1 = enemynear,movetype=H
+trigger2 = enemynear,stateno=[0,105]
+trigger3 = enemynear,stateno=[120,155]
+trigger4 = enemynear,stateno=[5000,5210]
+var(1) = 0
+
+[STATE ENEMY,POWER]
+type = VarSet
+trigger1 = Time
+var(0) = enemynear,power
+;/超必殺判定
+
+;------------------------------------------------------------------------------
+; AI - ヘ?パー監?
+;------------------------------------------------------------------------------
+[STATE DEBUG]
+type = DisplayToClipboard
+trigger1 = Time
+text = "HELPER:%d %d %d %d %d "
+params = var(11),var(12),var(13),var(14),var(15)
+[STATE DEBUG]
+Type = AppendToClipBoard
+trigger1 = Time
+text = "%d %d %d %d %d"
+params = var(16),var(17),var(18),var(19),var(30)
+[STATE DEBUG]
+Type = AppendToClipBoard
+trigger1 = Time
+text = "\n50:%d 51:%d 52:%d 53:%d 54:%d"
+params = var(50),var(51),var(52),var(53),var(54)
+
+[STATE PlayerID取得フ?グ]
+type = VarSet
+triggerall = Time
+trigger1 = Enemy,NumHelper > var(3);?手のヘ?パーが?えた
+var(4) = 1
+
+[STATE ]
+type = VarSet
+trigger1 = Time
+var(3) = Enemy,NumHelper
+
+[STATE PlayerIDAdd]
+type = Helper
+triggerall = Time
+trigger1 = RoundState=2
+trigger1 = var(4)
+name = " "
+id = 886600
+stateno = 886600
+supermovetime = 99990000000
+pausemovetime = 99990000000
+
+[STATE ヘ?パー?加?]          ;前回より?加したヘ?パーの?+2
+type = VarSet               ;helperから呼び出されたhelperの?加が読めない保険分
+triggerall = Time
+trigger1 = NumHelper(886600)
+trigger1 = var(4)
+var(7) = helper(886600),ID-var(6)+2
+
+;------------------------------------------------------------------------------
+[STATE 警戒フ?グの?セット]
+type = VarRangeSet
+trigger1 = Time
+first = 50
+last = 54
+value = 0
+
+;------------------------------------------------------------------------------
+[STATE PlayerID取得]
+type = ChangeState
+triggerall = Time
+trigger1 = RoundState=2
+trigger1 = var(5):=11+0||1
+trigger1 = var(4):=0    ||1
+value = 887711
+;/ヘ?パー監?
+
+;------------------------------------------------------------------------------
+;/AIヘ?パー
+;==============================================================================
+; ヘ?パー監??ープ
+[Statedef 887711]
+[STATE ?セット1]   ;存在しないPlayerIDが格納されているVARは?セットする
+type = VarSet
+trigger1 = PlayerIDExist(var(var(5)))=0
+var(var(5)) = 0
+
+[STATE ?セット2]   ;攻?用ヘ?パーではないと思われるヘ?パーのPlayerIDは?セットする
+type = VarSet
+triggerall = PlayerIDExist(var(var(5)))
+;?手のMoveContactとほぼ同?に出現したヘ?パーはヒットスパーク表示用と思われるので?セット
+trigger1 = EnemyNear,MoveContact=[1,2]
+trigger1 = PlayerID(var(var(5))),Time<=2
+;timeが120以上でMoveTypeがAでないヘ?パー
+trigger2 = PlayerID(var(var(5))),MoveType!=A&&PlayerID(var(var(5))),time>120
+;timeが600以上のヘ?パー
+trigger3 = PlayerID(var(var(5))),time>600
+;command入力されたHelperはkeyctrl=1のAI用ヘ?パー臭いので?セット
+trigger4 = PlayerID(var(var(5))),command="holdfwd"
+;Time=0が読みとれるHelperも常?監?でSelfStateしているAI用ヘ?パー臭い
+trigger5 = PlayerID(var(var(5))),Time=0
+var(var(5)) = 0
+
+[STATE マーキ?グ?セット]
+type = VarSet
+trigger1 = PlayerIDExist(var(var(5)))=0
+var(var(5)+10) = 0
+
+;//////////////////////////////////////////////////////////////////////////////
+;------------------------------------------------
+; 飛び道具監? いっこめ
+[STATE 飛び道具監?(HitDef型)]
+type = NULL
+triggerall = PlayerIDExist(var(var(5)))
+trigger1 = PlayerID(var(var(5))),MoveType=A         ;攻?判定
+trigger1 = PlayerID(var(var(5))),HitDefAttr=SCA,AA,AP       ;攻?判定のヘ?パー
+trigger1 = PlayerID(var(var(5))),Vel X>0            ;前進してる
+trigger1 = PlayerID(var(var(5))),Pos Y<10           ;地面にめり?んでない
+
+;0-8(511)       P2BodyDist X[0-511]
+;こちらとの?離、0-511 (255を加えてるので実際は-256～255まで)
+trigger1 = var(50):=(var(50)|255-Ceil(PlayerID(var(var(5))),P2BodyDist X))  ||1
+;9-16(97792)        POS Y [0-191]
+;飛び道具の?さ、0-191 (1/2してるので最大-382まで、誤差2前後)
+trigger1 = var(50):=(var(50)|512*abs(Ceil(PlayerID(var(var(5))),Pos Y/2)))  ||1
+;17-21(4063232)     Vel X [0-31]
+;飛び道具のVEL X、0-31
+trigger1 = var(50):=(var(50)|131072*Ceil(PlayerID(var(var(5))),Vel X))      ||1
+;22-26(130023424)   Vel Y [0-31]
+;飛び道具のVEL Y、0-31  (15を加えてるので実際-16～15まで)
+trigger1 = var(50):=(var(50)|4194304*(15-Ceil(PlayerID(var(var(5))),Vel Y)))
+
+;ト?ガーとして使う場?はこうする
+;こちらとの?離 :   -((helper(887700),var(50)&511)-255)
+;飛び道具の?さ :   (helper(887700),var(50)&97792)/256
+;飛び道具のVEL X:   (helper(887700),var(50)&4063232)/131072
+;飛び道具のVEL Y:   -(((helper(887700),var(50)&130023424)/4194304)-15)
+
+[STATE 飛び道具監?(Proj型)]
+type = NULL
+triggerall = PlayerIDExist(var(var(5)))
+triggerall = var(var(5))=var(var(5)+10)             ;マーキ?グしたヘ?パー
+trigger1 = EnemyNear,NumProj                    ;?手がProjectileを出してる
+trigger1 = PlayerID(var(var(5))),MoveType=I
+trigger1 = !(PlayerID(var(var(5))),HitDefAttr=SCA,AA,AP)
+trigger1 = PlayerID(var(var(5))),Vel X>0
+trigger1 = PlayerID(var(var(5))),Pos Y<10
+trigger1 = var(50):=(var(50)|255-Ceil(PlayerID(var(var(5))),P2BodyDist X))  ||1
+trigger1 = var(50):=(var(50)|512*abs(Ceil(PlayerID(var(var(5))),Pos Y/2)))  ||1
+trigger1 = var(50):=(var(50)|131072*Ceil(PlayerID(var(var(5))),Vel X))      ||1
+trigger1 = var(50):=(var(50)|4194304*(15-Ceil(PlayerID(var(var(5))),Vel Y)))
+;------------------------------------------------
+; 飛び道具監? 2こめ
+[STATE 飛び道具監?(HitDef型)]
+type = NULL
+triggerall = PlayerIDExist(var(var(5)))
+trigger1 = var(50)                      ;いっこめがすでに?る?だけ
+trigger1 = PlayerID(var(var(5))),MoveType=A         ;攻?判定
+trigger1 = PlayerID(var(var(5))),HitDefAttr=SCA,AA,AP       ;攻?判定のヘ?パー
+trigger1 = PlayerID(var(var(5))),Vel X>0            ;前進してる
+trigger1 = PlayerID(var(var(5))),Pos Y<10           ;地面にめり?んでない
+trigger1 = var(51):=(var(51)|255-Ceil(PlayerID(var(var(5))),P2BodyDist X))  ||1
+trigger1 = var(51):=(var(51)|512*abs(Ceil(PlayerID(var(var(5))),Pos Y/2)))  ||1
+trigger1 = var(51):=(var(51)|131072*Ceil(PlayerID(var(var(5))),Vel X))      ||1
+trigger1 = var(51):=(var(51)|4194304*(15-Ceil(PlayerID(var(var(5))),Vel Y)))
+
+[STATE 飛び道具監?(Proj型)]
+type = NULL
+triggerall = PlayerIDExist(var(var(5)))
+triggerall = var(var(5))=var(var(5)+10)             ;マーキ?グしたヘ?パー
+trigger1 = EnemyNear,NumProj                    ;?手がProjectileを出してる
+trigger1 = var(50)
+trigger1 = PlayerID(var(var(5))),MoveType=I
+trigger1 = !(PlayerID(var(var(5))),HitDefAttr=SCA,AA,AP)
+trigger1 = PlayerID(var(var(5))),Vel X>0
+trigger1 = PlayerID(var(var(5))),Pos Y<10
+trigger1 = var(51):=(var(51)|255-Ceil(PlayerID(var(var(5))),P2BodyDist X))  ||1
+trigger1 = var(51):=(var(51)|512*abs(Ceil(PlayerID(var(var(5))),Pos Y/2)))  ||1
+trigger1 = var(51):=(var(51)|131072*Ceil(PlayerID(var(var(5))),Vel X))      ||1
+trigger1 = var(51):=(var(51)|4194304*(15-Ceil(PlayerID(var(var(5))),Vel Y)))
+
+
+;------------------------------------------------
+; ?下監?
+[STATE ?下飛道具(HitDef型)]
+type = VarSet
+triggerall = PlayerIDExist(var(var(5)))
+trigger1 = PlayerID(var(var(5))),MoveType=A
+trigger1 = PlayerID(var(var(5))),HitDefAttr=SCA,AA,AP
+trigger1 = PlayerID(var(var(5))),Vel X = [-1,1]
+trigger1 = PlayerID(var(var(5))),Vel Y >= 1
+trigger1 = PlayerID(var(var(5))),P2BodyDist X=[-100,100]
+trigger1 = PlayerID(var(var(5))),P2Dist Y>0
+var(52) = 1+Ceil(PlayerID(var(var(5))),P2BodyDist Y-PlayerID(var(var(5))),Vel Y*10)
+;自分の前後100px範囲内に?下飛び道具っぽいのを見つけると、Var(51)に?下飛び道具の?さを代入します
+
+[STATE ?下飛道具(Proj型)]
+type = VarSet
+triggerall = PlayerIDExist(var(var(5))) ;上から?る飛び道具(P)
+triggerall = var(var(5))=var(var(5)+10)
+trigger1 = PlayerID(var(var(5))),MoveType=I
+trigger1 = !(PlayerID(var(var(5))),HitDefAttr=SCA,AA,AP)
+trigger1 = PlayerID(var(var(5))),Vel X = [-1,1]
+trigger1 = EnemyNear,NumProj
+trigger1 = PlayerID(var(var(5))),Vel Y >= 1
+trigger1 = PlayerID(var(var(5))),P2BodyDist X=[-100,100]
+trigger1 = PlayerID(var(var(5))),P2Dist Y>0
+var(52) = 1+Ceil(PlayerID(var(var(5))),P2BodyDist Y-PlayerID(var(var(5))),Vel Y*10)
+
+;------------------------------------------------
+; 設置警戒
+[STATE 設置(近?離)]
+type = VarSet
+triggerall = PlayerIDExist(var(var(5)))
+trigger1 = PlayerID(var(var(5))),MoveType=A
+trigger1 = PlayerID(var(var(5))),HitDefAttr=SCA,AA,AP
+trigger1 = PlayerID(var(var(5))),Vel Y = 0
+trigger1 = PlayerID(var(var(5))),Vel X = 0
+trigger1 = PlayerID(var(var(5))),P2BodyDist X=[-100,100]
+trigger1 = PlayerID(var(var(5))),P2BodyDist Y=[-100,100]
+var(53) = IfElse(PlayerID(var(var(5))),P2Dist X>0,1,-1)
+;自分の100px範囲内に設置ヘ?パーっぽいのを見つけると1を代入、後ろにいると-1を代入
+
+[STATE 設置(隣接?離)]
+type = VarSet
+triggerall = PlayerIDExist(var(var(5)))
+trigger1 = PlayerID(var(var(5))),MoveType=A
+trigger1 = PlayerID(var(var(5))),HitDefAttr=SCA,AA,AP
+trigger1 = PlayerID(var(var(5))),Vel Y = 0
+trigger1 = PlayerID(var(var(5))),Vel X = 0
+trigger1 = PlayerID(var(var(5))),P2BodyDist X=[-35,35]
+trigger1 = PlayerID(var(var(5))),P2BodyDist Y=[-60,60]
+var(53) = IfElse(PlayerID(var(var(5))),P2Dist X>0,10,-10)
+;更に近い場?は10を代入、後ろにいると-10
+
+[STATE 設置(??離)]
+type = VarSet
+triggerall = PlayerIDExist(var(var(5)))
+trigger1 = PlayerID(var(var(5))),MoveType=A
+trigger1 = PlayerID(var(var(5))),HitDefAttr=SCA,AA,AP
+trigger1 = PlayerID(var(var(5))),Vel Y = 0
+trigger1 = PlayerID(var(var(5))),Vel X = 0
+trigger1 = PlayerID(var(var(5))),P2BodyDist X!=[-100,100]
+trigger1 = PlayerID(var(var(5))),P2BodyDist X=[-350,350]
+trigger1 = PlayerID(var(var(5))),P2BodyDist Y=[-100,100]
+var(54) = IfElse(PlayerID(var(var(5))),P2Dist X>0,1,-1)
+;??離に見つけると1、後ろにいると-1
+;//////////////////////////////////////////////////////////////////////////////
+
+[STATE loop]
+type = ChangeState
+trigger1 = var(5)<=11+10
+trigger1 = var(5):=var(5)+1
+value = StateNo
+[STATE end]
+type = ChangeState
+trigger1 = var(5)>11+10
+trigger1 = var(5):=11||1
+value = 887712
+;==============================================================================
+; VAR整?
+[Statedef 887712]
+
+[STATE VARを詰める]
+type = NULL
+triggerall = !var(var(5))
+trigger1 = var(var(5)):=var(ifelse(var(5)+1>20,2,var(5)+1))||1  ;Var(2)は0で固定されてるので、0が代入される
+trigger1 = (var(var(5)):=var(ifelse(var(5)+1>20,2,var(5)+1)))||(var(ifelse(var(5)+1>20,2,var(5)+1)):=0)||1
+
+[STATE loop]
+type = ChangeState
+trigger1 = var(5)<=11+10
+trigger1 = var(5):=var(5)+1
+value = StateNo
+
+[STATE end]
+type = ChangeState
+trigger1 = var(5)>11+10
+trigger1 = var(5):=0||1
+value = IfElse(var(7)>0,887710,887701)
+;------------------------------------------------------------------------------
+;==============================================================================
+; PlayerID取得
+[Statedef 887710]
+
+[STATE PlayerID取得?制限]
+type = VarSet
+trigger1 = var(7)>10
+var(7) = 10
+[STATE PlayerIDを格納するVAR]
+type = VarSet
+trigger1 = 1
+var(5) = 11+(var(11)>0)+(var(12)>0)+(var(13)>0)+(var(14)>0)+(var(15)>0)+(var(16)>0)+(var(17)>0)+(var(18)>0)+(var(19)>0)+(var(20)>0)
+[STATE PlayerID取得]
+type = VarSet
+trigger1 = PlayerIDExist(var(6)-var(7))         ;PlayerIDが存在する
+trigger1 = (var(6)-var(7))!=var(var(5)-1)           ;重複登録の防止
+trigger1 = PlayerID(var(6)-var(7)),IsHelper         ;ヘ?パーに限る
+trigger1 = PlayerID(var(6)-var(7)),IsHomeTeam!=IsHomeTeam   ;?手側に限る
+var(var(5)) = PlayerID(var(6)-var(7)),ID
+[STATE マーキ?グ]                  ;飛び道具必殺技と思われるステートで呼び出されたヘ?パーをマーキ?グ
+type = VarSet
+trigger1 = PlayerIDExist(var(var(5)))
+trigger1 = PlayerID(var(6)-var(7)),IsHelper
+trigger1 = PlayerID(var(var(5))),MoveType!=A||!(PlayerID(var(var(5))),HitDefAttr=SCA,AA,AP,AT)  ;攻?判定無し
+trigger1 = EnemyNear,MoveType=A             ;?手が攻?判定の?に呼び出された
+trigger1 = !(EnemyNear,HitDefAttr=SCA,AA,AP,AT)     ;?手がHitDefを出してない(飛び道具?)
+trigger1 = EnemyNear,CTRL=0
+trigger1 = EnemyNear,Time>10
+trigger1 = EnemyNear,StateNo>=1000          ;1000以上なら大抵必殺技
+var(var(5)+10) = PlayerID(var(var(5))),ID
+
+[STATE loop]
+type = ChangeState
+trigger1 = var(7)>0
+trigger1 = var(7):=var(7)-1||1
+value = 887701
+[STATE end]
+type = ChangeState
+trigger1 = var(7)<=0
+value = 887701
+;------------------------------------------------------------------------------
+;/AIヘ?パー
+;==============================================================================
