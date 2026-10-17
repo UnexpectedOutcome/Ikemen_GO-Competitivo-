@@ -752,6 +752,10 @@ function start.f_animGet(ref, side, member, params, velParams, loop, srcAnim)
 					local sel = start.p[side].t_selected[member]
 					if sel and sel.ref then
 						a = start.loadPalettes(a, ref, sel.pal)
+					else
+						-- hover preview: use the default palette instead of the SFF's first sprite palette
+						local defPal = (charData.pal_defaults and charData.pal_defaults[1]) or 1
+						a = start.loadPalettes(a, ref, defPal)
 					end
 				end
 				animUpdate(a)
