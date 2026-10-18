@@ -24,7 +24,7 @@
 ;------------------------------------------------------------------------------;
 [Statedef 1000]
   Type        = S
-poweradd = 20
+poweradd = 0
   MoveType    = A
   Physics     = S
   Juggle      = 0
@@ -608,7 +608,7 @@ getpower = 15,7
 ;------------------------------------------------------------------------------;
 [Statedef 1100]
   Type        = A
-poweradd = 20
+poweradd = 0
   MoveType    = A
   Physics     = N
   Juggle      = 0
@@ -1475,13 +1475,13 @@ getpower = 30,15
 [State 1300]
   Type     = PowerAdd
   Trigger1 = MoveHit = 1
-  Value    = 116; 165
+  Value    = 0; 165
   IgnoreHitPause = 1
 
 [State 1300]
   Type     = PowerAdd
   Trigger1 = MoveGuarded = 1
-  Value    = 10; 20
+  Value    = 0; 20
   IgnoreHitPause = 1
 
 ;---------------------------[ ïœêîíËã` ]-----------------------------;
@@ -2439,7 +2439,7 @@ getpower = 30,15
   VelSet      = 0, 0
   Ctrl        = 0
   Anim        = 1570
-  PowerAdd    = 150
+  PowerAdd    = 0
   SprPriority = 3
 
 [State 1570]

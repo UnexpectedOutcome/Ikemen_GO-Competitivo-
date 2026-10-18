@@ -259,7 +259,7 @@ physics=S
 juggle=ifelse(numtarget,15,8)
 anim=207
 velset=0,0
-poweradd=18*!var(20)
+poweradd=0*!var(20)
 sprpriority=1
 ctrl=0
 facep2=1
@@ -2630,7 +2630,7 @@ value=36
 [State 805, power]
 type=poweradd
 trigger1= animelem=4 && !var(20)
-value=72
+value=0
 
 [State 805, throw]
 type=targetstate
@@ -2789,7 +2789,7 @@ value=36
 [State 810, power]
 type=poweradd
 trigger1= animelem=4 && !var(20)
-value=72
+value=0
 [State 810, throw]
 type=targetstate
 trigger1= animelem=4

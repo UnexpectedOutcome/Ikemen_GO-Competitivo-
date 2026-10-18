@@ -1983,7 +1983,7 @@ movetype=A
 ctrl=0
 velset=0,0
 sprpriority=1
-poweradd=72*!var(20)
+poweradd=0*!var(20)
 facep2=1
 
 [state 1000,Posset]
@@ -2466,7 +2466,7 @@ physics = S
 juggle  = 1
 velset = 0,0
 ctrl = 1
-poweradd=72*!var(20)
+poweradd=0*!var(20)
 sprpriority = 2
 
 [state 1000,Posset]

@@ -109,7 +109,7 @@ juggle = 3
 ctrl = 0
 anim = 2001
 velset = 0,0
-poweradd = 80
+poweradd = 0
 sprpriority = 5
 
 [State 2001, 1]
@@ -363,7 +363,7 @@ juggle = 0
 ctrl = 0
 anim = 2501
 velset = 0,0
-poweradd = 100
+poweradd = 0
 sprpriority = 4
 
 [State 2501, 1]

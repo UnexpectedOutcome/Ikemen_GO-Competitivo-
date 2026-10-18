@@ -358,7 +358,7 @@ Physics  = C
 Anim     = 505
 Ctrl     = 0
 Facep2   = 1
-PowerAdd = 20
+PowerAdd = 0
 
 [State 500]
 Type=VarAdd
@@ -513,7 +513,7 @@ Physics  = N
 Anim     = 504
 Ctrl     = 0
 Facep2   = 1
-PowerAdd = 20
+PowerAdd = 0
 
 [State 500]
 Type=Gravity

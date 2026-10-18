@@ -3785,7 +3785,7 @@ value = 36
 [State 810, getpower]
 type = poweradd
 trigger1 = numtarget && animelem = 3 && !var(20)
-value = 72
+value = 0
 
 [State 810, damage]
 type = targetlifeadd
@@ -4012,7 +4012,7 @@ value = 36
 [State 820, getpower]
 type = poweradd
 trigger1 = numtarget && animelem = 11 && !var(20)
-value = 72
+value = 0
 
 [State 820, Hit]
 type = hitadd
@@ -4743,7 +4743,7 @@ value = 36
 [State 861, getpower]
 type = poweradd
 trigger1 = !time && numtarget && !var(20)
-value = 72
+value = 0
 
 [State 861, hitcount]
 type = varadd

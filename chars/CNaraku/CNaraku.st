@@ -1028,7 +1028,7 @@ value = 5100 ;Hit ground
 ;--------------------------
 [Statedef 1000]
 type = A
-poweradd = 20
+poweradd = 0
 movetype = A
 physics = S
 ctrl = 0
@@ -1107,7 +1107,7 @@ ctrl = ifelse(var(58)>0,0,1)
 ;----------------------------
 [Statedef 1100]
 type = A
-poweradd = 20
+poweradd = 0
 movetype = A
 physics = S
 velSet = 0,0

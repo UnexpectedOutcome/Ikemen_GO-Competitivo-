@@ -4185,7 +4185,7 @@ value = 1401
 type    = S
 movetype = A
 physics = S
-poweradd = 125
+poweradd = 0
 ctrl = 0
 velset = 0,0
 anim = 1401
@@ -5690,7 +5690,7 @@ physics = S
 velset = 0,0
 ctrl = 0
 anim = 1501
-poweradd = 125
+poweradd = 0
 
 [State 0, NotHitBy]
 type = NotHitBy
@@ -6873,7 +6873,7 @@ movetype = A
 physics = S
 ctrl = 0
 anim = 1702
-poweradd = 150
+poweradd = 0
 
 [State 20, StopSnd]
 type = StopSnd
@@ -7271,7 +7271,7 @@ physics = S
 velset = 0,0
 ctrl = 0
 anim = 1800
-poweradd = 150
+poweradd = 0
 sprpriority = 2
 
 [State 0, SuperPause]
@@ -8035,7 +8035,7 @@ physics = C
 velset = 0,0
 ctrl = 0
 anim = 1900
-poweradd=150
+poweradd=0
 
 ;***********------"mugshot"-----------**********
 [State 0, Helper]
@@ -8314,7 +8314,7 @@ velset = 0,0
 ctrl = 0
 anim = 2000
 juggle  = 7
-poweradd=150
+poweradd=0
 sprpriority = 2
 
 [State 3000: EnvShake]
@@ -9785,7 +9785,7 @@ velset = 0,0
 ctrl = 0
 anim = 2300
 sprpriority = 2
-poweradd = 150
+poweradd = 0
 
 [State 0, SuperPause]
 type = SuperPause

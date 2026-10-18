@@ -791,7 +791,7 @@ type = a
 movetype = a
 physics = n
 anim = 1130
-poweradd = 150
+poweradd = 0
 ctrl = 0
 velset = 0,0
 
@@ -822,7 +822,7 @@ type = a
 movetype = a
 physics = n
 anim = 1160
-poweradd = 150
+poweradd = 0
 ctrl = 0
 velset = 0,0
 
@@ -853,7 +853,7 @@ type = s
 movetype = a
 physics = s
 anim = 1200
-poweradd = 100
+poweradd = 20
 ctrl = 0
 
 [state -, varadd];＊影踊るスケルツォ、の業
@@ -993,7 +993,7 @@ type = s
 movetype = a
 physics = s
 anim = 1210+(prevstateno=1200)
-poweradd = 100
+poweradd = 0
 ctrl = 0
 
 [state -, varadd];＊影踊るスケルツォ、の業
@@ -1121,7 +1121,7 @@ type = s
 movetype = a
 physics = s
 anim = 1220+(prevstateno=[1200,1210])
-poweradd = 100
+poweradd = 0
 ctrl = 0
 
 [state -, varadd];＊影踊るスケルツォ、の業

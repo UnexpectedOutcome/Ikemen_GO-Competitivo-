@@ -1961,7 +1961,7 @@ value = 36
 type = PowerAdd
 trigger1 = NumTarget && AnimElem = 8 && !var(20)
 trigger2 = NumTarget && AnimElem = 17, = 2 && !var(20)
-value = 72
+value = 0
 
 [State 810, HitAdd]
 type = HitAdd
@@ -2177,7 +2177,7 @@ value = 36
 [State 820, Power]
 type = PowerAdd
 trigger1 = NumTarget && AnimElem = 7 && !var(20)
-value = 72
+value = 0
 
 [State 820, HitAdd]
 type = HitAdd
@@ -2564,7 +2564,7 @@ value = 36
 [State 860, Power]
 type = PowerAdd
 trigger1 = NumTarget && AnimElem = 8 && !var(20)
-value = 72
+value = 0
 
 [State 860, HitAdd]
 type = HitAdd
@@ -2669,7 +2669,7 @@ value = 36
 [State 860, Power]
 type = PowerAdd
 trigger1 = NumTarget && AnimElem = 1, = 2 && !var(20) && var(10) != 3
-value = 72
+value = 0
 
 [State 860, HitAdd]
 type = HitAdd
@@ -2914,7 +2914,7 @@ value = 36
 [State 871, Power]
 type = PowerAdd
 trigger1 = NumTarget && !Time && !var(20)
-value = 72
+value = 0
 
 [State 871, HitAdd]
 type = HitAdd

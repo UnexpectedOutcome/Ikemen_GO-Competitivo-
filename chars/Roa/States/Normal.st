@@ -2306,7 +2306,7 @@ value = 36
 [State 810, Power]
 type = PowerAdd
 trigger1 = NumTarget && animelemtime(4)=6 && !var(20)
-value = 72
+value = 0
 
 [State 810, HitAdd]
 type = HitAdd
@@ -2627,7 +2627,7 @@ value = 36
 [State 810, Power]
 type = PowerAdd
 trigger1 = NumTarget && animelemtime(4)=6 && !var(20)
-value = 72
+value = 0
 
 [State 810, HitAdd]
 type = HitAdd
@@ -3048,7 +3048,7 @@ value = 36
 [State 810, Power]
 type = PowerAdd
 trigger1 = NumTarget && animelemtime(3)=5 && !var(20)
-value = 72
+value = 0
 
 [State 810, HitAdd]
 type = HitAdd

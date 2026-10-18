@@ -2890,7 +2890,7 @@ absolute = 1  ;–hŒä—Í‚ğ”½‰f‚·‚é
 [State 901, ƒQ[ƒW‘‰Á]
 type     = PowerAdd
 trigger1 = animelem = 11
-value    = 300
+value    = 0
 
 ;------------------------------------[‘Šè§Œä2]
 

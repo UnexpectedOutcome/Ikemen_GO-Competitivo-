@@ -788,7 +788,7 @@ moveType = A
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 18 * !var(20)
+powerAdd = 0 * !var(20)
 facep2 = 1
 
 [State 250, Anim]
@@ -2706,7 +2706,7 @@ physics = N
 moveType = A
 ctrl = 0
 sprPriority = 1
-powerAdd = 18 * !var(20)
+powerAdd = 0 * !var(20)
 
 [State 0, VelAdd]
 type = VelSet
@@ -2801,7 +2801,7 @@ physics = N
 moveType = A
 ctrl = 0
 sprPriority = 1
-powerAdd = 18 * !var(20)
+powerAdd = 0 * !var(20)
 
 [State 0, VelAdd]
 type = VelSet
@@ -3649,7 +3649,7 @@ type    = S
 movetype= A
 physics = N
 anim = 810
-poweradd = 60
+poweradd = 0
 
 [State 810, Safety]
 type = ChangeState
@@ -3764,7 +3764,7 @@ value = floor(-120*fvar(11))
 [State 820, PowerAdd]
 type = PowerAdd
 trigger1 = NumTarget && AnimElem = 5 && !var(20)
-value = 70
+value = 0
 
 [State 820, TargetPowerAdd]
 type = TargetPowerAdd
@@ -4063,7 +4063,7 @@ value = S5,ifelse(random<500,1,6)
 [State 820, PowerAdd]
 type = PowerAdd
 trigger1 = NumTarget && AnimElem = 4 && !var(20)
-value = 70
+value = 0
 
 [State 820, HitAdd]
 type = HitAdd

@@ -4601,7 +4601,7 @@ movetype = A
 physics = N
 anim = 810
 ctrl = 0
-poweradd = 75
+poweradd = 0
 sprpriority = 2
 
 ;[State 810, 1];因為在Statedef 800時設定var(23):= -1 這裡就不用再設置
@@ -5008,7 +5008,7 @@ physics = N
 anim = 860
 velset = 0,0
 ctrl = 0
-poweradd = 75
+poweradd = 0
 sprpriority = 2
 
 ;[State 860, 1]
@@ -5402,7 +5402,7 @@ physics = N
 anim = 860
 velset = 0,0
 ctrl = 0
-poweradd = 75
+poweradd = 0
 sprpriority = 2
 
 ;[State 885, 1]

@@ -238,7 +238,7 @@ anim = 1050
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 72 * !var(20)
+powerAdd = 0 * !var(20)
 faceP2 = 1
 
 [State 1050, Button Detect]
@@ -277,7 +277,7 @@ anim = 1100
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 72 * !var(20)
+powerAdd = 0 * !var(20)
 faceP2 = 1
 
 [State 1100, Button Detect]
@@ -2314,7 +2314,7 @@ anim = 1700
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 72 * !var(20)
+powerAdd = 0 * !var(20)
 faceP2 = 1
 
 [State 1700, Voice]
@@ -2369,7 +2369,7 @@ anim = 1800
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 72 * !var(20)
+powerAdd = 20 * !var(20)
 faceP2 = 1
 
 [State 1800, Button Detect]
@@ -2449,7 +2449,7 @@ anim = 1900
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 72 * !var(20)
+powerAdd = 0 * !var(20)
 faceP2 = 1
 
 [State 1900, Button Detect]
@@ -2527,7 +2527,7 @@ anim = 1901
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 72 * !var(20)
+powerAdd = 0 * !var(20)
 
 [State 1901, Width]
 type = Width

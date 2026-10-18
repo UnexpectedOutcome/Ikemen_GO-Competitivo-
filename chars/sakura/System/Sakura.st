@@ -512,7 +512,7 @@ value=511
 ; Acceleration
 [Statedef 530]
 Type     = S
-poweradd = 20
+poweradd = 0
 MoveType = A
 Physics  = N
 Anim     = 530
@@ -528,7 +528,7 @@ value=0
 [State 530]
 Type=Poweradd
 Trigger1=1
-value=1
+value=0
 
 [State 500]
 Type=VarAdd

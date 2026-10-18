@@ -1680,7 +1680,7 @@ type    = a
 movetype= a
 physics = a
 anim = 551
-poweradd = 50
+poweradd = 0
 
 [state 551, width]
 type = width

@@ -8,7 +8,7 @@ movetype = a
 physics = s
 anim = 1000
 juggle = 1
-poweradd = 160
+poweradd = 20
 ctrl = 0
 
 [state 1000, nothitby];
@@ -141,7 +141,7 @@ type    = s
 movetype= a
 physics = s
 anim = 1101
-poweradd = 300
+poweradd = 0
 
 [state 1101, width]
 type = width
@@ -534,7 +534,7 @@ movetype = a
 physics = s
 anim = 1200
 juggle = 1
-poweradd = 200
+poweradd = 0
 ctrl = 0
 
 [state 1200, helper]

@@ -758,7 +758,7 @@ value = 35
 [State PowerAdd]
 type = PowerAdd
 trigger1 = !animelemtime(4)
-value = 90
+value = 0
 
 
 ;to ground

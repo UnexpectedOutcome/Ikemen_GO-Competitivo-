@@ -115,7 +115,7 @@ anim = 210
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 18 * !var(20)
+powerAdd = 0 * !var(20)
 faceP2 = 1
 
 [State 210, Voice]
@@ -215,7 +215,7 @@ anim = 215
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 18 * !var(20)
+powerAdd = 0 * !var(20)
 facep2 = 1
 
 [State 215, Voice]
@@ -316,7 +316,7 @@ anim = 220
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 18 * !var(20)
+powerAdd = 0 * !var(20)
 facep2 = 1
 
 [State 220, Voice]
@@ -471,7 +471,7 @@ anim = 225
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 18 * !var(20)
+powerAdd = 0 * !var(20)
 facep2 = 1
 
 [State 225, Voice]
@@ -578,7 +578,7 @@ anim = 226
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 18 * !var(20)
+powerAdd = 0 * !var(20)
 facep2 = 1
 
 [State 226, Voice]
@@ -849,7 +849,7 @@ anim = 240
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 18 * !var(20)
+powerAdd = 0 * !var(20)
 faceP2 = 1
 
 [State 240, Voice]
@@ -959,7 +959,7 @@ anim = 245
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 18 * !var(20)
+powerAdd = 0 * !var(20)
 faceP2 = 1
 
 [State 245, Voice]
@@ -1048,7 +1048,7 @@ anim = 250
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 18 * !var(20)
+powerAdd = 0 * !var(20)
 faceP2 = 1
 
 [State 250, Voice]
@@ -1143,7 +1143,7 @@ anim = 255
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 18 * !var(20)
+powerAdd = 0 * !var(20)
 faceP2 = 1
 
 [State 255, Voice]
@@ -1424,7 +1424,7 @@ anim = 420
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 18 * !var(20)
+powerAdd = 0 * !var(20)
 faceP2 = 1
 
 [State 420, Voice]
@@ -1569,7 +1569,7 @@ anim = 421
 ctrl = 0
 velSet = 0,0
 sprPriority = 1
-powerAdd = 18 * !var(20)
+powerAdd = 0 * !var(20)
 faceP2 = 1
 
 [State 421, Voice]
@@ -3001,7 +3001,7 @@ value = 36
 [State 810, Power]
 type = PowerAdd
 trigger1 = NumTarget && AnimElem = 8 && !var(20)
-value = 72
+value = 0
 
 [State 810, HitAdd]
 type = HitAdd
@@ -3239,7 +3239,7 @@ value = 36
 [State 820, Power]
 type = PowerAdd
 trigger1 = NumTarget && AnimElem = 8
-value = 36
+value = 0
 
 [State 820, HitAdd]
 type = HitAdd

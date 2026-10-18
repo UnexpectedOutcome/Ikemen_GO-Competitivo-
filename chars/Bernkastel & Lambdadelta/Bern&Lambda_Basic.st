@@ -2640,7 +2640,7 @@ type    = S
 movetype= A
 physics = N
 anim = 810
-poweradd = 40
+poweradd = 0
 
 [State -3, ボイス・ベルン]
 type = PlaySnd

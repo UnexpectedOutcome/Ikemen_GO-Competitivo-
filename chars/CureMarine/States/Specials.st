@@ -130,7 +130,7 @@ air.cornerpush.veloff = 0
 type = PowerAdd
 trigger1 = movecontact = 1
 trigger1 = numtarget
-value = 40
+value = 0
 ignorehitpause = 1
 
 [State 1001, Damage Dampen]
@@ -444,7 +444,7 @@ air.cornerpush.veloff = 0
 type = PowerAdd
 trigger1 = movecontact = 1
 trigger1 = numtarget
-value = 40
+value = 0
 ignorehitpause = 1
 
 [State 1021, Damage Dampen]

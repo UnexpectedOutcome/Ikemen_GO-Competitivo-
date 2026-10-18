@@ -7,7 +7,7 @@ physics = s
 ctrl = 0
 anim = 1000
 sprpriority = 2
-poweradd = 25
+poweradd = 20
 facep2 = 1
 
 [state voice]
@@ -62,7 +62,7 @@ physics = s
 ctrl = 0
 anim = 1000
 sprpriority = 2
-poweradd = 25
+poweradd = 20
 facep2 = 1
 
 [state voice]
@@ -117,7 +117,7 @@ physics = s
 ctrl = 0
 anim = 1000
 sprpriority = 2
-poweradd = 25
+poweradd = 20
 facep2 = 1
 
 [state voice]
@@ -172,7 +172,7 @@ physics = n
 ctrl = 0
 anim = 1100
 sprpriority = 2
-poweradd = 25
+poweradd = 20
 facep2 = 1
 
 [state velmul]
@@ -247,7 +247,7 @@ physics = n
 ctrl = 0
 anim = 1100
 sprpriority = 2
-poweradd = 25
+poweradd = 20
 facep2 = 1
 
 [state velmul]
@@ -322,7 +322,7 @@ physics = n
 ctrl = 0
 anim = 1100
 sprpriority = 2
-poweradd = 25
+poweradd = 20
 facep2 = 1
 
 [state velmul]
@@ -993,7 +993,7 @@ physics = s
 anim = 1300
 ctrl = 0
 sprpriority = 2
-poweradd = 25
+poweradd = 0
 facep2 = 1
 velset = 0,0
 
@@ -1028,7 +1028,7 @@ physics = s
 anim = 1300
 ctrl = 0
 sprpriority = 2
-poweradd = 25
+poweradd = 0
 facep2 = 1
 velset = 0,0
 

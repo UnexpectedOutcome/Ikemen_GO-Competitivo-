@@ -1403,7 +1403,7 @@ anim=1300
 ctrl=0
 velset=0,0
 sprpriority=1
-poweradd=72*!var(20)
+poweradd=0*!var(20)
 facep2=1
 
 [State 1300, Button]
@@ -1711,7 +1711,7 @@ anim=1530
 ctrl=0
 velset=0,0
 sprpriority=1
-poweradd=72*!var(20)
+poweradd=0*!var(20)
 facep2=1
 
 [State 1530, Button]

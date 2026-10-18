@@ -3330,7 +3330,7 @@ movetype = A
 physics = N
 anim = 1513 ;1510
 ctrl = 0
-poweradd = 100
+poweradd = 0
 sprpriority = 0
 
 [State 1510, 1]
@@ -3568,7 +3568,7 @@ physics = S
 velset = 0,0
 ctrl = 0
 juggle = 0 ;6
-poweradd = 100
+poweradd = 20
 sprpriority = 3
 
 [State 1600, 1]
