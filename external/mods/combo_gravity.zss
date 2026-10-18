@@ -1,0 +1,27 @@
+# external/mods/combo_gravity.zss
+# Aplica la gravedad y el empuje calculados por combo_gravity.lua.
+# Lo registra combo_gravity.lua como estado comun de todos los personajes.
+
+[StateDef -2]
+
+if isHelper || teamSide = 0 {
+	# Nada: helpers y escenario
+} else if moveType = H && !getHitVar(guarded) && !inCustomState && map(_cg_grav) > 1 {
+	# Gravedad extra mientras esta en el aire
+	if stateType = A && hitPauseTime = 0 {
+		velAdd{y: const(movement.yaccel) * (map(_cg_grav) - 1)}
+	}
+	# Empuje extra una vez por cada golpe nuevo, justo despues de la pausa del golpe
+	# (la VelSet del estado de recibir golpe se aplica en el primer tick, por eso time >= 1)
+	if getHitVar(hitcount) != map(_cg_last) {
+		map(_cg_pending) := 1;
+		map(_cg_last) := getHitVar(hitcount);
+	}
+	if map(_cg_pending) && hitPauseTime = 0 && time >= 1 {
+		velMul{x: map(_cg_push)}
+		map(_cg_pending) := 0;
+	}
+} else if moveType != H {
+	map(_cg_last) := 0;
+	map(_cg_pending) := 0;
+}
