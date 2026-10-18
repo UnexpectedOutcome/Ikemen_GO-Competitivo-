@@ -1,0 +1,804 @@
+;==========================================================================
+;コマンド関連ファイル
+;==========================================================================
+
+[Command]
+name = "歪"
+command = B, DB, D, DF, F, c
+time = 45
+
+[Command]
+name = "疑心"
+command = B, DB, D, DF, F, b
+time = 45
+
+[Command]
+name = "お持ち帰り"
+command = B, DB, D, DF, F, a
+time = 45
+
+[Command]
+name = "マッハレナパン"
+command = D, DF, F, a
+time = 30
+
+[Command]
+name = "レナパン連打"
+command = D, DB, B, a
+time = 30
+
+[Command]
+name = "絶一門"
+command = F, D, DF, b
+time = 30
+
+[Command]
+name = "腸流し"
+command = D, DF, F, b
+time = 30
+
+[Command]
+name = "断罪"
+command = D, DB, B, b
+time = 30
+
+[Command]
+name = "リテイク"
+command = F, D, DF, c
+time = 30
+
+[Command]
+name = "鉈廻し"
+command = D, DF, F, c
+time = 30
+
+[Command]
+name = "鉈還し"
+command = D, DB, B, c
+time = 30
+
+;-| Double Tap |-----------------------------------------------------------
+[Command]
+name = "FF";Required (do not remove)
+command = F, F
+time = 10
+
+[Command]
+name = "BB";Required (do not remove)
+command = B, B
+time = 10
+
+;-| 2/3 Button Combination |-----------------------------------------------
+[Command]
+name = "recovery";Required (do not remove)
+command = a+b
+time = 1
+
+[Command]
+name = "ab"
+command = a+b
+time = 1
+
+;-| Dir + Button |---------------------------------------------------------
+[Command]
+name = "fwd_a"
+command = /F,a
+time = 1
+
+[Command]
+name = "fwd_b"
+command = /F,b
+time = 1
+
+[Command]
+name = "fwd_c"
+command = /F,c
+time = 1
+
+[Command]
+name = "fwd_x"
+command = /F,x
+time = 1
+
+[Command]
+name = "fwd_y"
+command = /F,y
+time = 1
+
+
+[Command]
+name = "downfwd_a"
+command = /DF,a
+time = 1
+
+[Command]
+name = "downfwd_b"
+command = /DF,b
+time = 1
+
+[Command]
+name = "back_x"
+command = /B,x
+time = 1
+
+[Command]
+name = "back_a"
+command = /B,a
+time = 1
+
+[Command]
+name = "back_b"
+command = /B,b
+time = 1
+
+[Command]
+name = "back_c"
+command = /B,c
+time = 1
+
+[Command]
+name = "down_a"
+command = /$D,a
+time = 1
+
+[Command]
+name = "down_b"
+command = /$D,b
+time = 1
+
+[Command]
+name = "down_c"
+command = /$D,c
+time = 1
+
+[Command]
+name = "down_z"
+command = /$D,z
+time = 1
+
+[Command]
+name = "fwd_ab"
+command = /F, a+b
+time = 1
+
+[Command]
+name = "back_ab"
+command = /B, a+b
+time = 1
+
+;-| 攻撃ボタン押しっぱなし |-----------------------------------------------
+
+[Command]
+name = "hold_med"
+command = /b
+time = 1
+
+[Command]
+name = "hold_med"
+command = /a
+time = 1
+
+[Command]
+name = "hold_med"
+command = /a+b
+time = 1
+
+[Command]
+name = "hold_med"
+command = /c
+time = 1
+
+[Command]
+name = "hold_x"
+command = /x
+time = 1
+
+[Command]
+name = "hold_x"
+command = /y
+time = 1
+
+
+;-| Single Button |---------------------------------------------------------
+[Command]
+name = "a"
+command = a
+time = 1
+
+[Command]
+name = "b"
+command = b
+time = 1
+
+[Command]
+name = "c"
+command = c
+time = 1
+
+[Command]
+name = "x"
+command = x
+time = 1
+
+[Command]
+name = "y"
+command = y
+time = 1
+
+[Command]
+name = "z"
+command = z
+time = 1
+
+[Command]
+name = "s"
+command = s
+time = 1
+
+
+[Command]
+name = "u"
+command = $U
+time = 1
+[Command]
+name = "uu"
+command = /$U
+time = 1
+
+;-| Hold Dir |--------------------------------------------------------------
+[Command]
+name = "holdfwd";Required (do not remove)
+command = /$F
+time = 1
+
+[Command]
+name = "holdback";Required (do not remove)
+command = /$B
+time = 1
+
+[Command]
+name = "holdup";Required (do not remove)
+command = /$U
+time = 1
+
+[Command]
+name = "holddown";Required (do not remove)
+command = /$D
+time = 1
+
+
+[Command]
+name = "f_a"
+command = F, a
+time = 15
+
+[Command]
+name = "f_b"
+command = F, b
+time = 15
+
+[Command]
+name = "f_c"
+command = F, c
+time = 15
+
+; Don't remove the following line. It's required by the CMD standard.
+[Statedef -1]
+
+
+;===========================================================================
+;コマンド実行部分（優先順位が高いものを先に表記）
+;===========================================================================
+;---------------------------------------------------------------------------
+
+;---------------------------------------------------------------------------
+;前方ダッシュ
+[State -1]
+type = ChangeState
+value = 100
+trigger1 = command = "FF"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+
+;---------------------------------------------------------------------------
+;バックステップ
+[State -1]
+type = ChangeState
+value = 105
+trigger1 = command = "BB"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;空中ダッシュ(air)
+[State -1, Dash]
+type = ChangeState
+value = 110
+trigger1 = command = "FF"
+trigger1 = statetype = A
+trigger1 = ctrl
+trigger1 = stateno != 110
+trigger1 = stateno != 115
+;---------------------------------------------------------------------------
+;空中バックダッシュ(air)
+[State -1, Dash]
+type = ChangeState
+value = 115
+trigger1 = command = "BB"
+trigger1 = statetype = A
+trigger1 = ctrl
+trigger1 = stateno != 110
+trigger1 = stateno != 115
+;===================================================================
+超必殺技
+;==============================================================================
+;---------------------------------------------------------------------
+;-------------------------------------------------------------
+;歪
+[State -1]
+type = ChangeState
+value = 500
+triggerall = power >= 1000
+triggerall = command = "歪"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+trigger2 = stateno = 200
+trigger2 = movecontact
+trigger3 = stateno = 410
+trigger3 = movecontact
+trigger4 = stateno = 330
+trigger4 = movecontact
+trigger5 = stateno = 230
+trigger5 = movecontact
+trigger6 = stateno = 240
+trigger6 = movecontact
+trigger7 = stateno = 440
+trigger7 = movecontact
+trigger8 = stateno = 330
+trigger8 = movecontact
+trigger9 = stateno = 340
+trigger9 = movecontact
+trigger10 = stateno = 300
+trigger10 = movecontact
+trigger11 = stateno = 301
+trigger11 = movecontact
+trigger12 = stateno = 411
+trigger12 = movecontact
+
+;-----------------------------------------------------------------
+;-------------------------------------------------------------
+;疑心
+[State -1]
+type = ChangeState
+value = 510
+triggerall = power >= 1000
+triggerall = command = "疑心"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+trigger2 = stateno = 200
+trigger2 = movecontact
+trigger3 = stateno = 410
+trigger3 = movecontact
+trigger4 = stateno = 330
+trigger4 = movecontact
+trigger5 = stateno = 230
+trigger5 = movecontact
+trigger6 = stateno = 240
+trigger6 = movecontact
+trigger7 = stateno = 440
+trigger7 = movecontact
+trigger8 = stateno = 330
+trigger8 = movecontact
+trigger9 = stateno = 340
+trigger9 = movecontact
+trigger10 = stateno = 300
+trigger10 = movecontact
+trigger11 = stateno = 301
+trigger11 = movecontact
+trigger12 = stateno = 411
+trigger12 = movecontact
+
+;-----------------------------------------------------------------
+;-------------------------------------------------------------
+;お持ち帰り
+[State -1]
+type = ChangeState
+value = 520
+triggerall = power >= 1000
+triggerall = command = "お持ち帰り"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+
+;-----------------------------------------------------------------
+;----------------------------------------------------------------
+;---------------------------------------------------------------------------
+
+;===========================================================================
+;　必殺技
+;===========================================================================
+
+;-------------------------------------------------------------
+;絶一門
+[State -1]
+type = ChangeState
+value = 350
+triggerall = command = "絶一門"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+trigger2 = stateno = 200
+trigger2 = movecontact
+trigger3 = stateno = 410
+trigger3 = movecontact
+trigger4 = stateno = 330
+trigger4 = movecontact
+
+;-----------------------------------------------------------------
+;-------------------------------------------------------------
+;リテイク
+[State -1]
+type = ChangeState
+value = 450
+triggerall = command = "リテイク"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+trigger2 = stateno = 200
+trigger2 = movecontact
+trigger3 = stateno = 410
+trigger3 = movecontact
+trigger4 = stateno = 330
+trigger4 = movecontact
+trigger5 = stateno = 230
+trigger5 = movecontact
+trigger6 = stateno = 240
+trigger6 = movecontact
+trigger7 = stateno = 440
+trigger7 = movecontact
+trigger8 = stateno = 330
+trigger8 = movecontact
+trigger9 = stateno = 340
+trigger9 = movecontact
+trigger10 = stateno = 300
+trigger10 = movecontact
+trigger11 = stateno = 301
+trigger11 = movecontact
+trigger12 = stateno = 411
+trigger12 = movecontact
+
+;-----------------------------------------------------------------
+;-------------------------------------------------------------
+;マッハレナパン
+[State -1]
+type = ChangeState
+value = 230
+triggerall = command = "マッハレナパン"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+trigger2 = stateno = 200
+trigger2 = movecontact
+
+;-----------------------------------------------------------------
+;-------------------------------------------------------------
+;レナパン連打
+[State -1]
+type = ChangeState
+value = 240
+triggerall = command = "レナパン連打"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+trigger2 = stateno = 200
+trigger2 = movecontact
+trigger3 = stateno = 230
+trigger3 = movecontact
+trigger4 = stateno = 210
+trigger4 = movecontact
+trigger5 = stateno = 310
+trigger5 = movecontact
+
+;-----------------------------------------------------------------
+;-------------------------------------------------------------
+;腸流し
+[State -1]
+type = ChangeState
+value = 330
+triggerall = command = "腸流し"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+trigger2 = stateno = 200
+trigger2 = movecontact
+trigger3 = stateno = 240
+trigger3 = movecontact
+trigger4 = stateno = 301
+trigger4 = movecontact
+trigger5 = stateno = 300
+trigger5 = movecontact
+trigger6 = stateno = 210
+trigger6 = movecontact
+trigger7 = stateno = 310
+trigger7 = movecontact
+
+;-----------------------------------------------------------------
+;-------------------------------------------------------------
+;断罪
+[State -1]
+type = ChangeState
+value = 340
+triggerall = command = "断罪"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+trigger2 = stateno = 200
+trigger2 = movecontact
+trigger3 = stateno = 240
+trigger3 = movecontact
+trigger4 = stateno = 330
+trigger4 = movecontact
+trigger5 = stateno = 301
+trigger5 = movecontact
+trigger6 = stateno = 300
+trigger6 = movecontact
+trigger7 = stateno = 210
+trigger7 = movecontact
+trigger8 = stateno = 310
+trigger8 = movecontact
+
+;-----------------------------------------------------------------
+;-------------------------------------------------------------
+;鉈還し
+[State -1]
+type = ChangeState
+value = 430
+triggerall = command = "鉈還し"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+trigger2 = stateno = 200
+trigger2 = movecontact
+trigger3 = stateno = 230
+trigger3 = movecontact
+trigger4 = stateno = 410
+trigger4 = movecontact
+
+;-----------------------------------------------------------------
+;-------------------------------------------------------------
+;鉈廻し
+[State -1]
+type = ChangeState
+value = 440
+triggerall = command = "鉈廻し"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+trigger2 = stateno = 210
+trigger2 = movecontact
+trigger3 = stateno = 310
+trigger3 = movecontact
+trigger4 = stateno = 200
+trigger4 = movecontact
+trigger5 = stateno = 300
+trigger5 = movecontact
+trigger6 = stateno = 301
+trigger6 = movecontact
+trigger7 = stateno = 400
+trigger7 = movecontact
+trigger6 = stateno = 330
+trigger6 = movecontact
+trigger7 = stateno = 340
+trigger7 = movecontact
+
+;-----------------------------------------------------------------
+
+;-----------------------------------------------------------------
+;===========================================================================
+;　通常技
+;===========================================================================
+;------------------------------------------------------------------------------
+;背負い投げ
+[State -1, Seoi Throw]
+type = ChangeState
+value = 800
+triggerall = statetype = S
+triggerall = ctrl
+triggerall = StateNo != 100
+trigger1 = command = "fwd_x"
+trigger1 = P2BodyDist X < 20
+trigger1 = ((P2StateType = S) || (P2StateType = C))
+trigger1 = P2MoveType != H
+trigger2 = command = "back_x"
+trigger2 = P2BodyDist X < 20
+trigger2 = ((P2StateType = S) || (P2StateType = C))
+trigger2 = P2MoveType != H
+;;-------------------------------------------------------------
+;-------------------------------------------------------------
+;弱パンチ
+[State -1]
+type = ChangeState
+value = 200
+triggerall = command = "a"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+trigger2 = stateno = 200
+trigger2 = movecontact
+
+;-------------------------------------------------------------------------
+;-------------------------------------------------------------
+;中攻撃
+[State -1]
+type = ChangeState
+value = 300
+triggerall = command = "b"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+trigger2 = stateno = 200
+trigger2 = movecontact
+trigger3 = stateno = 240
+trigger3 = movecontact
+
+;----------------------------------------------------------------
+;-------------------------------------------------------------
+;中攻撃＋
+[State -1]
+type = ChangeState
+value = 301
+triggerall = command = "b"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+trigger2 = stateno = 300
+trigger2 = movecontact
+
+;----------------------------------------------------------------
+;-------------------------------------------------------------
+;横強攻撃
+[State -1]
+type = ChangeState
+value = 411
+triggerall = command = "fwd_c"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+trigger2 = stateno = 200
+trigger2 = movecontact
+trigger3 = stateno = 300
+trigger3 = movecontact
+trigger4 = stateno = 301
+trigger4 = movecontact
+trigger5 = stateno = 210
+trigger5 = movecontact
+trigger6 = stateno = 310
+trigger6 = movecontact
+trigger7 = stateno = 240
+trigger7 = movecontact
+trigger8 = stateno = 330
+trigger8 = movecontact
+
+;----------------------------------------------------------------
+;-------------------------------------------------------------
+;強攻撃
+[State -1]
+type = ChangeState
+value = 400
+triggerall = command = "c"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl = 1
+trigger2 = stateno = 200
+trigger2 = movecontact
+trigger3 = stateno = 300
+trigger3 = movecontact
+trigger4 = stateno = 301
+trigger4 = movecontact
+trigger5 = stateno = 210
+trigger5 = movecontact
+trigger6 = stateno = 310
+trigger6 = movecontact
+trigger7 = stateno = 240
+trigger7 = movecontact
+trigger8 = stateno = 440
+trigger8 = movecontact
+trigger9 = stateno = 330
+trigger9 = movecontact
+
+;----------------------------------------------------------------
+;---------------------------------------------------------------------------
+;しゃがみ攻撃
+[State -1]
+type = ChangeState
+value = 210
+triggerall = command = "a"
+triggerall = command = "holddown"
+trigger1 = statetype = C
+trigger1 = ctrl = 1
+trigger2 = stateno = 210
+trigger2 = movecontact
+
+;-----------------------------------------------------------------
+;---------------------------------------------------------------------------
+;しゃがみ中攻撃
+[State -1]
+type = ChangeState
+value = 310
+triggerall = command = "b"
+triggerall = command = "holddown"
+trigger1 = statetype = C
+trigger1 = ctrl = 1
+trigger2 = stateno = 210
+trigger2 = movecontact
+
+;-----------------------------------------------------------------
+;---------------------------------------------------------------------------
+;しゃがみ強攻撃
+[State -1]
+type = ChangeState
+value = 410
+triggerall = command = "c"
+triggerall = command = "holddown"
+trigger1 = statetype = C
+trigger1 = ctrl = 1
+trigger2 = stateno = 210
+trigger2 = movecontact
+trigger3 = stateno = 310
+trigger3 = movecontact
+trigger4 = stateno = 300
+trigger4 = movecontact
+trigger5 = stateno = 301
+trigger5 = movecontact
+trigger6 = stateno = 240
+trigger6 = movecontact
+trigger7 = stateno = 330
+trigger7 = movecontact
+trigger8 = stateno = 440
+trigger8 = movecontact
+
+;-----------------------------------------------------------------
+;---------------------------------------------------------------------------
+;ジャンプ攻撃
+[State -1]
+type = ChangeState
+value = 220
+triggerall = command = "a"
+triggerall = statetype = A
+trigger1 = ctrl
+;-----------------------------------------------------------------
+;---------------------------------------------------------------------------
+;ジャンプ中攻撃
+[State -1]
+type = ChangeState
+value = 320
+triggerall = command = "b"
+triggerall = statetype = A
+trigger1 = ctrl
+trigger2 = stateno = 220
+trigger2 = movecontact
+;-----------------------------------------------------------------
+;---------------------------------------------------------------------------
+;ジャンプ強攻撃
+[State -1]
+type = ChangeState
+value = 420
+triggerall = command = "c"
+triggerall = statetype = A
+trigger1 = ctrl
+trigger2 = stateno = 220
+trigger2 = movecontact
+trigger3 = stateno = 320
+trigger3 = movecontact
+;-----------------------------------------------------------------
+;----------------------------------------------------------------
+ジャンプキャンセル
+
+[State -2]
+type = Changestate
+triggerall = command = "holdup"
+trigger1 = (stateno = 410) && movecontact
+value = 40
+;----------------------------------------------------------------
