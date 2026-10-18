@@ -1,0 +1,215 @@
+;NAOKの最後のCNSファイルです。長くなってしまう場合に、CNSを10個まで分割できます。
+
+;-----------------------------------------------------------------------------
+[Statedef -2];常時監視ステート(相手に行動を制御されても関係無く常に実行される)
+;-----------------------------------------------------------------------------
+[State -2];CPU操作中のPOWER回復
+Type = PowerAdd
+TriggerAll = Power< 2000
+TriggerAll = Alive && Life > 0 && !LoseKO && RoundState = 2
+Trigger1 = Var(59) = 1
+Trigger1 = GameTime % 1 = 0
+Value = 1
+
+[State -2]
+type = Helper
+triggerall = NumHelper(3000) = 0
+trigger1 = 1
+ID = 3000
+stateno = 3000
+pos = 0,0
+postype = p1
+helpertype = normal
+keyctrl = 0
+ownpal = 0
+size.xscale = 0.5      ;ヘルパーの横のサイズ
+size.yscale = 0.5      
+
+
+[State -2, スパーク表示]
+type = Explod
+triggerall = WinKo 
+trigger1 = stateno = [6000, 6600]
+trigger1 = numexplod(11000) = 0
+anim = 11000  
+ID = 11000
+bindtime = -1      ;その場所に停滞する時間。-1にするとその位置に固定されます
+postype = back
+pos = 0,0      ;キャラ本体からのExplod表示位置
+removeongethit = 0 ;1ならこのキャラが攻撃を受けたときExplodが消えるようになる
+ownpal = 1         ;このExplodエフェクトアニメが(PalFXなどで)本体の色が変わった時に
+                   ;一緒に変わるかどうか（0=変わる・1=変わらない）
+removetime = 900
+ignorehitpause = 1 ; ;1にすれば攻撃が当たった時の硬直時間を無視してステートコントローラが有効
+persistent = 0    ;1以上にすればこのステートコントローラの効果がそのステート内でその数値（時間）置きに持続します
+sprpriority = 9
+ontop = 1
+pausemovetime = 999999
+Supermovetime = 999999
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;コンボによるダメージ補正
+;//////////////////////////////////////////////////////////////////////////
+; 
+[state a]
+type = varset
+trigger1 = 1
+fvar(1) = 1.0
+
+
+[state a]
+type = varset
+triggerall = stateno != [6000,6600]
+triggerall = stateno != 1205
+trigger1 = enemy,movetype = H
+trigger1 = enemy,gethitvar(hitcount) > 0
+;trigger1 = enemy,gethitvar(hitcount) < 20
+fvar(1) = ((100.0-(15.0+(enemy,gethitvar(hitcount))*4.0))/100.0)
+
+[state a]
+type = varset
+triggerall = stateno = 1205
+trigger1 = enemy,movetype = H
+trigger1 = enemy,gethitvar(hitcount) > 0
+;trigger1 = enemy,gethitvar(hitcount) < 20
+fvar(1) = ((100.0-(15.0+(enemy,gethitvar(hitcount))*10.0))/100.0)
+
+
+[state a]
+type = varset
+trigger1 = fvar(1) <= 0
+fvar(1) = 0.01
+
+[state a]
+type = attackmulset
+triggerall = stateno != 10501
+trigger1 = 1
+value = fvar(1)
+
+
+
+
+
+;パワー溜めステートで表示されたエフェクトを消す制御をしてます
+;[State -2, エフェクトを消す]
+;type = RemoveExplod
+;triggerall = NumExplod(777) > 1 ;IDナンバー130のエフェクトの画面中の数が0よりも上、
+;trigger1 = StateNo = 0       ;つまり１枚以上表示されている時
+;ID = 777
+
+
+
+
+;----------------------------------------------------------------------------
+;デバッグ支援記述集
+
+; ※ この一連の記述は、キャラが完成したら消すか";"を付けて無効化しましょう。
+;　　僅かにでも処理が重くなることが理由です。（ちなみにNullではダメです）
+
+
+;デバッグモードに白い文字の表示を加える
+[State -2, デバッグ表示]
+type = DisplayToClipboard
+trigger1 = 1
+text = "V1-C=%d,V3-J=%d,V4-D=%d,V5-B=%d,V20-A=%d"
+params = var(1),var(3),var(4),var(5),var(20)
+ignorehitpause = 1
+
+;表示を横に加える
+[State -2, デバッグ表示その2]
+type = AppendToClipboard
+trigger1 = 1
+text = " V22-L=%d,V21-R=%d,Pos X=%d,Y=%d"
+params = var(22),var(21),ceil(Pos X),floor(Pos Y)
+ignorehitpause = 1
+
+;表示を下に加える
+[State -2, デバッグ表示その3]
+type = AppendToClipboard
+trigger1 = 1
+text = "\nDist X=%d,Y=%d, Vel X=%d/10,Y=%d/10 : Power=%d"
+params = floor(P2BodyDist X),ceil(P2BodyDist Y),ceil(Vel X*10),floor(Vel Y*10),Power
+ignorehitpause = 1
+
+
+; ※ 関数説明：floor(1.5) = 1、ceil(1.5) = 2になります。 小数を含む場合によく使います。
+;　　小数を詳しく見たい場合は%dの代わりに%fを使います。 MUGENに限らず結構常識です。
+;　　Vel X*10に対し、表記はVel X=%d/10になっています。 10で割った数値が目安のVel Xです。
+;　　PosとDistはfloorとceilが逆になっています。
+
+
+
+
+;---------------------------------------------------------------------------------
+[Statedef -3];常時監視ステート(p2statenoなどで相手に行動を制御された時は実行しない)
+;---------------------------------------------------------------------------------
+
+
+;これはジャンプ後とバックステップ後に着地音を鳴らすコントローラです。
+[State -3, 音を鳴らす]
+type = PlaySnd
+triggerall = Time = 1
+trigger1 = stateno = 52  ;ジャンプ後の着地
+trigger2 = stateno = 106 ;バックステップ後の着地
+value = 0, 0
+
+;ダッシュ音
+[State -3]
+type=PlaySnd
+trigger1 = Time = 2    ;1や0では何故かダメ
+trigger1 = stateno = 100
+value = 62, 0
+channel = 5
+
+;ジャンプ音
+[State 40, 5]
+type = playsnd
+trigger1 = stateno = 40 ;ジャンプ直前
+trigger1 = Time = 1
+value = 58, 0
+
+[State -3, 1];ダッシュの音止め
+type = stopSnd
+trigger1 = stateno != 100
+channel = 5
+
+
+
+;以下のいくつかの項目は、大部分のボイスを設定しています。
+
+;ダメージボイス関連
+[State -3, ランダムに変数を選ぶ]
+type = VarRandom
+trigger1=stateno = 5000 && time = 0  ;立ちやられ
+trigger2=stateno = 5020 && time = 0  ;しゃがみやられ
+trigger3=stateno = 5010 && time = 0  ;ふっとびやられ？
+v = 50
+range = 0,2
+
+[State -3, ダメージボイス]
+type = PlaySnd
+triggerall = Time = 1
+triggerall = Alive && GameTime % 2 = 0                  ;生きている時＆3Fに一回の確率で
+trigger1 = stateno=5000 || stateno=5010 || stateno=5020 ;ダメージの瞬間
+trigger2 = stateno = 5070 || stateno = 5080             ;ダメージの瞬間
+value = 20,var(50)                                   ;50,0～50,3までをランダムに決定
+channel = 0 ;チャンネルを決定しています。同じチャンネルの音は重なりません。
+
+
+[State -3, 受身ボイス]
+type = PlaySnd
+triggerall = Time = 1
+triggerall = Alive && GameTime % 2 = 0      ;GameTimeを3で割ったあまりが0の時
+trigger1 = stateno = 5200 || stateno = 5210 ;受身直後
+value = 20, 3
+channel = 0 ;そのおかげで、各ボイスが同時に発せられることがなくなります。
+
+
+[State -3, 起き上がりボイス]
+type = PlaySnd
+triggerall = Time = 1
+triggerall = Alive && GameTime % 3 = 0
+trigger1 = stateno = 5120              ;起き上がり時
+value = 80,random/334
+channel = 4
+

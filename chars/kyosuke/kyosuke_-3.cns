@@ -1,0 +1,151 @@
+
+;===========================================================================
+; 準常時監視ステート（－３）
+;===========================================================================
+;---------------------------------------------------------------------------
+; こちらは通常の食らい状態以外の「P2StateNo」や「TargetState」等で制御された、
+; 作成者が任意に指定した相手側の食らいステートに限り、
+; 登録したステートコントローラが有効にはなりません。
+; －１や－２と上手く使い分けて行きましょう。
+;---------------------------------------------------------------------------
+
+[Statedef -3]
+
+;先行入力認識用ヘルパー暴走防止
+	[state -3, ステートリセット]
+		type			= ChangeState
+		trigger1		= IsHelper(99999)
+		value			= 99999
+		ignorehitpause	= 1
+
+;-----------------------------------
+;ハイジャンプ処理
+;-----------------------------------
+	[State -3, ハイジャンプ消去]
+		type		= VarSet
+		trigger1	= stateno = 52
+		trigger1	= time = 0
+		v			= 3
+		value		= 0
+
+	[State -3, ハイジャンプ判定]
+		type		= VarSet
+		trigger1	= stateno = 10
+		trigger1	= time = 0
+		trigger2	= stateno = 100 || stateno = 99
+		v			= 3
+		value		= 20
+
+	[State -3, ハイジャンプ前方]
+		type		= VelSet
+		triggerall	= stateno = 50
+		triggerall	= anim = 42
+		triggerall	= time = 1
+		trigger1	= var(3) >= 1
+		trigger2	= command = "holdy"
+		trigger3	= command = "holdz"
+		x			= 5.5
+
+	[State -3, ハイジャンプ後方]
+		type		= VelSet
+		triggerall	= stateno = 50
+		triggerall	= anim = 43
+		triggerall	= time = 1
+		trigger1	= var(3) >= 1
+		trigger2	= command = "holdy"
+		trigger3	= command = "holdz"
+		x			= -6
+
+;-----------------------------------
+;小ジャンプ処理
+;-----------------------------------
+	[State -3, 小ジャンプ判定]
+		type		= VarSet
+		triggerall	= stateno = 40 || stateno = 41
+		trigger1	= command != "holdup"
+		v			= 4
+		value		= 1
+
+	[State -3, 小ジャンプ消去]
+		type		= VarSet
+		triggerall	= stateno = 40 || stateno = 41
+		trigger1	= command = "holdup"
+		v			= 4
+		value		= 0
+
+	[State -3, 小ジャンプ]
+		type		= VelAdd
+		triggerall	= stateno = 50
+		triggerall	= time = 1
+		trigger1	= var(4) = 1
+		trigger2	= command = "holdz"
+		y			= 4
+
+;-----------------------------------
+;残像処理
+;-----------------------------------
+	[State -3, 残像]
+		type		= AfterImage
+		triggerall	= stateno = 50
+		triggerall	= time = 1
+		trigger1	= var(3) >= 1
+		trigger2	= command = "holdy"
+		trigger3	= command = "holdz"
+		time		= 35
+		length		= 3
+		frameGap	= 1
+		timegap		= 6
+		palbright	= 0,0,0
+		palcontrast	= 130,130,130
+		paladd		= 0,0,0
+		palmul		= 1,1,1
+		trans		= Add1
+
+	[State -3, 残像時間]
+		Type			= AfterImageTime
+		trigger1		= StateType = S
+		trigger2		= MoveType = H
+		Time			= 0
+		Ignorehitpause	= 1
+
+;---------------------------------------------------------------------------
+; 叩きつけヘルパー呼び出し
+;---------------------------------------------------------------------------
+	[State -3, 壁ドン]
+		type		= Helper
+		trigger1	= P2movetype = H
+		trigger1	= P2stateno = 1262
+		trigger1	= NumHelper(1263) = 0
+		Persistent	= 0
+		name		= "kabe"
+		stateno		= 1263
+		ID			= 1263
+		pos			= 0,0
+		postype		= P2
+		sprpriority	= -2
+		facing		= 1
+		keyctrl		= 0
+		ownpal		= 1
+
+;----------------------------------------------------------------------------
+	[State -3, 先行入力認識用ヘルパー]
+		type			= Helper
+		trigger1		= var(59) = 0
+		trigger1		= !NumHelper(99999)
+		trigger1		= !IsHelper
+		helpertype		= Normal
+		name			= "commandhelper"
+		stateno			= 99999
+		ID				= 99999
+		postype			= P1
+		pos				= 0,9999
+		keyctrl			= 1
+		pausemovetime	= 2147483647
+		supermovetime	= 2147483647
+
+;---------------------------------------------------------------------------
+	[State -3, 画面端めくり制限]
+		type			= width
+		trigger1		= Movetype != H
+		edge			= 4,0
+		IgnoreHitPause	= 1

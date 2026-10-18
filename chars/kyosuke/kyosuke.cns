@@ -1,0 +1,2811 @@
+;===========================================================================
+; コンスタンツ（定数）
+;===========================================================================
+;---------------------------------------------------------------------------
+; 基本データ
+;---------------------------------------------------------------------------
+[Data]
+	life				= 1000	;ライフ（体力ゲージ）最大値
+	power				= 2000	;パワーゲージ最大値（オプション・デフォルトは3000=Lv.3）
+	attack				= 100	;攻撃力（デフォルトは１００％）
+	defence				= 100	;防御力（デフォルトは１００％）
+	fall.defence_up		= 50	;横に倒れている時に一時的に加える防御力（％）
+	liedown.time		= 60	;横に倒れている時間（フレーム）
+	airjuggle			= 15	;ジャグルポイント限界値（「小ネタ.txt」参照）
+	sparkno				= 2		;デフォルトのヒットスパーク（fightfxから）
+	guard.sparkno		= 40	;デフォルトのガードスパーク（fightfxから）
+	KO.echo				= 0		;ＫＯ時の音声（11,0）にエコーを掛けるか否か（0=掛けない,1=掛ける）
+	volume				= 0		;キャラの標準の音量（最小-255・最大255）
+	IntPersistIndex		= 40	;次のラウンドへ持ち越せる「Var」のアドレスの範囲を決める（※１）
+	FloatPersistIndex	= 40	;次のラウンドへ持ち越せる「FVar」のアドレスの範囲を決める（※１）
+
+;---------------------------------------------------------------------------
+; サイズ
+;---------------------------------------------------------------------------
+[Size]
+	xscale				= 0.5		;キャラの横の大きさ（絶対値・float）
+	yscale				= 0.5		;キャラの縦の大きさ（絶対値・float）
+	ground.back			= 15		;地上にいる時の「後方の物理的な幅」
+	ground.front		= 16		;地上にいる時の「前方の物理的な幅」
+	air.back			= 12		;空中にいる時の「後方の物理的な幅」
+	air.front			= 12		;空中にいる時の「前方の物理的な幅」
+	height				= 60		;キャラの物理的な高さ（高いほど相手は飛び越しにくくなる）
+	attack.dist			= 170		;相手がガード態勢に入る最低の距離
+	proj.attack.dist	= 90		;自分の「Projectile」に対して相手がガード態勢に入る最低の距離
+	proj.doscale		= 0			;xscaleとyscaleを「Projectile」にも影響させるか否か（0=させない・1=させる）
+	head.pos			= 0,-100	;キャラの標準の頭の座標（Bind系で適用される）
+	mid.pos				= 0,-72		;キャラの標準の体中心の座標（Bind系で適用される））
+	shadowoffset		= 0			;影のＹ軸方向の位置座標
+	draw.offset			= 0,0		;キャラの表示座標（Ｘ軸,Ｙ軸）
+
+;---------------------------------------------------------------------------
+; 移動速度
+;---------------------------------------------------------------------------
+[Velocity]
+	walk.fwd     = 3.4			;前進速度（Ｘ軸・[Statedef 20]に適用される）
+	walk.back    = -2.6			;後退速度（Ｘ軸・[Statedef 20]に適用される）
+	run.fwd      = 6.6,0		;前方に走る速度（Ｘ軸,Ｙ軸・[Statedef 100]に適用される）
+	run.back     = -5.0,-5.0	;後方に走る速度（Ｘ軸,Ｙ軸・[Statedef 105]に適用される）
+	jump.neu     = 0,-11		;垂直の速度（Ｘ軸,Ｙ軸・[Statedef 40]に適用される）
+	jump.back    = -3.5			;後方ジャンプの速度（Ｘ軸・[Statedef 40]に適用される）
+	jump.fwd     = 2.8			;前方ジャンプの速度（Ｘ軸・[Statedef 40]に適用される）
+	runjump.back = -2.55,-8.1	;後方に走ってからのジャンプ速度（Ｘ軸,Ｙ軸・[Statedef 40]に適用される）
+	runjump.fwd  = 4,-8.1		;前方に走ってからのジャンプ速度（Ｘ軸,Ｙ軸・[Statedef 40]に適用される）
+	airjump.neu  = 0,-7.1		;空中垂直ジャンプ速度（Ｘ軸,Ｙ軸・[Statedef 45]に適用される）
+	airjump.back = -2.7			;空中後方ジャンプ速度（Ｘ軸・[Statedef 45]に適用される）
+	airjump.fwd  = 3.2			;空中前方ジャンプ速度（Ｘ軸・[Statedef 45]に適用される）
+
+;---------------------------------------------------------------------------
+; 運動関係
+;---------------------------------------------------------------------------
+[Movement]
+	airjump.num		= 0		;空中ジャンプが出来る回数
+	airjump.height	= 35	;空中ジャンプが出来る最低の高度（Ｙ軸）
+	yaccel			= 0.58	;Ｙ軸加速度（重力）
+	stand.friction	= .85	;立っている時の摩擦係数（ステートのPhysicsが「S」の時）
+	crouch.friction	= .82	;しゃがんでいる時の摩擦係数（ステートのPhysicsが「C」の時）
+
+;===========================================================================
+; ステート
+;===========================================================================
+;===========================================================================
+; 基本行動
+;===========================================================================
+;---------------------------------------------------------------------------
+;タイムオーバー（負けた時）
+[Statedef 170]
+	type	= S
+	ctrl	= 0
+	anim	= 170
+	velset	= 0,0
+
+	[State 170, 無敵]
+	type		= NotHitBy
+	trigger1	= 1 ;トリガーを何も書かず「1」にする事により、『無条件で常に実行させる命令』になる。
+	value		= SCA
+	time		= 1
+
+;---------------------------------------------------------------------------
+;勝利ポーズ分岐（common1.cnsには無いけど、これもコモンステート）
+[Statedef 180]
+	type	= S
+
+[State 180, ステート変更]
+	type		= ChangeState
+	trigger1	= Time = 0
+	value		= 181
+
+;---------------------------------------------------------------------------
+;勝利ポーズ
+[Statedef 181]
+	type	= S
+	ctrl	= 0
+	anim	= 180
+	velset	= 0,0
+
+	[State 181, 演出時間]
+		type		= AssertSpecial
+		trigger1	= Time = [0,180]
+		flag		= roundnotover
+
+	[State 181, ボイス]
+		type		= PlaySnd
+		trigger1	= var(10) = 1
+		trigger1	= AnimElem = 4
+		value		= s180,2
+
+	[State 181, ボイス]
+		type		= PlaySnd
+		trigger1	= var(10) = 0
+		trigger1	= MatchOver = 0
+		trigger1	= AnimElem = 5
+		value		= s180,0
+
+	[State 181, ボイス]
+		type		= PlaySnd
+		trigger1	= var(10) = 0
+		trigger1	= MatchOver = 1
+		trigger1	= AnimElem = 5
+		value		= s180,1
+
+	[State 181, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= AnimElem = 2
+		value		= s220, 0
+
+	[State 181, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= AnimElem = 5
+		value		= s180, 5
+
+	[State 181, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= AnimElem = 8
+		value		= s1000, 1
+
+	[State 181, 無敵]
+		type		= NotHitBy
+		trigger1	= 1
+		value		= SCA
+		time		= 1
+
+;---------------------------------------------------------------------------
+;イントロ（試合開始前の登場演出アクション）
+[Statedef 191]
+	type	= S
+	ctrl	= 0
+	anim	= 190
+	velset	= 0,0
+
+	[State 191, アニメ変更]
+		type		= ChangeAnim
+		trigger1	= RoundState = 0
+		value		= 190
+
+	[State 190, 専用セリフ用変数]
+		type		= VarSet
+		triggerall	= Time = 0
+		trigger1	= (enemy(0),authorname = "azu") && (enemy(0),name = "baldur")
+		trigger2	= (enemy(1),authorname = "azu") && (enemy(1),name = "baldur")
+		V			= 13
+		value		= 1
+
+	[State 191, アニメ変更]
+		type		= ChangeAnim
+		triggerall	= Var(13) = 1
+		trigger1	= Time < 300
+		value		= 190
+		elem		= 1
+
+	[State 191, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= AnimElem = 5
+		value		= s190, 1
+
+	[State 191, ボイス]
+		type		= PlaySnd
+		triggerall	= Var(13) != 1
+		trigger1	= AnimElem = 7
+		value		= s190,0
+
+	[State 191, ボイス]
+		type		= PlaySnd
+		triggerall	= Var(13) = 1
+		trigger1	= AnimElem = 7
+		value		= s190,2
+
+	[State 191, 特殊効果]
+		type		= AssertSpecial
+		trigger1	= 1
+		flag		= Intro
+
+[State 191, ステート変更]
+	type		= ChangeState
+	trigger1	= AnimTime = 0
+	value		= 0
+
+;---------------------------------------------------------------------------
+;挑発
+[Statedef 195]
+	type		= S
+	movetype	= I
+	physics		= S
+	ctrl		= 0
+	anim		= 195
+	velset		= 0,0
+	sprpriority	= 2
+
+	[State 195, ボイス]
+		type		= PlaySnd
+		trigger1	= AnimElem = 4
+		value		= s195,0
+
+[State 195, ステート変更]
+	type		= ChangeState
+	trigger1	= AnimTime = 0
+	value		= 0
+	ctrl		= 1
+
+;===========================================================================
+; 通常攻撃技
+;===========================================================================
+;---------------------------------------------------------------------------
+;立ち弱パンチ
+[Statedef 200]
+	type		= S
+	movetype	= A
+	physics		= S
+	velset		= 0,0
+	ctrl		= 0
+	anim		= 200
+	sprpriority	= 2
+	facep2		= 1
+
+	[State 200, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= Time = 1
+		value		= s200, 1
+
+	[State 200, ランダム変数]
+		type		= VarRandom
+		trigger1	= Time = 0
+		v			= 13
+		range		= 0,1
+
+	[State 200, ボイス]
+		type		= PlaySnd
+		trigger1	= Var(13) = 0
+		trigger1	= Time = 1
+		value		= s10,0
+
+	[State 200, ヒット定義]
+		type				= HitDef
+		trigger1			= AnimElem = 2
+		attr				= S, NA ;立ち通常打撃（Standing, Normal Attack）
+		damage				= Ceil(FVar(30)*25), 0
+		animtype			= Light
+		guardflag			= MA
+		hitflag				= MAF
+		priority			= 3, Hit
+		pausetime			= 8, 8
+		getpower			= 30
+		givepower			= 10, 10
+		sparkno				= -1
+		guard.sparkno		= -1
+		hitsound			= s200, 0
+		guardsound			= s0, 10
+		ground.type			= High
+		ground.slidetime	= 10
+		guard.slidetime		= 10
+		ground.hittime		= 10
+		guard.hittime		= 10
+		air.hittime			= 10
+		ground.velocity		= -4
+		airguard.velocity	= -1.9,-.8
+		air.type			= High
+		air.velocity		= -1.4,-3
+		air.hittime			= 12
+		fall.recovertime	= Ceil(100-(FVar(22)*10))
+
+	[State 200, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2000
+		pos				= 0, EnemyNear,Const(size.mid.pos.y)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2000
+
+	[State 200, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2001
+		pos				= 0, EnemyNear,Const(size.mid.pos.y)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2001
+
+	[State 200, ガードスパーク]
+		type			= Explod
+		trigger1		= MoveGuarded
+		anim			= 2030
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2030
+
+[State 200, ステート変更]
+	type		= ChangeState
+	trigger1	= AnimTime = 0
+	value		= 0
+	ctrl		= 1
+
+;---------------------------------------------------------------------------
+;立ち斬り
+[Statedef 210]
+	type		= S
+	movetype	= A
+	physics		= S
+	ctrl		= 0
+	velset		= 0,0
+	anim		= 210
+	sprpriority	= -1
+
+	[State 210, 画像表示優先度]
+		type		= SprPriority
+		trigger1	= AnimElem = 6
+		value		= 2
+
+	[State 210, 物理的なキャラの幅]
+		type		= Width
+		trigger1	= (AnimElemTime (2) >= 0) && (AnimElemTime (7) < 0)
+		value		= 15,0
+
+	[State 250, 速度]
+		type		= VelSet
+		trigger1	= Animelem = 4
+		x			= 3.5
+
+	[State 250, 速度]
+		type		= VelSet
+		trigger1	= Animelem = 7
+		x			= 0
+
+	[State 210, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= Time = 3
+		value		= 220, 0
+
+	[State 210, ランダム変数]
+		type		= VarRandom
+		trigger1	= Time = 0
+		v			= 13
+		range		= 0,1
+
+	[State 210, ボイス]
+		type		= PlaySnd
+		trigger1	= Var(13) = 0
+		trigger1	= Time = 1
+		value		= s10,2
+
+	[State 210, ボイス]
+		type		= PlaySnd
+		trigger1	= Var(13) = 1
+		trigger1	= Time = 1
+		value		= s10,3
+
+	[State 210, ヒット定義]
+		type				= HitDef
+		trigger1			= Time = 0
+		attr				= S, NA
+		animtype			= Medium
+		damage				= Ceil(FVar(30)*72)
+		guardflag			= MA
+		pausetime			= 11, 11
+		getpower			= 51
+		givepower			= 30, 30
+		sparkno				= -1
+		guard.sparkno		= -1
+		hitsound			= s220,1
+		guardsound			= s220,3
+		ground.type			= High
+		ground.slidetime	= 14
+		guard.slidetime		= 12
+		ground.hittime		= 14
+		guard.hittime		= 14
+		air.hittime			= 14
+		ground.velocity		= -3.5
+		air.velocity		= -2.5,-4
+		fall.recovertime	= Ceil(100-(FVar(22)*10))
+
+	[State 210, エフェクト]
+		type			= Explod
+		trigger1		= AnimElem = 4
+		anim			= 211
+		pos				= 0, 0
+		postype			= P1
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 99999
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 0
+		trans			= Add1
+		ID				= 211
+
+	[State 210, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2010
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		ontop			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add1
+		ID				= 2010
+
+	[State 210, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2011
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 1,1
+		sprpriority		= 5
+		ownpal			= 1
+		ontop			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= None
+		ID				= 2011
+
+	[State 210, ガードスパーク]
+		type			= Explod
+		trigger1		= MoveGuarded
+		anim			= 2030
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2030
+
+[State 210, ステート変更]
+	type		= ChangeState
+	trigger1	= AnimTime = 0
+	value		= 0
+	ctrl		= 1
+
+;---------------------------------------------------------------------------
+;立ち強斬り
+[Statedef 220]
+	type		= S
+	movetype	= A
+	physics		= S
+	ctrl		= 0
+	velset		= 0,0
+	anim		= 220
+	sprpriority	= 2
+
+	[State 220, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= Time = 5
+		value		= s220, 0
+
+	[State 220, ボイス]
+		type		= PlaySnd
+		trigger1	= Time = 5
+		value		= s10,4
+
+	[State 220, ヒット定義]
+		type				= HitDef
+		trigger1			= Time = 0
+		attr				= S, NA
+		animtype			= Medium
+		damage				= Ceil(FVar(30)*84)
+		guardflag			= MA
+		pausetime			= 13, 13
+		getpower			= 74
+		givepower			= 30, 30
+		sparkno				= -1
+		guard.sparkno		= -1
+		hitsound			= s220,2
+		guardsound			= s220,3
+		ground.type			= High
+		ground.slidetime	= 15
+		guard.slidetime		= 13
+		ground.hittime		= 15
+		guard.hittime		= 15
+		air.hittime			= 15
+		ground.velocity		= -6.4
+		air.velocity		= -4.9,-4.4
+		fall.recovertime	= Ceil(100-(FVar(22)*10))
+
+	[State 220, エフェクト]
+		type			= Explod
+		trigger1		= AnimElem = 4
+		anim			= 221
+		pos				= 0, 0
+		postype			= P1
+		scale			= 0.5,0.5
+		sprpriority		= -1
+		ownpal			= 1
+		bindtime		= 99999
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 0
+		trans			= Add1
+		ID				= 221
+
+	[State 220, エフェクト]
+		type			= ModifyExplod
+		trigger1		= AnimElem = 6
+		sprpriority		= 3
+		removeongethit	= 1
+		ignorehitpause	= 0
+		trans			= Add1
+		ID				= 221
+
+	[State 220, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2020
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= -5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2020
+
+	[State 220, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2021
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		ontop			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add1
+		ID				= 2021
+
+	[State 220, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2022
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		ontop			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2022
+
+	[State 220, ガードスパーク]
+		type			= Explod
+		trigger1		= MoveGuarded
+		anim			= 2030
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2030
+
+[State 220, ステート変更]
+	type		= ChangeState
+	trigger1	= AnimTime = 0
+	value		= 0
+	ctrl		= 1
+
+;---------------------------------------------------------------------------
+;立ちキック
+[Statedef 230]
+	type		= S
+	movetype	= A
+	physics		= S
+	ctrl		= 0
+	velset		= 0,0
+	anim		= 230
+	sprpriority	= 2
+
+	[State 230, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= Time = 2
+		value		= s200, 1
+
+	[State 230, ボイス]
+		type		= PlaySnd
+		trigger1	= Time = 1
+		value		= s10,1
+
+	[State 230, ヒット定義]
+		type				= HitDef
+		trigger1			= Time = 0
+		attr				= S, NA
+		animtype			= Medium
+		damage				= Ceil(FVar(30)*52)
+		guardflag			= MA
+		pausetime			= 12,12
+		getpower			= 35
+		givepower			= 18, 0
+		sparkno				= -1
+		guard.sparkno		= -1
+		hitsound			= s200, 0
+		guardsound			= s0,10
+		ground.type			= High
+		ground.slidetime	= 14
+		guard.slidetime		= 14
+		ground.hittime		= 14
+		guard.hittime		= 14
+		air.hittime			= 14
+		ground.velocity		= -6.2
+		air.velocity		= -4.8,-5.4
+		fall.recovertime	= Ceil(100-(FVar(22)*10))
+
+	[State 230, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2000
+		pos				= 0, EnemyNear,Const(size.mid.pos.y)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2000
+
+	[State 230, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2001
+		pos				= 0, EnemyNear,Const(size.mid.pos.y)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2001
+
+	[State 230, ガードスパーク]
+		type			= Explod
+		trigger1		= MoveGuarded
+		anim			= 2030
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2030
+
+[State 230, ステート変更]
+	type		= ChangeState
+	trigger1	= AnimTime = 0
+	value		= 0
+	ctrl		= 1
+
+;---------------------------------------------------------------------------
+;裏拳
+[Statedef 240]
+	type		= S
+	movetype	= A
+	physics		= S
+	ctrl		= 0
+	velset		= 0,0
+	anim		= 240
+	sprpriority	= 2
+
+	[State 240, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= Time = 2
+		value		= s200, 1
+
+	[State 240, ランダム変数]
+		type		= VarRandom
+		trigger1	= Time = 0
+		v			= 13
+		range		= 0,1
+
+	[State 240, 無敵]
+		type		= nothitby
+		trigger1	= AnimElemTime(4) >= 0 && AnimElemTime(5) < 0
+		value		= ,AP
+		time		= 1
+
+	[State 240, ボイス]
+		type		= PlaySnd
+		trigger1	= Time = 4
+		value		= s10,2
+
+	[State 240, ヒット定義]
+		type				= HitDef
+		trigger1			= Time = 0
+		attr				= S, NA
+		animtype			= Medium
+		damage				= Ceil(FVar(30)*49)
+		hitflag				= MA
+		guardflag			= MA
+		pausetime			= 12,12
+		getpower			= 35
+		givepower			= 18, 0
+		sparkno				= -1
+		guard.sparkno		= -1
+		hitsound			= s200, 0
+		guardsound			= s0,10
+		ground.type			= High
+		ground.slidetime	= 14
+		guard.slidetime		= 14
+		ground.hittime		= 14
+		ground.velocity		= -5.5
+		air.velocity		= -4.2,-4.5
+		fall.recovertime	= Ceil(100-(FVar(22)*10))
+
+	[State 240, ヘルパー]
+		type		= Helper
+		trigger1	= AnimElem = 4
+		name		= "URA"
+		stateno		= 245
+		ID			= 245
+		helpertype	= normal
+		pos			= 30,-80
+		scale		= 0.5,0.5
+		postype		= P1
+		facing		= 1
+		keyctrl		= 0
+		ownpal		= 0
+		ontop		= 1
+
+	[State 240, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2000
+		pos				= 0, EnemyNear,Const(size.mid.pos.y)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2000
+
+	[State 240, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2001
+		pos				= 0, EnemyNear,Const(size.mid.pos.y)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2001
+
+	[State 240, ガードスパーク]
+		type			= Explod
+		trigger1		= MoveGuarded
+		anim			= 2030
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2030
+
+[State 240, ステート変更]
+	type		= ChangeState
+	trigger1	= AnimTime = 0
+	value		= 0
+	ctrl		= 1
+
+;---------------------------------------------------------------------------
+;しゃがみパンチ
+[Statedef 400]
+	type		= C
+	movetype	= A
+	physics		= C
+	ctrl		= 0
+	anim		= 400
+	sprpriority	= 2
+	facep2		= 1
+
+	[State 400, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= Time = 1
+		value		= s200, 1
+
+	[State 400, ランダム変数]
+		type		= VarRandom
+		trigger1	= Time = 0
+		v			= 13
+		range		= 0,1
+
+	[State 400, ボイス]
+		type		= PlaySnd
+		trigger1	= Var(13) = 0
+		trigger1	= Time = 1
+		value		= s10,0
+
+	[State 400, ヒット定義]
+		type				= HitDef
+		trigger1			= Time = 0
+		attr				= C, NA
+		damage				= Ceil(FVar(30)*26)
+		priority			= 3, Hit
+		animtype			= Light
+		hitflag				= MAF
+		guardflag			= MA
+		pausetime			= 10,11
+		getpower			= 20
+		givepower			= 10, 0
+		sparkno				= -1
+		guard.sparkno		= -1
+		hitsound			= s200, 0
+		guardsound			= s0, 10
+		ground.type			= Low
+		ground.slidetime	= 4
+		ground.hittime		= 10
+		ground.velocity		= -4
+		air.velocity		= -1.5,-3
+		fall.recovertime	= Ceil(100-(FVar(22)*10))
+
+	[State 400, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2000
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y)*0.3)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2000
+
+	[State 400, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2001
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y)*0.3)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2001
+
+	[State 400, ガードスパーク]
+		type			= Explod
+		trigger1		= MoveGuarded
+		anim			= 2030
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y)*0.3)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2030
+
+[State 400, ステート変更]
+	type		= ChangeState
+	trigger1	= AnimTime = 0
+	value		= 11
+	ctrl		= 1
+
+;---------------------------------------------------------------------------
+;しゃがみ斬り
+[Statedef 410]
+	type		= C
+	movetype	= A
+	physics		= C
+	ctrl		= 0
+	anim		= 410
+	sprpriority	= 2
+
+	[State 410, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= Time = 3
+		value		= s220, 0
+
+	[State 410, ボイス]
+		type		= PlaySnd
+		trigger1	= Time = 5
+		value		= s10,2
+
+	[State 410, ヒット定義]
+		type				= HitDef
+		trigger1			= Time = 0
+		attr				= C, NA
+		damage				= Ceil(FVar(30)*78)
+		animtype			= Medium
+		hitflag				= MAF
+		guardflag			= MA
+		pausetime			= 12,12
+		getpower			= 52
+		givepower			= 20, 10
+		sparkno				= -1
+		guard.sparkno		= -1
+		hitsound			= s220,1
+		guardsound			= s220,3
+		ground.type			= High
+		ground.slidetime	= 12
+		ground.hittime		= 15
+		ground.velocity		= -7
+		air.velocity		= -3,-4
+		fall.recovertime	= Ceil(100-(FVar(22)*10))
+
+	[State 410, エフェクト]
+		type			= Explod
+		trigger1		= AnimElem = 4
+		anim			= 411
+		pos				= 0, 0
+		postype			= P1
+		scale			= 0.5,0.5
+		sprpriority		= -4
+		ownpal			= 1
+		bindtime		= 99999
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 0
+		trans			= Add1
+		ID				= 411
+
+	[State 410, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2010
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y)*0.3)
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		ontop			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add1
+		ID				= 2010
+
+	[State 410, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2011
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y)*0.3)
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 1,1
+		sprpriority		= 5
+		ownpal			= 1
+		ontop			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add1
+		ID				= 2011
+
+	[State 400, ガードスパーク]
+		type			= Explod
+		trigger1		= MoveGuarded
+		anim			= 2030
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y)*0.3)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2030
+
+[State 410, ステート変更]
+	type		= ChangeState
+	trigger1	= AnimTime = 0
+	value		= 11
+	ctrl		= 1
+
+;---------------------------------------------------------------------------
+;しゃがみ強斬り
+[Statedef 420]
+	type		= C
+	movetype	= A
+	physics		= C
+	ctrl		= 0
+	anim		= 420
+	sprpriority	= 2
+
+	[State 420, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= Time = 4
+		value		= s220, 0
+
+	[State 420, ボイス]
+		type		= PlaySnd
+		trigger1	= Time = 4
+		value		= s10,4
+
+	[State 420, ヒット定義]
+		type				= HitDef
+		trigger1			= Time = 0
+		attr				= S, NA
+		animtype			= H
+		damage				= Ceil(FVar(30)*85)
+		guardflag			= MA
+		hitflag				= MAF
+		pausetime			= 12, 12
+		getpower			= 69
+		givepower			= 25, 25
+		sparkno				= -1
+		guard.sparkno		= -1
+		hitsound			= s220,2
+		guardsound			= s220,3
+		ground.type			= High
+		air.type			= High
+		ground.slidetime	= 15
+		guard.slidetime		= 15
+		ground.hittime		= 15
+		guard.hittime		= 15
+		air.hittime			= 15
+		ground.velocity		= -4.8
+		air.velocity		= -4.2,-6
+		air.fall			= 1
+		fall.recovertime	= Ceil(100-(FVar(22)*10))
+
+	[State 420, エフェクト]
+		type			= Explod
+		trigger1		= AnimElem = 4
+		anim			= 421
+		pos				= 0, 0
+		postype			= P1
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 99999
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 0
+		trans			= Add1
+		ID				= 421
+
+	[State 420, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2020
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= -5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2020
+
+	[State 420, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2021
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		ontop			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add1
+		ID				= 2021
+
+	[State 420, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2022
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= -5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2022
+
+	[State 420, ガードスパーク]
+		type			= Explod
+		trigger1		= MoveGuarded
+		anim			= 2030
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2030
+
+[State 420, ステート変更]
+	type		= ChangeState
+	trigger1	= AnimTime = 0
+	value		= 11
+	ctrl		= 1
+
+;---------------------------------------------------------------------------
+;しゃがみキック
+[Statedef 430]
+	type		= C
+	movetype	= A
+	physics		= C
+	ctrl		= 0
+	anim		= 430
+	sprpriority	= 2
+
+	[State 430, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= Time = 2
+		value		= s200, 1
+
+	[State 430, ランダム変数]
+		type		= VarRandom
+		trigger1	= Time = 0
+		v			= 13
+		range		= 0,1
+
+	[State 430, ボイス]
+		type		= PlaySnd
+		trigger1	= Var(13) = 0
+		trigger1	= Time = 1
+		value		= s10,0
+
+	[State 430, ヒット定義]
+		type				= HitDef
+		trigger1			= Time = 0
+		attr				= C, NA
+		animtype			= Light
+		damage				= Ceil(FVar(30)*34)
+		priority			= 3, Hit
+		hitflag				= MAF
+		guardflag			= L
+		pausetime			= 10,10
+		getpower			= 25
+		givepower			= 20, 20
+		sparkno				= -1
+		guard.sparkno		= -1
+		hitsound			= s200,0
+		guardsound			= s0,10
+		ground.type			= Low
+		ground.slidetime	= 4
+		guard.slidetime		= 6
+		ground.hittime		= 10
+		ground.velocity		= -4
+		air.velocity		= -1.2,-3
+		down.velocity		= -4, 0
+		guard.velocity		= -5
+		fall.recovertime	= Ceil(100-(FVar(22)*10))
+
+	[State 430, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2000
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y)*0.3)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2000
+
+	[State 430, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2001
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y)*0.3)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2001
+
+	[State 430, ガードスパーク]
+		type			= Explod
+		trigger1		= MoveGuarded
+		anim			= 2030
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y)*0.3)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2030
+
+[State 430, ステート変更]
+	type		= ChangeState
+	trigger1	= AnimTime = 0
+	value		= 11
+	ctrl		= 1
+
+;---------------------------------------------------------------------------
+;スライディング
+[Statedef 450]
+	type		= C
+	movetype	= A
+	physics		= C
+	ctrl		= 0
+	anim		= 450
+	sprpriority	= 2
+
+	[State 450, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= Time = 2
+		value		= s225, 1
+
+	[State 450, ボイス]
+		type		= PlaySnd
+		trigger1	= AnimElem = 2
+		value		= s10,5
+
+	[State 450, 速度]
+		type		= VelSet
+		trigger1	= Animelem = 3
+		x			= 15
+
+	[State 450, 速度]
+		type		= VelSet
+		trigger1	= Animelem = 4
+		x			= 0
+
+	[State 450, ヒット定義]
+		type				= HitDef
+		trigger1			= Time = 0
+		attr				= C, NA
+		animtype			= Light
+		damage				= Ceil(FVar(30)*56)
+		hitflag				= MAF
+		guardflag			= L
+		pausetime			= 12,12
+		getpower			= 35
+		givepower			= 20, 20
+		sparkno				= -1
+		guard.sparkno		= -1
+		hitsound			= s230,0
+		guardsound			= s0,10
+		ground.type			= Trip
+		ground.slidetime	= 15
+		guard.slidetime		= 15
+		ground.hittime		= 15
+		guard.hittime		= 15
+		air.hittime			= 15
+		ground.velocity		= -2,-2
+		air.velocity		= -2,-2
+		guard.velocity		= -10
+		fall				= 1
+		fall.recovertime	= Ceil(100-(FVar(22)*10))
+
+	[State 450, エフェクト]
+		type			= Explod
+		trigger1		= AnimElem = 3
+		anim			= 2101
+		pos				= 0, 0
+		postype			= P1
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 4
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		trans			= Add
+		ID				= 2101
+
+	[State 450, エフェクト]
+		type			= Explod
+		trigger1		= AnimElem = 3
+		anim			= 1306
+		pos				= 0, 0
+		postype			= P1
+		scale			= 0.5,0.5
+		sprpriority		= -1
+		ownpal			= 1
+		bindtime		= 10
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		trans			= Add
+		ID				= 1306
+
+	[State 450, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2000
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y)*0.3)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2000
+
+	[State 450, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2001
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y)*0.3)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2001
+
+	[State 450, ガードスパーク]
+		type			= Explod
+		trigger1		= MoveGuarded
+		anim			= 2030
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y)*0.3)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2030
+
+[State 450, ステート変更]
+	type		= ChangeState
+	trigger1	= AnimTime = 0
+	value		= 11
+	ctrl		= 1
+
+;---------------------------------------------------------------------------
+;ジャンプパンチ
+[Statedef 600]
+	type		= A
+	movetype	= A
+	physics		= A
+	ctrl		= 0
+	anim		= 600
+	sprpriority	= 2
+
+	[State 600, 1ジャンプ内回数]
+		type		= VarAdd
+		trigger1	= PrevStateNo = 600
+		trigger1	= Time = 0
+		var(30)		= 1
+
+	[State 600, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= Time = 1
+		value		= s200, 1
+
+	[State 600, ランダム変数]
+		type		= VarRandom
+		trigger1	= Time = 0
+		v			= 13
+		range		= 0,1
+
+	[State 600, ボイス]
+		type		= PlaySnd
+		trigger1	= Var(13) = 0
+		trigger1	= Time = 1
+		value		= s10,0
+
+	[State 600, ヒット定義]
+		type				= HitDef
+		trigger1			= Time = 0
+		attr				= A, NA
+		animtype			= Light
+		damage				= Ceil(FVar(30)*24)
+		guardflag			= HA
+		priority			= 3, Hit
+		pausetime			= 7,7
+		getpower			= 30
+		givepower			= 10, 10
+		sparkno				= -1
+		guard.sparkno		= -1
+		hitsound			= s200, 0
+		guardsound			= s0,10
+		ground.type			= High
+		ground.slidetime	= 5
+		ground.hittime		= 5
+		ground.velocity		= -4
+		air.velocity		= -1.3,-4.2
+		air.fall			= 1
+		fall.recovertime	= Ceil(100-(FVar(22)*10))
+
+	[State 600, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2000
+		pos				= 0, EnemyNear,Const(size.mid.pos.y)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2000
+
+	[State 600, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2001
+		pos				= 0, EnemyNear,Const(size.mid.pos.y)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2001
+
+	[State 600, ガードスパーク]
+		type			= Explod
+		trigger1		= MoveGuarded
+		anim			= 2030
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2030
+
+;---------------------------------------------------------------------------
+;ジャンプ武器攻撃
+[Statedef 610]
+	type		= A
+	movetype	= A
+	physics		= A
+	ctrl		= 0
+	anim		= 610
+	sprpriority	= 2
+
+	[State 610, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= Time = 1
+		value		= 220, 0
+
+	[State 610, ランダム変数]
+		type		= VarRandom
+		trigger1	= Time = 0
+		v			= 13
+		range		= 0,1
+
+	[State 610, ボイス]
+		type		= PlaySnd
+		trigger1	= Var(13) = 0
+		trigger1	= Time = 1
+		value		= s10,2
+
+	[State 610, ボイス]
+		type		= PlaySnd
+		trigger1	= Var(13) = 1
+		trigger1	= Time = 1
+		value		= s10,3
+
+	[State 610, ヒット定義]
+		type				= HitDef
+		trigger1			= Time = 0
+		attr				= A, NA
+		animtype			= Hard
+		damage				= Ceil(FVar(30)*75)
+		guardflag			= HA
+		pausetime			= 15,15
+		getpower			= 60
+		givepower			= 20, 20
+		sparkno				= -1
+		guard.sparkno		= -1
+		hitsound			= s220,1
+		guardsound			= s220,3
+		animtype			= Med
+		ground.type			= High
+		ground.slidetime	= 14
+		ground.hittime		= 14
+		ground.velocity		= -5
+		air.velocity		= -3,-6.8
+		air.fall			= 1
+		fall.recovertime	= Ceil(100-(FVar(22)*10))
+
+	[State 610, エフェクト]
+		type			= Explod
+		trigger1		= AnimElem = 4
+		anim			= 611
+		pos				= 0, 0
+		postype			= P1
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 99999
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 0
+		trans			= Add1
+		ID				= 611
+
+	[State 610, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2010
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		ontop			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add1
+		ID				= 2010
+
+	[State 610, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2011
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 1,1
+		sprpriority		= 5
+		ownpal			= 1
+		ontop			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= None
+		ID				= 2011
+
+	[State 610, ガードスパーク]
+		type			= Explod
+		trigger1		= MoveGuarded
+		anim			= 2030
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2030
+
+;---------------------------------------------------------------------------
+;ジャンプ強武器攻撃
+[Statedef 620]
+	type		= A
+	movetype	= A
+	physics		= A
+	ctrl		= 0
+	anim		= 620
+	sprpriority	= 2
+
+	[State 620, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= Time = 1
+		value		= 220, 0
+
+	[State 620, ランダム変数]
+		type		= VarRandom
+		trigger1	= Time = 0
+		v			= 13
+		range		= 0,1
+
+	[State 620, ボイス]
+		type		= PlaySnd
+		trigger1	= Var(13) = 0
+		trigger1	= Time = 1
+		value		= s10,3
+
+	[State 620, ボイス]
+		type		= PlaySnd
+		trigger1	= Var(13) = 1
+		trigger1	= Time = 1
+		value		= s10,4
+
+	[State 620, ヒット定義]
+		type				= HitDef
+		trigger1			= Time = 0
+		attr				= A, NA
+		animtype			= Hard
+		damage				= Ceil(FVar(30)*83)
+		guardflag			= HA
+		pausetime			= 15,15
+		getpower			= 75
+		givepower			= 25, 25
+		sparkno				= -1
+		guard.sparkno		= -1
+		hitsound			= s220,2
+		guardsound			= s220,3
+		ground.type			= High
+		ground.slidetime	= 16
+		ground.hittime		= 16
+		ground.velocity		= -5.1
+		air.velocity		= -3.6,-5
+		air.fall			= 1
+		fall.recovertime	= Ceil(100-(FVar(22)*10))
+
+	[State 620, エフェクト]
+		type			= Explod
+		trigger1		= AnimElem = 4
+		anim			= 621
+		pos				= 0, 0
+		postype			= P1
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 99999
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 0
+		trans			= Add1
+		ID				= 621
+
+	[State 620, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2020
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= -5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2020
+
+	[State 620, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2021
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		ontop			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add1
+		ID				= 2021
+
+	[State 620, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2022
+		pos				= 0, ceil(EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= -5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2022
+
+	[State 620, ガードスパーク]
+		type			= Explod
+		trigger1		= MoveGuarded
+		anim			= 2030
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2030
+
+;---------------------------------------------------------------------------
+;ジャンプキック
+[Statedef 630]
+	type		= A
+	movetype	= A
+	physics		= A
+	ctrl		= 0
+	anim		= 630
+	sprpriority	= 2
+
+	[State 630, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= Time = 2
+		value		= s200, 1
+
+	[State 630, ランダム変数]
+		type		= VarRandom
+		trigger1	= Time = 0
+		v			= 13
+		range		= 0,1
+
+	[State 630, ボイス]
+		type		= PlaySnd
+		trigger1	= Var(13) = 0
+		trigger1	= Time = 1
+		value		= s10,0
+
+	[State 630, ボイス]
+		type		= PlaySnd
+		trigger1	= Var(13) = 1
+		trigger1	= Time = 1
+		value		= s10,2
+
+	[State 630, ヒット定義]
+		type				= HitDef
+		trigger1			= Time = 0
+		attr				= A, NA
+		animtype			= Hard
+		damage				= Ceil(FVar(30)*55)
+		guardflag			= HA
+		priority			= 4, Hit
+		pausetime			= 15,15
+		getpower			= 45
+		givepower			= 10, 10
+		sparkno				= -1
+		guard.sparkno		= -1
+		hitsound			= s230,0
+		guardsound			= s0,10
+		animtype			= Med
+		ground.type			= High
+		ground.slidetime	= 15
+		ground.hittime		= 15
+		ground.velocity		= -5.1
+		air.velocity		= -3.6,-5
+		air.fall			= 1
+		fall.recovertime	= Ceil(100-(FVar(22)*10))
+
+	[State 630, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2000
+		pos				= 0, EnemyNear,Const(size.mid.pos.y)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2000
+
+	[State 630, ヒットスパーク]
+		type			= Explod
+		trigger1		= MoveHit
+		trigger1		= P2MoveType = H
+		anim			= 2001
+		pos				= 0, EnemyNear,Const(size.mid.pos.y)
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2001
+
+	[State 630, ガードスパーク]
+		type			= Explod
+		trigger1		= MoveGuarded
+		anim			= 2030
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2030
+
+;===========================================================================
+; 投げ技
+;===========================================================================
+;投げ：掴み
+[Statedef 800]
+	type		= S
+	movetype	= A
+	physics		= S
+	velset		= 0,0
+	ctrl		= 0
+	anim		= 800
+	sprpriority	= 2
+
+	[State 800, ヒット定義（投げ用）]
+		type		= HitDef
+		triggerall	= (statetype != A)
+		trigger1	= Time = 0
+		attr		= S, NT
+		hitflag		= M-
+		priority	= 1, Miss
+		sparkno		= -1
+		sprpriority	= 1
+		p1facing	= IfElse(command="holdfwd",1,-1)
+		p2facing	= 1
+		p1stateno	= 801
+		p2stateno	= 810
+		guard.dis	= 0
+		fall		= 0
+		numhits		= 0
+
+[State 800, ステート変更]
+	type		= ChangeState
+	Trigger1	= AnimTime = 0
+	value		= 0
+	ctrl		= 1
+
+;---------------------------------------------------------------------------
+;投げ_2
+[Statedef 801]
+	type		= S
+	movetype	= A
+	physics		= N
+	anim		= 801
+	sprpriority	= 2
+
+	[State 801, 投げ抜けフラグ初期化]
+		type			= VarSet
+		trigger1		= Time = 0
+		v				= 29
+		value			= 0
+		ignorehitpause	= 1
+		persistent		= 1
+
+	[State 801, 投げ抜けフラグセット]
+		type			= VarSet
+		triggerall		= (NumTarget)
+		triggerall		= (Var(29) = 0) && (time = [0,7])
+		trigger1		= (Target,Command = "holdfwd") && (Target,Command = "a")
+		trigger2		= (Target,Command = "holdback") && (Target,Command = "a")
+		trigger3		= (Target,Command = "holdfwd") && (Target,Command = "b")
+		trigger4		= (Target,Command = "holdback") && (Target,Command = "b")
+		trigger5		= (Target,Command = "holdfwd") && (Target,Command = "c")
+		trigger6		= (Target,Command = "holdback") && (Target,Command = "c")
+		trigger7		= (Target,Command = "holdfwd") && (Target,Command = "x")
+		trigger8		= (Target,Command = "holdback") && (Target,Command = "x")
+		trigger9		= (Target,Command = "holdfwd") && (Target,Command = "y")
+		trigger10		= (Target,Command = "holdback") && (Target,Command = "y")
+		trigger11		= (Target,Command = "holdfwd") && (Target,Command = "z")
+		trigger12		= (Target,Command = "holdback") && (Target,Command = "z")
+		v				= 29
+		value			= 1
+		ignorehitpause	= 1
+		persistent		= 1
+
+	[State 801, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= AnimElem = 1
+		value		= s800,0
+
+	[State 801, 物理的なキャラの幅]
+		type		= Width
+		trigger1	= AnimElem = 1
+		edge		= 40,0
+
+	[State 801, 掴んだ相手の位置]
+		type		= TargetBind
+		trigger1	= AnimElemTime(3) < 0
+		pos			= 38, 0
+
+	[State 801, 掴んだ相手の位置]
+		type		= TargetBind
+		trigger1	= AnimElemTime(3) >= 0 && AnimElemTime(4) < 0
+		pos			= 0, 0
+
+	[State 801, 掴んだ相手の位置]
+		type		= TargetBind
+		trigger1	= AnimElemTime(4) >= 0 && AnimElemTime(5) < 0
+		pos			= -30, 0
+
+	[State 801, 掴んだ相手の位置]
+		type		= TargetBind
+		trigger1	= AnimElem = 5
+		pos			= -40, 0
+
+	[State 801, 振り向き]
+		type		= Turn
+		trigger1	= AnimElem = 9
+
+	[State 801, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= AnimElem = 3
+		value		= s0,21
+
+	[State 801, 音を鳴らす]
+		type		= PlaySnd
+		trigger1	= AnimElem = 3
+		trigger2	= AnimElem = 8
+		value		= s220,2
+
+	[State 801, ダメージ]
+		type		= TargetLifeAdd
+		trigger1	= AnimElem = 4
+		value		= -Ceil(51*Const(Data.Attack)/100)
+		kill		= 0
+
+	[State 801, ダメージ]
+		type		= TargetLifeAdd
+		trigger1	= AnimElem = 8
+		value		= -Ceil(56*Const(Data.Attack)/100)
+		kill		= 1
+
+	[State 801, エフェクト]
+		type			= Explod
+		trigger1		= AnimElem = 3
+		anim			= 2101
+		pos				= 0, 0
+		postype			= P1
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 4
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		trans			= Add
+		ID				= 2101
+
+	[State 801, エフェクト]
+		type			= Explod
+		trigger1		= AnimElem = 3
+		anim			= 810
+		pos				= 0, 0
+		postype			= P1
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		bindtime		= 99999
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		trans			= Add1
+		ID				= 810
+
+	[State 801, エフェクト]
+		type			= Explod
+		trigger1		= AnimElem = 7
+		anim			= 811
+		pos				= 20, -20
+		postype			= P1
+		scale			= 0.5,0.5
+		sprpriority		= -4
+		facing			= -1
+		ownpal			= 1
+		bindtime		= 99999
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		trans			= Add1
+		ID				= 811
+
+	[State 801, ヒットスパーク]
+		type			= Explod
+		trigger1		= AnimElem = 4
+		anim			= 2010
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		ontop			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add1
+		ID				= 2010
+
+	[State 801, ヒットスパーク]
+		type			= Explod
+		trigger1		= AnimElem = 4
+		anim			= 2011
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 1,1
+		sprpriority		= 5
+		ownpal			= 1
+		ontop			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= None
+		ID				= 2011
+
+	[State 220, ヒットスパーク]
+		type			= Explod
+		trigger1		= AnimElem = 8
+		anim			= 2020
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= -5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2020
+
+	[State 220, ヒットスパーク]
+		type			= Explod
+		trigger1		= AnimElem = 8
+		anim			= 2021
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		ontop			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add1
+		ID				= 2021
+
+	[State 220, ヒットスパーク]
+		type			= Explod
+		trigger1		= AnimElem = 8
+		anim			= 2022
+		pos				= 0, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P2
+		facing			= 1
+		vfacing			= 1
+		scale			= 0.5,0.5
+		sprpriority		= 4
+		ownpal			= 1
+		ontop			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2022
+
+	[State 801, 相手ステート変更]
+		type		= TargetState
+		trigger1	= AnimElemTime(8) = 10
+		value		= 816
+
+[State 801, ステート変更]
+	type		= ChangeState
+	triggerall	= (time = [0,7])
+	trigger1	= Var(29) = 1
+	value		= 830
+
+[State 801, ステート変更]
+	type		= ChangeState
+	trigger1	= AnimTime = 0
+	value		= 0
+	ctrl		= 1
+
+;---------------------------------------------------------------------------
+;投げられた相手_1
+[Statedef 810]
+	type		= U
+	movetype	= H
+	physics		= N
+	ctrl		= 0
+	velset		= 0,0
+
+	[State 810, 相手のアニメ変更]
+		type		= ChangeAnim2
+		trigger1	= Time = 0
+		value		= 802
+
+;---------------------------------------------------------------------------
+;投げられた相手_2
+[Statedef 815]
+	type		= A
+	movetype	= H
+	physics		= N
+	velset		= 0,0
+	sprpriority	= -1
+	facep2		= 1
+
+	[State 815, アニメ変更]
+		type	= ChangeAnim2
+		Trigger1	= Time = 0
+		value		= 803
+
+	[State 815, 表示優先度]
+		type 		= Sprpriority
+		trigger1	= AnimElem = 5
+		value		= 5
+
+	[State 815, 物理的なキャラの幅]
+		type		= Width
+		trigger1	= 1
+		edge		= 20,0
+
+;---------------------------------------------------------------------------
+;スライド
+[Statedef 816]
+	type		= A
+	movetype	= H
+	physics		= N
+	ctrl		= 0
+	poweradd	= 0
+	velset		= 0,0
+
+	[State 816, 移動速度]
+		type		= VelSet
+		trigger1	= Time = 0
+		x			= 1
+		y			= 1
+
+	[State 816, 移動速度]
+		type		= VelSet
+		trigger1	= Time = 0
+		x			= 3.2
+		y			= -4
+
+	[State 816, 移動速度]
+		type		= VelAdd
+		trigger1	= Time > 3
+		y			= GetHitVar(yaccel)
+
+	[State 816, 落下状態]
+		type		= HitFallSet
+		trigger1	= 1
+		value		= 1
+
+	[State 816, 位置]
+		type		= posset
+		trigger1	= time = 0
+		trigger1	= pos Y > 0
+		y			= 0
+
+	[State 816, アニメ変更]
+		type		= ChangeAnim
+		trigger1	= Time = 0
+		value		= 5052
+
+	[State 816, アニメ変更]
+		type		= ChangeAnim
+		trigger1	= !SelfAnimExist(5052)
+		value		= 5070
+
+[State 816, ステート変更]
+	type		= changeState
+	trigger1	= pos Y >= 0
+	trigger1	= vel Y > 0
+	value		= 817
+
+;---------------------------------------------------------------------------
+;スライドダウン
+[Statedef 817]
+	type		= L
+	movetype	= H
+	physics		= N
+	ctrl		= 0
+	sprpriority	= 0
+
+	[State 817, 無敵なし]
+		type		= hitby
+		trigger1	= 1
+		value		= SCA,AA,AT,AP
+		time		= 1
+
+	[State 817, アニメ変更]
+		type		= changeanim
+		trigger1	= SelfAnimExist(5100)
+		trigger1	= SelfAnimExist(5110)
+		trigger1	= SelfAnimExist(5170)
+		trigger1	= time = 0
+		value		= 5100
+
+	[State 817, アニメ変更]
+		type		= changeanim
+		trigger1	= SelfAnimExist(5100)
+		trigger1	= SelfAnimExist(5110)
+		trigger1	= SelfAnimExist(5170)
+		trigger1	= time = 20
+		value		= 5170
+
+	[State 817, アニメ変更]
+		type		= changeanim
+		trigger1	= anim = 5170 || anim = 5160
+		trigger1	= animtime = 0
+		value		= 5110
+
+	[State 817, 速度]
+		type		= VelSet
+		trigger1	= time = 0
+		x			= 1.2
+		y			= 0
+
+	[State 817, 位置]
+		type		= posset
+		trigger1	= 1
+		y			= 0
+
+	[State 817, 速度]
+		type		= VelSet
+		trigger1	= time = 15
+		x			= 0
+
+[State 817, 制御権を戻す]
+	type		= selfState
+	trigger1	= life = 0
+	trigger1	= time = 42
+	value		= 5110
+
+[State 817, 制御権を戻す]
+	type		= selfState
+	trigger1	= time = 42
+	value		= 5120
+
+;---------------------------------------------------------------------------
+;投げ抜け_自分側
+[Statedef 830]
+	type		= U
+	movetype	= I
+	physics		= N
+	anim		= 830
+	ctrl		= 0
+
+	[State 830, 状態変更]
+		type			= StateTypeSet
+		trigger1		= (statetype = A)
+		physics			= A
+		ignorehitpause	= 1
+		persistent		= 1
+
+	[State 830, 無敵]
+		type		= NotHitBy
+		trigger1	= 1
+		value		= SCA
+		time		= 1
+
+	[State 830, ガードスパーク]
+		type			= Explod
+		trigger1		= Time = 1
+		anim			= 2030
+		pos				= 20, (EnemyNear,Const(size.mid.pos.y))
+		postype			= P1
+		facing			= IfElse(MoveHit,IfElse(Random<500,1,-1),-1)
+		vfacing			= IfElse(Random<500,1,-1)
+		scale			= 0.5,0.5
+		sprpriority		= 5
+		ownpal			= 1
+		bindtime		= 1
+		supermovetime	= 99999
+		pausemovetime	= 99999
+		persistent		= 0
+		vel				= 0,0
+		removeongethit	= 1
+		ignorehitpause	= 1
+		trans			= Add
+		ID				= 2030
+
+	[State 830, 押し判定]
+		type			= PlayerPush
+		trigger1		= 1
+		value			= 1
+		ignorehitpause	= 1
+		persistent		= 1
+
+	[State 830, 移動速度]
+		type		= VelSet
+		trigger1	= Time = 1
+		x			= -2
+
+[State 830, 掴んだ相手のステート変更]
+	type		= Targetstate
+	trigger1	= Time = 1
+	value		= 805
+
+[State 830, ステート変更]
+	type		= ChangeState
+	trigger1	= (time > 20)
+	value		= IfElse(statetype=A,51,0)
+	ctrl		= IfElse(statetype=A,0,1)
+
+;---------------------------------------------------------------------------
+;投げ抜け_相手側
+[Statedef 805]
+	type		= U
+	movetype	= H
+	physics		= N
+	ctrl		= 0
+	facing		= (Enemy,Facing)
+
+	[State 805, 状態変更]
+		type			= StateTypeSet
+		trigger1		= (time > 0)
+		movetype		= I
+		ignorehitpause	= 1
+		persistent		= 1
+
+	[State 805, アニメ変更]
+		type		= ChangeAnim
+		triggerall	= SelfAnimExist(5005)
+		trigger1	= Time = 0
+		value		= 5005
+
+	[State 805, 相手のアニメ変更]
+		type		= ChangeAnim2
+		triggerall	= !SelfAnimExist(5005)
+		trigger1	= Time = 0
+		value		= 802
+
+	[State 805, 無敵]
+		type		= NotHitBy
+		trigger1	= 1
+		value		= SCA
+		time		= 1
+
+	[State 805, 押し判定]
+		type			= PlayerPush
+		trigger1		= 1
+		value			= 1
+		ignorehitpause	= 1
+		persistent		= 1
+
+	[State 805, 軸位置]
+		type		= Posset
+		triggerall	= (statetype = A)
+		trigger1	= (pos Y >= 0)
+		y			= 0
+
+	[State 805, 移動速度]
+		type		= VelSet
+		trigger1	= Time = 0
+		x			= -2
+
+	[State 805, 移動速度]
+		type		= VelSet
+		triggerall	= (statetype = A)
+		trigger1	= (pos Y >= 0)
+		y			= 0
+
+	[State 805, 速度加算]
+		type		= Veladd
+		triggerall	= (statetype = A)
+		trigger1	= (time > 0)
+		y			= 0.25
+
+[State 805, 相手ステートに戻す]
+	type		= SelfState
+	trigger1	= (time > 20)
+	value		= IfElse(statetype=A,5040,0)
+	ctrl		= 1

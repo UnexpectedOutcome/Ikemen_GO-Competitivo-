@@ -1,0 +1,7631 @@
+
+;---------------------------------------------------------------------------
+; 基本データ
+;---------------------------------------------------------------------------
+[Data]
+life=1000;ライフ（体力ゲージ）最大値
+power=3001;パワーゲージ最大値（オプション・デフォルトは3000=Lv.3）
+attack=100;攻撃力（デフォルトは１００％）
+defence=100;防御力（デフォルトは１００％）
+fall.defence_up=50;横に倒れている時に一時的に加える防御力（％）
+liedown.time=60;横に倒れている時間（フレーム）
+airjuggle=30;15;ジャグルポイント限界値（「小ネタ.txt」参照）
+sparkno=2;デフォルトのヒットスパーク（fightfxから）
+guard.sparkno=40;デフォルトのガードスパーク（fightfxから）
+KO.echo=0;ＫＯ時の音声（11,0）にエコーを掛けるか否か
+volume=120;キャラの標準の音量（最小-255・最大255）
+IntPersistIndex=1;次のラウンドへ持ち越せる「Var」のアドレスの範囲を決める
+FloatPersistIndex=1;次のラウンドへ持ち越せる「FVar」のアドレスの範囲を決める
+
+;---------------------------------------------------------------------------
+; サイズ
+;---------------------------------------------------------------------------
+[Size]
+xscale=1;キャラの横の大きさ（絶対値・float）
+yscale=1;キャラの縦の大きさ（絶対値・float）0.51
+ground.back=20;地上にいる時の「後方の物理的な幅」
+ground.front=20;地上にいる時の「前方の物理的な幅」
+air.back=20;空中にいる時の「後方の物理的な幅」
+air.front=20;空中にいる時の「前方の物理的な幅」
+height=60;キャラの物理的な高さ（高いほど相手は飛び越しにくくなる）
+attack.dist=160;相手がガード態勢に入る最低の距離
+proj.attack.dist=90;自分の「Projectile」に対して相手がガード態勢に入る最低の距離
+proj.doscale=1;xscaleとyscaleを「Projectile」にも影響させるか否か（0=させない・1=させる）
+head.pos=0,-100;キャラの標準の頭の座標（Bind系で適用される）
+mid.pos=0,-60;キャラの標準の体中心の座標（Bind系で適用される）
+shadowoffset=0;影のＹ軸方向の位置座標
+draw.offset=0,0;キャラの表示座標（Ｘ軸,Ｙ軸）
+
+;---------------------------------------------------------------------------
+; 移動速度
+;---------------------------------------------------------------------------
+[Velocity]
+walk.fwd=2.4;前進速度（Ｘ軸・[Statedef 20]に適用される）
+walk.back=-2.2.0;後退速度（Ｘ軸・[Statedef 20]に適用される）
+run.fwd=5,0;前方に走る速度（Ｘ軸,Ｙ軸・[Statedef 100]に適用される）
+run.back=-5,0;後方に走る速度（Ｘ軸,Ｙ軸・[Statedef 105]に適用される）
+jump.neu=0,-9;垂直ジャンプの速度（Ｘ軸,Ｙ軸・[Statedef 40]に適用される）
+jump.back=-3;後方ジャンプの速度（Ｘ軸・[Statedef 40]に適用される）
+jump.fwd=3;前方ジャンプの速度（Ｘ軸・[Statedef 40]に適用される）
+runjump.back=-4.5,-8.5;後方に走ってからのジャンプ速度
+runjump.fwd=4.5,-8.5;前方に走ってからのジャンプ速度
+airjump.neu=0,-8.1;空中垂直ジャンプ速度（Ｘ軸,Ｙ軸・[Statedef 45]に適用される）
+airjump.back=-2.55;空中後方ジャンプ速度（Ｘ軸・[Statedef 45]に適用される）
+airjump.fwd=2.5;空中前方ジャンプ速度（Ｘ軸・[Statedef 45]に適用される）
+
+;---------------------------------------------------------------------------
+; 運動関係
+;---------------------------------------------------------------------------
+[Movement]
+airjump.num=0;空中ジャンプが出来る回数
+airjump.height=35;空中ジャンプが出来る最低の高度（Ｙ軸）
+yaccel=.5;Ｙ軸加速度（重力）
+stand.friction=.85;立っている時の摩擦係数（ステートのPhysicsが「S」の時）
+crouch.friction=.82;しゃがんでいる時の摩擦係数（ステートのPhysicsが「C」の時）
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+; 基本行動のステート
+;---------------------------------------------------------------------------
+
+;---------------------------------------------------------------------------
+; ラウンド開始前初期化専用ステート
+[Statedef 5900]
+type=S
+
+[State 5900,1];Clear all int variables
+type=VarRangeSet
+trigger1=roundsexisted=0
+value=0
+
+[State 5900,2];Clear all float variables
+type=VarRangeSet
+trigger1=roundsexisted=0
+fvalue=0
+
+[State 5900,3];Intro for round 1
+type=null;ChangeState
+trigger1=1
+value=9999
+
+[State 5900,3];Intro for round 1
+type=ChangeState
+trigger1=!RoundsExisted;roundno = 1
+value=190
+
+
+;---------------------------------------------------------------------------
+;タイムオーバー（負けた時）
+[Statedef 170]
+type=S
+ctrl=0
+velset=0,0
+
+[state ]
+type=changeanim
+trigger1=anim!=170
+value=170
+ignorehitpause=1
+
+[State 170,無敵]
+type=NotHitBy
+trigger1=1;トリガーを何も書かず「1」にする事により、『無条件で常に実行させる命令』になる。
+value=SCA
+time=1
+
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+
+;---------------------------------------------------------------------------
+;勝利ポーズ分岐
+[Statedef 180]
+type=S
+
+[State 1200,カメラ制御ヘルパー]
+type=helper
+trigger1=pos X!=0
+trigger1=Time=0
+trigger1=palno!=12
+name="helper1"
+id=6001
+pos=0,0
+postype=p1
+stateno=6001
+helpertype=normal
+ownpal=1
+keyctrl=1
+
+[state ]
+type=changeanim
+trigger1=anim!=182
+value=182
+ignorehitpause=1
+
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[State 190,ランダムに変数を選ぶ]
+type=VarRandom
+trigger1=animelemtime(1)=0
+v=1
+range=0,3
+
+[State 600,音を鳴らす];しゃあ
+type=PlaySnd
+trigger1=var(1)=0
+trigger1=AnimElem=1
+value=181,0
+channel=0
+
+[State 600,音を鳴らす];よっしゃあ
+type=PlaySnd
+trigger1=var(1)=1
+trigger1=AnimElem=1
+value=182,0
+channel=0
+
+[State 600,音を鳴らす];本気でこい
+type=PlaySnd
+trigger1=!MatchOver
+trigger1=var(1)=2
+trigger1=AnimElem=1
+value=183,0
+channel=0
+
+[State 600,音を鳴らす];あんたの本気
+type=PlaySnd
+trigger1=!MatchOver
+trigger1=var(1)=3
+trigger1=AnimElem=1
+value=195,0
+channel=0
+
+[State 600,音を鳴らす];もうこんなに
+type=PlaySnd
+trigger1=MatchOver
+trigger1=(var(1)=[2,3])
+trigger1=AnimElem=1
+value=6011,0
+channel=0
+
+[State 181,無敵]
+type=NotHitBy
+trigger1=1
+value=SCA,AA,AT,AP
+time=1
+
+[State 1000,***]
+type=AssertSpecial
+Trigger1=(var(1)=[0,1])
+Trigger1=(sysfvar(4)<100)
+trigger2=MatchOver
+Trigger2=(var(1)=[2,3])
+Trigger2=(sysfvar(4)<720)
+trigger3=!MatchOver
+Trigger3=(var(1)=[2,3])
+Trigger3=(sysfvar(4)<300)
+flag=roundnotover
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+
+[State 180,ステート変更]
+type=null;ChangeState
+trigger1=Time>=1
+value=181
+;---------------------------------------------------------------------------
+;勝利ポーズ（礼をする）
+[Statedef 181]
+type=S
+ctrl=0
+velset=0,0
+
+[state ]
+type=changeanim
+trigger1=anim!=182
+value=182
+ignorehitpause=1
+
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[State 190,ランダムに変数を選ぶ]
+type=VarRandom
+trigger1=animelemtime(1)=0
+v=1
+range=0,3
+
+[State 600,音を鳴らす];しゃあ
+type=PlaySnd
+trigger1=var(1)=0
+trigger1=AnimElem=1
+value=181,0
+channel=0
+
+[State 600,音を鳴らす];よっしゃあ
+type=PlaySnd
+trigger1=var(1)=1
+trigger1=AnimElem=1
+value=182,0
+channel=0
+
+[State 600,音を鳴らす];本気でこい
+type=PlaySnd
+trigger1=!MatchOver
+trigger1=var(1)=2
+trigger1=AnimElem=1
+value=183,0
+channel=0
+
+[State 600,音を鳴らす];あんたの本気
+type=PlaySnd
+trigger1=!MatchOver
+trigger1=var(1)=3
+trigger1=AnimElem=1
+value=195,0
+channel=0
+
+[State 600,音を鳴らす];もうこんなに
+type=PlaySnd
+trigger1=MatchOver
+trigger1=(var(1)=[2,3])
+trigger1=AnimElem=1
+value=6011,0
+channel=0
+
+[State 181,無敵]
+type=NotHitBy
+trigger1=1
+value=SCA,AA,AT,AP
+time=1
+
+[State 1000,***]
+type=AssertSpecial
+Trigger1=(var(1)=[0,1])
+Trigger1=(sysfvar(4)<100)
+trigger2=MatchOver
+Trigger2=(var(1)=[2,3])
+Trigger2=(sysfvar(4)<720)
+trigger3=!MatchOver
+Trigger3=(var(1)=[2,3])
+Trigger3=(sysfvar(4)<300)
+flag=roundnotover
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+
+;---------------------------------------------------------------------------
+;カメラ制御ヘルパー
+[Statedef 6001]
+type=S
+physics=S
+anim=0
+ctrl=0
+
+[state 2906,本体の向きに追従]
+type=turn
+trigger1=ishelper(6001)
+trigger1=facing!=root,facing
+ignorehitpause=1
+
+[State 4];速度を与える
+type=VelSet
+trigger1=parent,pos X>0
+x=ifelse(facing=1,4,-4)
+
+[State 4];速度を与える
+type=VelSet
+trigger1=parent,pos X<0
+x=ifelse(facing=1,-4,4)
+
+[State 4];速度を与える
+type=VelSet
+trigger1=parent,pos X=[-5,5]
+x=0
+
+[State 3000,位置]
+type=Width
+trigger1=1
+value=1,1
+
+[State 181,無敵]
+type=NotHitBy
+trigger1=1
+value=SCA,AA,AT,AP
+time=1
+
+[State 1000,***]
+type=AssertSpecial
+Trigger1=1
+flag=invisible
+flag2=noshadow
+
+[State 210,3]
+type=ScreenBound
+trigger1=1
+value=1
+movecamera=320,0
+
+[State 210,3]
+type=PlayerPush
+trigger1=1
+value=0
+
+;---------------------------------------------------------------------------
+; イントロ分岐
+
+;イントロ選択
+[Statedef 190]
+type=S
+ctrl=0
+velset=0,0
+
+[state ]
+type=changeanim
+value=1
+trigger1=anim!=1
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[State 190,];親父
+type=ChangeState
+trigger1=(EnemyNear,Name="yujiro")
+value=198
+
+[State 190,];ジャック
+type=ChangeState
+trigger1=(EnemyNear,Name="jack-hamma")
+value=201
+
+[State 190,];烈
+type=ChangeState
+trigger1=(EnemyNear,Name="gato")
+trigger2=(EnemyNear,Name="gatoXI")
+trigger3=(EnemyNear,Name="retu")
+trigger4=(EnemyNear,Name="kaioh-retsu")
+value=193
+
+[State 190,];独歩
+type=ChangeState
+trigger1=(EnemyNear,Name="doppo orochi")
+value=196
+
+[State 190,];花
+type=ChangeState
+trigger1=(EnemyNear,Name="K-Hanayama")
+value=202
+
+[State 190,];各種稽古
+type=ChangeState
+trigger1=(EnemyNear,Name="Syouzan Matsuo")
+value=199
+
+[State 190,];各種稽古
+type=ChangeState
+trigger1=(EnemyNear,Name="Strider_Hiryu")
+trigger2=(EnemyNear,Name="Strider Hiryu")
+trigger3=(EnemyNear,Name="Tsubaki")
+trigger3=(EnemyNear,authorName="BOH")
+value=194
+
+[State 190,]
+type=ChangeState
+trigger1=(EnemyNear,Name="izou motobe")
+value=197
+
+[State 190,]
+type=ChangeState
+trigger1=random<350
+trigger1=animelemtime(1)=0
+value=191
+
+[State 190,]
+type=ChangeState
+trigger1=random<330
+trigger1=animelemtime(1)=0
+value=203
+
+[State 190,]
+type=ChangeState
+trigger1=random<650
+trigger1=animelemtime(1)=0
+value=204
+
+[State 190,]
+type=ChangeState
+trigger1=1;animelemtime(1)>=0
+value=192
+;---------------------------------------------------------------------------
+;イントロ（試合開始前の登場演出アクション）
+[Statedef 191]
+type=S
+ctrl=0
+velset=0,0
+
+[state ]
+type=changeanim
+value=190
+trigger1=anim!=190
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=AnimElem=2
+value=395,0
+
+[State 600,音を鳴らす];俺に稽古
+type=PlaySnd
+trigger1=AnimElem=3
+value=193,0
+channel=0
+
+[State 191,特殊効果]
+type=AssertSpecial
+trigger1=1
+flag=Intro
+
+[State 191,ステート変更]
+type=ChangeState
+trigger1=AnimTime=0
+value=0
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+;---------------------------------------------------------------------------
+;イントロ（本気で向かって来い）
+[Statedef 192]
+type=S
+ctrl=0
+velset=0,0
+
+[state ]
+type=changeanim
+value=191
+trigger1=anim!=191
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=AnimElem=3
+value=183,0
+channel=0
+
+[State 191,特殊効果]
+type=AssertSpecial
+trigger1=1
+flag=Intro
+
+[State 191,ステート変更]
+type=ChangeState
+trigger1=AnimTime=0
+value=0
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+;---------------------------------------------------------------------------
+;イントロ（烈）
+[Statedef 193]
+type=S
+ctrl=0
+anim=192
+velset=0,0
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=AnimElem=2
+value=395,0
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=AnimElem=3
+value=6009,0
+channel=0
+
+[State 191,特殊効果]
+type=AssertSpecial
+trigger1=1
+flag=Intro
+
+[State 191,ステート変更]
+type=ChangeState
+trigger1=AnimTime=0
+value=0
+
+;------------------------------------------------------------------
+;イントロ（独歩）
+[Statedef 196]
+type=S
+ctrl=0
+anim=0
+velset=0,0
+
+[State 600,音を鳴らす]
+type=changeanim
+trigger1=time=370
+value=193
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=anim=193
+trigger1=AnimElem=3
+value=6001,0
+channel=0
+
+[State 191,特殊効果]
+type=AssertSpecial
+trigger1=1
+flag=Intro
+
+[State 191,ステート変更]
+type=ChangeState
+trigger1=anim=193
+trigger1=AnimTime=0
+value=0
+
+;------------------------------------------------------------------
+;イントロ(いぞう）
+[Statedef 197]
+type=S
+ctrl=0
+anim=190
+velset=0,0
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=time=1
+value=6003,0
+channel=0
+persistent=0
+
+[State 191,特殊効果]
+type=AssertSpecial
+trigger1=1
+flag=Intro
+
+[State 191,ステート変更]
+type=ChangeState
+trigger1=AnimTime=0
+value=0
+;------------------------------------------------------------------
+;イントロ(親父）
+[Statedef 198]
+type=S
+ctrl=0
+anim=194
+velset=0,0
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=time=50
+value=6000,0
+channel=0
+persistent=0
+
+[State 191,特殊効果]
+type=AssertSpecial
+trigger1=1
+flag=Intro
+
+[State 191,ステート変更]
+type=ChangeState
+trigger1=AnimTime=0
+value=0
+
+;---------------------------------------------------------------------------
+;イントロ（各種稽古）
+[Statedef 199]
+type=S
+ctrl=0
+anim=190
+velset=0,0
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=time=0
+value=6006,0
+channel=0
+persistent=0
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=AnimElem=3,=70
+value=193,0
+channel=0
+
+[State 191,特殊効果]
+type=AssertSpecial
+trigger1=1
+flag=Intro
+
+[State 191,ステート変更]
+type=ChangeState
+trigger1=AnimTime=0
+value=0
+;---------------------------------------------------------------------------
+;イントロ（各種稽古）
+[Statedef 194]
+type=S
+ctrl=0
+anim=190
+velset=0,0
+
+[State 600,音を鳴らす];ストライダム
+type=PlaySnd
+trigger1=AnimElem=3
+value=6005,0
+channel=0
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=AnimElem=3,=70
+value=193,0
+channel=0
+
+[State 191,特殊効果]
+type=AssertSpecial
+trigger1=1
+flag=Intro
+
+[State 191,ステート変更]
+type=ChangeState
+trigger1=AnimTime=0
+value=0
+
+;---------------------------------------------------------------------------
+;イントロ（ジャック）
+[Statedef 201]
+type=S
+ctrl=0
+anim=0
+velset=0,0
+
+[State 600,音を鳴らす]
+type=changeanim
+trigger1=time=320
+value=192
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=time=320
+value=6007,0
+channel=0
+persistent=0
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=time=380
+value=6008,0
+channel=0
+
+[State 191,特殊効果]
+type=AssertSpecial
+trigger1=1
+flag=Intro
+
+[State 191,ステート変更]
+type=ChangeState
+trigger1=Anim=192
+trigger1=AnimTime=0
+value=0
+;---------------------------------------------------------------------------
+;イントロ（花山）
+[Statedef 202]
+type=S
+ctrl=0
+velset=0,0
+
+[state ]
+type=changeanim
+value=190
+trigger1=anim!=190
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=AnimElem=2
+value=395,0
+
+[State 600,音を鳴らす];俺に稽古
+type=PlaySnd
+trigger1=AnimElem=3,=20
+value=6010,0
+channel=0
+
+[State 191,特殊効果]
+type=AssertSpecial
+trigger1=1
+flag=Intro
+
+[State 191,ステート変更]
+type=ChangeState
+trigger1=AnimTime=0
+value=0
+;---------------------------------------------------------------------------
+;イントロ（テーピング）
+[Statedef 203]
+type=S
+ctrl=0
+velset=0,0
+
+[state ]
+type=changeanim
+value=195
+trigger1=anim!=195
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[State 600,音を鳴らす]
+type=PlaySnd
+;triggerall=anim=195
+trigger1=animelem=45;3
+trigger2=animelem=55;13
+trigger3=animelem=63;21
+trigger4=animelem=71;29
+value=395,0
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=animelemtime(1)=0
+value=194,0
+channel=0
+
+[State 191,特殊効果]
+type=AssertSpecial
+trigger1=1
+flag=Intro
+
+[State 191,ステート変更]
+type=ChangeState
+;trigger1=Anim=195
+trigger1=AnimTime=0
+value=0
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+
+;---------------------------------------------------------------------------
+;イントロ（シュ）
+[Statedef 204]
+type=S
+ctrl=0
+velset=0,0
+
+[state ]
+type=changeanim
+value=196
+trigger1=anim!=196
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=animelem=2
+trigger2=animelem=6
+value=3000,0
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=animelem=12
+value=390,0
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=animelem=12
+value=3001,0
+channel=0
+
+[State 191,特殊効果]
+type=AssertSpecial
+trigger1=1
+flag=Intro
+
+[State 191,ステート変更]
+type=ChangeState
+trigger1=AnimTime=0
+value=0
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+;---------------------------------------------------------------------------
+;挑発
+[Statedef 195]
+type=S
+movetype=I
+physics=S
+ctrl=0
+anim=180
+velset=0,0
+sprpriority=2
+
+[State 190,ランダムに変数を選ぶ]
+type=VarRandom
+trigger1=time=0
+v=1
+range=0,2
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=AnimElem=1
+value=395,0
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=var(1)=0
+trigger1=AnimElem=1
+value=196,0
+channel=0
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=var(1)=1
+trigger1=AnimElem=3
+value=185,0
+channel=0
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=var(1)=2
+trigger1=AnimElem=3
+value=184,0
+channel=0
+
+[State 195,ステート変更]
+type=ChangeState
+trigger1=AnimTime=0
+value=0
+ctrl=1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[statedef 0]
+type=s
+physics=s
+sprpriority=0
+
+[state ]
+type=changeanim
+trigger1=anim!=0
+value=0
+ignorehitpause=1
+
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+[state ]
+type=turn
+trigger1=palno=12
+trigger1=p2bodydist x<0
+trigger1=sysfvar(4)=1
+[state ]
+type=velset
+trigger1=sysfvar(4)=1
+y=0
+[state ]
+type=velset
+trigger1=abs(vel x)<2
+trigger2=sysfvar(4)=4
+x=0
+[state ]
+type=varadd
+triggerall=!ishelper&&roundstate=2&&palno=12&&sysvar(3)=0
+trigger1=anim=0&&sysfvar(2)>600&&sysfvar(4)>600
+sysfvar(3)=1
+ignorehitpause=1
+
+[state ]
+type=changestate
+trigger1=!alive
+value=5050
+[state ]
+type=destroyself
+trigger1=ishelper
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+
+;---------------------------------------------------------------------------
+; Walk
+[Statedef 20]
+type=S
+physics=S
+sprpriority=0
+
+[State 20,1]
+type=VelSet
+triggerall=palno!=12
+trigger1=command="holdfwd"
+trigger1=!var(59)
+x=const(velocity.walk.fwd.x)*1.5
+[State 20,1]
+type=VelSet
+triggerall=palno!=12
+trigger1=var(59)
+x=const(velocity.walk.fwd.x)*1.5
+
+[State 20,2]
+type=VelSet
+triggerall=palno!=12
+trigger1=!var(59)
+trigger1=command="holdback"
+x=const(velocity.walk.back.x)*1.5
+
+[State 20,3]
+type=ChangeAnim
+triggerall=palno!=12
+triggerall=vel x>0
+trigger1=Anim!=20&&Anim!=5
+trigger2=Anim=5&&AnimTime=0
+value=20
+
+[State 20,4]
+type=ChangeAnim
+triggerall=palno!=12
+triggerall=vel x<0
+trigger1=Anim!=21&&Anim!=5
+trigger2=Anim=5&&AnimTime=0
+value=21
+
+[state ];バグ対策
+type=changestate
+trigger1=palno=12
+value=22
+ctrl=1
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+
+; Walk
+[Statedef 22]
+type=S
+physics=S
+sprpriority=0
+
+[state ]
+type=changeanim
+triggerall=palno=12
+trigger1=anim!=20
+value=20
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[state ]
+type=ctrlset
+trigger1=palno=12
+value=1
+[state ]
+type=velset
+trigger1=palno=12
+x=const(velocity.walk.fwd.x)*1.5
+
+[state バグ対策]
+type=selfstate
+triggerall=palno=12
+trigger1=sysfvar(4)>=42
+trigger2=P2bodyDist X<5
+value=0
+ctrl=1
+ignorehitpause=1
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+;---------------------------------------------------------------------------
+; ジャンプ開始
+[Statedef 40]
+type=S
+physics=S
+ctrl=0
+sprpriority=1
+
+[state ]
+type=ChangeState
+triggerall=var(59)&&palno!=12
+trigger1=(enemynear(var(42)),statetype=L)
+trigger2=(enemynear(var(42)),stateno=[5111,5126])
+trigger3=p2bodydist x>150
+value=0
+ctrl=1
+
+[state ]
+type=changeanim
+trigger1=anim!=40
+value=40
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[State 40,1]
+type=VarSet
+trigger1=!var(59)
+trigger1=animelemtime(1)=0
+sysvar(1)=0
+
+[State 40,2]
+type=VarSet
+trigger1=!var(59)
+trigger1=command="holdfwd"
+sysvar(1)=1
+
+[State 40,3]
+type=VarSet
+trigger1=!var(59)
+trigger1=command="holdback"
+sysvar(1)=-1
+
+[State 40,移動速度];ＡＩオン
+type=VelSet
+trigger1=var(59)
+trigger1=AnimTime=0
+x=const(velocity.jump.fwd.x)
+y=const(velocity.jump.y)*1
+
+[State 40,移動速度]
+type=VelSet
+trigger1=var(59)=0
+trigger1=AnimTime=0
+x=ifelse(sysvar(1)=0,const(velocity.jump.neu.x),ifelse(sysvar(1)=1,const(velocity.jump.fwd.x),const(velocity.jump.back.x)))
+y=const(velocity.jump.y)*1
+
+[State 40,5]
+type=VelSet
+trigger1=AnimTime=0
+trigger1=prevstateno=100
+trigger1=sysvar(1)=1
+x=const(velocity.runjump.fwd.x)
+
+[State 40,5]
+type=VelSet
+trigger1=AnimTime=0
+trigger1=prevstateno=105;RUN_back
+x=const(velocity.runjump.back.x)
+
+[State 40,振り返る]
+type=Turn
+triggerall=(PrevStateNo=52)
+trigger1=(animelemtime(1)=0)&&(P2Dist X<0)
+Persistent=0
+
+[State 40,ステート変更]
+type=ChangeState
+trigger1=AnimTime=0
+value=50
+ctrl=1
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+;---------------------------------------------------------------------------
+; ジャンプ
+[Statedef 50]
+type=A
+physics=A
+
+[state ]
+type=changeanim
+truggerall=palno=12
+trigger1=anim!=[41,43]
+value=ifelse((vel x)=0,41,ifelse((vel x)>0,42,43))
+ignorehitpause=1
+[State 50,2]
+type=ChangeAnim
+truggerall=palno!=12
+trigger1=time=0
+value=ifelse((vel x)=0,41,ifelse((vel x)>0,42,43))
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[State 40,ハイジャンプ音]
+type=PlaySnd
+triggerall=palno!=12
+trigger1=animelemtime(1)=0
+value=40,1
+
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+;---------------------------------------------------------------------------
+;着地・改
+[Statedef 52]
+type=S
+physics=S
+ctrl=0
+
+[state ]
+type=changeanim
+trigger1=anim!=47
+value=47
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[State 52,軸位置];地面に軸をリセットする
+type=PosSet
+trigger1=1
+y=0
+
+[State 52,移動速度];速度をリセットしている
+type=VelSet
+trigger1=1
+x=0
+y=0
+
+[State 52,コントロール]
+type=CtrlSet
+triggerall=(PrevStateNo=[600,699])
+trigger1=(sysfvar(4)>0)
+value=1
+
+[State 52,振り返る]
+type=Turn
+trigger1=(AnimTime=0)&&(P2Dist X<0)
+trigger2=(AnimElemTime(1)=0)&&(P2Dist X<0)
+
+[State 52,ステート変更]
+type=ChangeState
+trigger1=AnimTime=0
+value=0
+ctrl=1
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+; RUN_FWD
+[Statedef 100]
+type=S
+physics=S
+sprpriority=1
+ctrl=0;1
+
+[state ]
+type=changeanim
+trigger1=anim!=100
+value=100
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[State 20,3]
+type=posset
+trigger1=1
+y=0
+[State 20,3]
+type=ctrlset
+trigger1=!var(59)
+value=1
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=animelem=2||animelem=6||animelem=10
+anim=30040
+id=30040
+pos=ceil(0*const(size.xscale)),ceil(0*const(size.yscale))
+postype=P1
+sprpriority=3
+bindtime=1
+ownpal=1
+Facing=-1
+scale=0.2,0.2
+vel=-0.5,-1
+
+[State 52,音を鳴らす]
+type=PlaySnd
+trigger1=animelem=3||animelem=6
+value=100,0
+volume=-50
+freqmul=1.5
+
+[State ,無敵になる]
+type=NotHitBy
+trigger1=1
+value=SCA,NA,SA,HA,NP,SP,HP,NT,ST,HT
+time=1
+
+[State 100,1]
+type=VelSet
+trigger1=1
+x=const(velocity.run.fwd.x)*1.5+ifelse(PrevStateno=107,1.8,0)
+
+[State 100,2];Prevent run from canceling into walk
+type=AssertSpecial
+trigger1=!var(59)
+flag=NoWalk
+
+[State 100,3];Prevent from turning
+type=AssertSpecial
+trigger1=!var(59)
+flag=NoAutoTurn
+
+[State 100,4]
+type=ChangeState
+trigger1=!var(59)
+trigger1=command!="holdfwd"
+trigger2=palno=12
+trigger2=sysfvar(4)>=60
+value=101
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+
+;---------------------------------------------------------------------------
+; RUN_FWD (land)
+[Statedef 101]
+type=S
+physics=S
+ctrl=0
+
+[state ]
+type=changeanim
+trigger1=anim!=104
+value=104
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[State 20,3]
+type=posset
+trigger1=1
+y=0
+
+[State 106,1]
+type=VelSet
+trigger1=1
+y=0
+
+[State 52,音を鳴らす]
+type=PlaySnd
+trigger1=animelemtime(1)=0
+value=100,0
+
+[State 106,4]
+type=ChangeState
+trigger1=animTime=0
+value=0
+ctrl=1
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+
+;---------------------------------------------------------------------------
+; RUN_BACK
+[Statedef 105]
+type=A
+physics=S
+sprpriority=1
+ctrl=0
+
+[state ]
+type=changeanim
+trigger1=anim!=105
+value=105
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[State ,無敵になる]
+type=NotHitBy
+trigger1=1
+value=SCA,NA,SA,HA,NP,SP,HP,NT,ST,HT
+time=1
+
+[State 20,3]
+type=posset
+trigger1=animelemtime(1)=0
+y=0
+
+[State 20,3]
+type=velset
+trigger1=sysfvar(4)=3
+y=-1.5
+
+[State 20,3]
+type=veladd
+trigger1=sysfvar(4)>=3
+y=0.4
+
+[State 52,音を鳴らす]
+type=PlaySnd
+trigger1=animelem=1
+value=40,2
+
+[State 100,1]
+type=VelSet
+trigger1=1
+x=const(velocity.run.back.x)
+
+[State 100,4]
+type=ChangeState
+trigger1=sysfvar(4)>5
+trigger1=pos y>=0
+value=106
+ctrl=0
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+;---------------------------------------------------------------------------
+; RUN_BACK2 (land)
+[Statedef 106]
+type=S
+physics=C
+ctrl=0
+
+[state ]
+type=changeanim
+trigger1=anim!=106
+value=106
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[State ,無敵になる]
+type=NotHitBy
+trigger1=1
+value=SCA,NA,SA,HA,NP,SP,HP,NT,ST,HT
+time=1
+
+[State 20,3]
+type=posset
+trigger1=1
+y=0
+
+[State 52,音を鳴らす]
+type=PlaySnd
+trigger1=animelem=1
+value=393,0
+
+[State 106,1]
+type=VelSet
+trigger1=animelemtime(1)=0
+y=0
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=animelem=2||animelem=6||animelem=10
+anim=30040
+id=30040
+pos=ceil(0*const(size.xscale)),ceil(0*const(size.yscale))
+postype=P1
+sprpriority=3
+bindtime=1
+ownpal=1
+Facing=-1
+scale=0.2,0.2
+vel=-0.5,-1
+
+[State 106,4]
+type=ChangeState
+trigger1=animtime=0
+value=0
+ctrl=1
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+
+;---------------------------------------------------------------------------
+; 吹っ飛び下降
+[Statedef 5050]
+type=A
+movetype=H
+physics=N
+
+[State 5050,1];Change anim when done with transition
+type=ChangeAnim
+trigger1=AnimTime=0
+trigger1=Anim=5035
+trigger2=Time=0;If no transition anim
+trigger2=Anim!=5035
+trigger2=(Anim!=[5051,5059])&&(Anim!=[5061,5069])
+trigger2=Anim!=5090;Not if hit off ground anim
+value=5050
+
+[State 5050,2];Coming down anim
+type=ChangeAnim
+trigger1=anim=[5050,5059]
+trigger1=Vel Y>=ifelse(anim=5050,1,-2)
+trigger1=SelfAnimExist(anim+10)
+value=anim+10
+persistent=0
+
+[State 5050,3];Gravity
+type=VelAdd
+trigger1=1
+y=GetHitVar(yaccel)
+
+[State 5050,6]
+type=ChangeState
+trigger1=Vel Y>0
+trigger1=Pos Y>=ifelse((anim=[5051,5059])||(anim=[5061,5069]),0,25)
+value=5100;HIT_BOUNCE
+
+[state ]
+type=destroyself
+trigger1=ishelper
+
+;---------------------------------------------------------------------------
+; 吹っ飛び後地面に激突
+[Statedef 5100]
+type=L
+movetype=H
+physics=N
+
+[State 5100,1]
+type=VelSet
+trigger1=Time=0
+trigger1=GetHitVar(fall.yvel)=0
+trigger1=vel x>1
+x=1
+
+[State 5100,EnvShake]
+type=FallEnvShake
+trigger1=Time=0
+
+[State 5100,Var];Save fall velocity
+type=VarSet
+trigger1=Time=0
+sysvar(1)=floor(vel y)
+
+[State 5100,2];Hit ground anim (normal)
+type=ChangeAnim
+triggerall=time=0
+trigger1=(anim!=[5051,5059])&&(anim!=[5061,5069])
+trigger2=!SelfAnimExist(5100+(anim%10))
+value=5100
+
+[State 5100,3];Hit ground anim (for hit up)
+type=ChangeAnim
+trigger1=time=0
+trigger1=(anim=[5051,5059])||(anim=[5061,5069])
+trigger1=SelfAnimExist(5100+(anim%10))
+value=5100+(anim%10)
+
+[State 5100,4]
+type=PosSet
+trigger1=Time=0
+y=0
+
+[State 5100,5]
+type=VelSet
+trigger1=Time=0
+y=0
+
+[State 5100,6];Reduce speed
+type=VelMul
+trigger1=Time=0
+x=0.75
+
+[State 5100,7]
+type=ChangeState
+trigger1=Time=0
+trigger1=GetHitVar(fall.yvel)=0
+value=5110;HIT_LIEDOWN
+
+[State 3000,3]
+type=EnvShake
+trigger1=Time=0
+time=10
+freq=2
+ampl=-4
+phase=10
+
+[State 5100,9]
+type=HitFallDamage
+trigger1=Time=3
+trigger1=palno<12
+;===================================================
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=Time=0
+value=850,2
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30002
+id=30002
+pos=0,0
+postype=P1
+sprpriority=-1
+bindtime=1
+ownpal=1
+scale=1.2,0.2
+ignorehitpause=1
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30040
+id=30040
+pos=ceil(0*const(size.xscale)),ceil(0*const(size.yscale))
+postype=P1
+sprpriority=-5
+bindtime=1
+ownpal=1
+Facing=-1
+scale=1,0.2
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30040
+id=30040
+pos=ceil(-30*const(size.xscale)),ceil(0*const(size.yscale))
+postype=P1
+sprpriority=-3
+bindtime=1
+ownpal=1
+Facing=-1
+scale=0.5,0.5
+vel=-0.5,-1
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30040
+id=30040
+pos=ceil(30*const(size.xscale)),ceil(0*const(size.yscale))
+postype=P1
+sprpriority=3
+bindtime=1
+ownpal=1
+Facing=-1
+scale=0.5,0.5
+vel=0.5,-1
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30120
+id=30120
+pos=ceil(0*const(size.xscale)),ceil(0*const(size.yscale))
+postype=P1
+sprpriority=3
+bindtime=1
+ownpal=1
+Facing=1
+scale=0.1,0.3
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30120
+id=30120
+pos=ceil(0*const(size.xscale)),ceil(0*const(size.yscale))
+postype=P1
+sprpriority=3
+bindtime=1
+ownpal=1
+Facing=-1
+scale=0.1,0.3
+
+;===================================================
+
+[State 5100,11]
+type=PosFreeze
+trigger1=1
+
+[State 5100,12]
+type=ChangeState
+trigger1=AnimTime=0
+value=5101
+
+[State 5100,13]
+type=ForceFeedback
+trigger1=Time=0
+waveform=sinesquare
+ampl=128,-3,-.2,.005
+time=20
+
+[Statedef 51000]
+type=S
+movetype=I
+physics=N
+
+[state 170,無敵]
+type=NotHitBy
+trigger1=1
+value=SCA
+time=1
+
+[State 5100,1]
+type=VelSet
+trigger1=Time=0
+trigger1=GetHitVar(fall.yvel)=0
+trigger1=vel x>1
+x=1
+
+[State 5100,EnvShake]
+type=FallEnvShake
+trigger1=Time=0
+
+[State 5100,Var];Save fall velocity
+type=VarSet
+trigger1=Time=0
+sysvar(1)=floor(vel y)
+
+[State 5100,2];Hit ground anim (normal)
+type=ChangeAnim
+triggerall=time=0
+trigger1=(anim!=[5051,5059])&&(anim!=[5061,5069])
+trigger2=!SelfAnimExist(5100+(anim%10))
+value=5100
+
+[State 5100,3];Hit ground anim (for hit up)
+type=ChangeAnim
+trigger1=time=0
+trigger1=(anim=[5051,5059])||(anim=[5061,5069])
+trigger1=SelfAnimExist(5100+(anim%10))
+value=5100+(anim%10)
+
+[State 5100,4]
+type=PosSet
+trigger1=Time=0
+y=0
+
+[State 5100,5]
+type=VelSet
+trigger1=Time=0
+y=0
+
+[State 5100,6];Reduce speed
+type=VelMul
+trigger1=Time=0
+x=0.75
+
+[State 5100,7]
+type=ChangeState
+trigger1=Time=0
+trigger1=GetHitVar(fall.yvel)=0
+value=5110;HIT_LIEDOWN
+
+[State 3000,3]
+type=EnvShake
+trigger1=Time=0
+time=10
+freq=2
+ampl=-4
+phase=10
+
+[State 5100,9]
+type=HitFallDamage
+trigger1=Time=3
+;===================================================
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=Time=0
+value=850,2
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30002
+id=30002
+pos=0,0
+postype=P1
+sprpriority=-1
+bindtime=1
+ownpal=1
+scale=1.2,0.2
+ignorehitpause=1
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30040
+id=30040
+pos=ceil(0*const(size.xscale)),ceil(0*const(size.yscale))
+postype=P1
+sprpriority=-5
+bindtime=1
+ownpal=1
+Facing=-1
+scale=1,0.2
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30040
+id=30040
+pos=ceil(-30*const(size.xscale)),ceil(0*const(size.yscale))
+postype=P1
+sprpriority=-3
+bindtime=1
+ownpal=1
+Facing=-1
+scale=0.5,0.5
+vel=-0.5,-1
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30040
+id=30040
+pos=ceil(30*const(size.xscale)),ceil(0*const(size.yscale))
+postype=P1
+sprpriority=3
+bindtime=1
+ownpal=1
+Facing=-1
+scale=0.5,0.5
+vel=0.5,-1
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30120
+id=30120
+pos=ceil(0*const(size.xscale)),ceil(0*const(size.yscale))
+postype=P1
+sprpriority=3
+bindtime=1
+ownpal=1
+Facing=1
+scale=0.1,0.3
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30120
+id=30120
+pos=ceil(0*const(size.xscale)),ceil(0*const(size.yscale))
+postype=P1
+sprpriority=3
+bindtime=1
+ownpal=1
+Facing=-1
+scale=0.1,0.3
+
+;===================================================
+
+[State 5100,11]
+type=PosFreeze
+trigger1=1
+
+[State 5100,12]
+type=ChangeState
+trigger1=AnimTime=0
+value=5101
+
+[State 5100,13]
+type=ForceFeedback
+trigger1=Time=0
+waveform=sinesquare
+ampl=128,-3,-.2,.005
+time=20
+;---------------------------------------------------------------------------
+; ダウン
+[Statedef 5110]
+type=L
+movetype=H
+physics=N
+
+[State 5110,5]
+type=PosSet
+trigger1=Time=0
+y=0
+
+[State 5110,1];For hit up/up-diag type (from state 5081)
+type=ChangeAnim
+persistent=0
+trigger1=SelfAnimExist(5110+(anim%10))
+trigger1=anim=[5081,5089]
+value=5110+(anim%10)
+
+[State 5110,2];Hit ground anim (normal)
+type=ChangeAnim
+triggerall=time=0
+triggerall=anim!=[5110,5119];Not already changed anim
+trigger1=anim!=[5161,5169]
+trigger2=!SelfAnimExist(5170+(anim%10))
+value=5170
+
+[State 5110,3];Hit ground anim (for hit up)
+type=ChangeAnim
+triggerall=time=0
+triggerall=anim!=[5110,5119];Not already changed anim
+trigger1=anim=[5161,5169]
+trigger1=SelfAnimExist(5170+(anim%10))
+value=5170+(anim%10)
+
+[State 5110,4]
+type=HitFallDamage
+trigger1=Time=0
+
+[State 5110,Var];Get fall velocity
+type=VarSet
+trigger1=Time=0
+trigger1=GetHitVar(fall.yvel)!=0
+sysvar(1)=floor(vel y)
+
+[State 5110,8]
+type=VelSet
+trigger1=Time=0
+y=0
+
+[State 5110,9];For hit up type
+type=ChangeAnim
+persistent=0
+triggerall=anim=[5171,5179]
+triggerall=SelfAnimExist(5110+(anim%10))
+trigger1=AnimTime=0
+trigger2=SysVar(0);SysVar(0) = 1 avoids hit ground anim
+value=5110+(anim%10)
+
+[State 5110,10];For normal
+type=ChangeAnim
+persistent=0
+triggerall=Anim!=[5111,5119]
+trigger1=AnimTime=0
+trigger2=SysVar(0);SysVar(0) = 1 avoids hit ground frame
+value=5110
+
+[State 5110,11];If just died
+type=ChangeState
+triggerall=!alive
+trigger1=AnimTime=0
+trigger2=SysVar(0);SysVar(0) = 1 avoids hit ground frame
+trigger3=Anim=[5110,5119]
+value=5150
+
+[State 5110,12]
+type=VarSet
+trigger1=SysVar(0)
+trigger1=Time=0
+sysvar(0)=0
+
+[State 5110,13];Friction
+type=VelMul
+trigger1=1
+x=0.85
+
+[State 5110,14]
+type=ForceFeedback
+trigger1=alive
+trigger1=Time=0
+time=8
+ampl=240
+waveform=sine
+
+[State 5110,15]
+type=ForceFeedback
+trigger1=!alive
+trigger1=Time=0
+ampl=200,7,-.467
+time=30
+waveform=sine
+
+;===================================================
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=Time=0
+value=40,0
+
+[State 600,音を鳴らす]
+type=PlaySnd
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+value=40,0
+
+[State 3000,3]
+type=EnvShake
+trigger1=Time=0
+time=10
+freq=2
+ampl=-4
+phase=10
+
+[State 1000,3]
+type=EnvShake
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+time=10
+freq=2
+ampl=-4
+phase=10
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30002
+id=30002
+pos=0,0
+postype=P1
+sprpriority=-1
+bindtime=1
+ownpal=1
+scale=1,0.2
+ignorehitpause=1
+pausemovetime=5000
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30040
+id=30040
+pos=ceil(0*const(size.xscale)),ceil(0*const(size.yscale))
+postype=P1
+sprpriority=-5
+bindtime=1
+ownpal=1
+Facing=-1
+scale=1,0.2
+pausemovetime=5000
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30040
+id=30040
+pos=ceil(-30*const(size.xscale)),ceil(0*const(size.yscale))
+postype=P1
+sprpriority=-3
+bindtime=1
+ownpal=1
+Facing=-1
+scale=0.2,0.2
+vel=-0.5,-1
+pausemovetime=5000
+
+[State -2,ダウンエフェクト]
+type=Explod
+trigger1=Time=0
+trigger1=(sysvar(1)<14)
+anim=30040
+id=30040
+pos=ceil(30*const(size.xscale)),ceil(0*const(size.yscale))
+postype=P1
+sprpriority=3
+bindtime=1
+ownpal=1
+Facing=-1
+scale=0.2,0.2
+vel=0.5,-1
+pausemovetime=5000
+
+;===================================================
+---------------------------------------------------------
+; 負けた時に横に倒れている
+[Statedef 5150]
+type=L
+movetype=H
+physics=N
+sprpriority=-3
+
+[State 5150,1]
+type=ChangeAnim
+triggerall=PrevStateno=5950
+trigger1=(anim!=5150)
+value=5150
+
+[State 5150,1];Normal anim
+type=ChangeAnim
+triggerall=PrevStateno!=5950
+triggerall=Time=0
+triggerall=SelfAnimExist(5140)
+trigger1=(anim!=[5111,5119])&&(anim!=[5171,5179])
+trigger2=!SelfAnimExist(5140+(anim%10))
+value=5140
+
+[State 5150,3];Hit up type anim
+type=ChangeAnim
+triggerall=PrevStateno!=5950
+trigger1=Time=0
+trigger1=(anim=[5111,5119])||(anim=[5171,5179])
+trigger1=SelfAnimExist(5140+(anim%10))
+value=5140+(anim%10)
+
+[State 5150,4];Match over anim
+type=ChangeAnim
+persistent=0
+triggerall=PrevStateno!=5950
+;trigger1 = Time = 0
+trigger1=MatchOver=1
+trigger1=Anim=[5140,5149]
+trigger1=SelfAnimExist(anim+10)
+value=anim+10
+
+[State 5150,5];Switch to 5110 if liedead anim does not exist
+type=ChangeAnim
+triggerall=PrevStateno!=5950
+trigger1=Time=0
+trigger1=Anim!=[5140,5159]
+trigger1=Anim!=[5110,5119]
+value=5110
+
+[State 5150,6];Friction
+type=VelMul
+trigger1=1
+x=0.85
+
+[State 5150,7];Friction
+type=VelSet
+trigger1=Vel x<.05
+persistent=0
+x=0
+
+[State 5150,7]
+type=playsnd
+trigger1=1
+value=11,3
+channel=0
+persistent=0
+
+[State 5150,8]
+type=NotHitBy
+trigger1=1
+value=SCA,AA,AT,AP
+time=1
+
+
+;■■■■■■■■■■■■■■■■■■■■■■■■■
+;	[本体]空中復帰
+;--------------------------------------------------
+[statedef 521000]
+type=u
+movetype=i
+physics=a
+ctrl=0
+
+[state ];バグ対策
+type=StateTypeSet
+trigger1=pos y>0
+statetype=a
+IgnoreHitPause=1
+[state ];バグ対策
+type=StateTypeSet
+trigger1=pos y<=0
+statetype=s
+IgnoreHitPause=1
+
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+
+[state ]
+type=velset
+trigger1=sysfvar(4)=1
+X=-4
+Y=-5
+[state ]
+type=turn
+trigger1=sysfvar(4)=1
+trigger1=p2dist x<-5
+[state ]
+type=changeanim
+trigger1=anim!=430000
+value=430000;ifelse((vel x>=0),420000,430000)
+[state ]
+type=nothitby
+trigger1=1
+value=sca
+[state ]
+type=playerpush
+trigger1=sysfvar(4)<14
+value=0
+[state ]
+type=null;ctrlset
+trigger1=time=15
+value=1
+
+[state ]
+type=changestate
+trigger1=vel y>0
+trigger1=pos y>=0
+trigger2=sysfvar(4)>60
+value=52
+ctrl=1
+[state 準ステ固定]
+type=changestate
+triggerall=palno!=12
+trigger1=!ishelper
+value=5210000
+ignorehitpause=1
+
+[statedef 5210000]
+type=u
+movetype=u
+physics=u
+movehitpersist=1
+hitdefpersist=1
+
+[state ]
+type=null
+trigger1=!ishelper
+trigger2=ishelper
+ignorehitpause=1
+
+;***************************************************************************
+;--------------------------壁ふっとばし---------------------------------------------
+;***************************************************************************
+;飛び
+[Statedef 5600]
+type=A
+movetype=H
+physics=N
+
+[State 5600,ターン]
+type=Turn
+triggerall=roundstate=2
+trigger1=P2BodyDist X!=[0,360]
+
+[State 1];無敵の状態を作る
+type=NotHitBy
+trigger1=1
+value=SCA,AA,AT,AP
+
+[State 1994,ステート変更]
+type=ChangeState
+triggerall=PrevStateno=[5601,5602]
+trigger1=Time=0
+value=5602
+
+[State 210,3]
+type=PlayerPush
+trigger1=1
+value=0
+
+[State 820,制御した相手のアニメ変更]
+type=ChangeAnim
+Trigger1=Time=0
+value=ifelse(SelfAnimExist(5052)=1,5052,5030)
+
+[State 821,速度加算]
+type=VelAdd
+trigger1=BackEdgeBodyDist>=10
+trigger2=FrontEdgeBodyDist>=10
+x=-2
+
+[State 821,速度加算]
+type=Velset
+trigger1=time=0
+y=0
+
+[State 1993,ステート変更];壁に当たる時のステートに行く
+type=ChangeState
+trigger1=BackEdgeBodyDist<=10
+trigger2=FrontEdgeBodyDist<=10
+value=5601
+
+
+[State 821,制御解除して相手のステートに戻す]
+type=SelfState
+trigger1=time=100
+value=5100
+
+
+
+;------------------
+; 壁に当たる
+[Statedef 5601]
+type=A
+movetype=H
+physics=N
+
+
+[State 1];無敵の状態を作る
+type=NotHitBy
+trigger1=1
+value=SCA,AA,AT,AP
+
+[State 1995,移動速度]
+type=VelSet
+trigger1=Time=0
+x=0
+y=0
+
+[State 1995,移動速度]
+type=Veladd
+trigger1=Time=0
+x=0
+y=0
+
+[State 820,制御した相手のアニメ変更]
+type=ChangeAnim
+Trigger1=Time=0
+value=5000
+
+[State 1994,振り返る]
+type=Turn
+trigger1=(Time=0)&&(FrontEdgeBodyDist<=20)
+
+[State 1994,軸位置移動]
+type=PosAdd
+trigger1=Time=0
+x=15-BackEdgeBodyDist
+y=-10
+
+[State 1994,移動を止める]
+type=PosFreeze
+trigger1=1
+x=0
+y=0
+
+[State 1994,カメラスクロールの有無]
+type=ScreenBound
+trigger1=1
+value=1
+movecamera=0,1
+
+[State 1000,3]
+type=EnvShake
+Trigger1=Time=0
+time=20
+freq=60
+ampl=-4
+phase=120
+
+[State 1994,ステート変更]
+type=ChangeState
+trigger1=Time=1
+value=5602
+
+;------------------
+; 壁からのバウンド
+[Statedef 5602]
+type=A
+movetype=H
+physics=N
+
+[State 210,3]
+type=PlayerPush
+trigger1=1
+value=0
+
+[State 1995,移動速度]
+type=VelSet
+trigger1=Time=0
+x=1
+y=-3.5
+
+[State 1995,重力代わり]
+type=VelAdd
+trigger1=1
+y=.45
+
+
+[State 1995,アニメ変更]
+type=ChangeAnim
+trigger1=Time=0
+value=ifelse(SelfAnimExist(5052)=1,5052,5050)
+
+
+
+[State 1995,相手ステートに戻す]
+type=SelfState
+trigger1=(Vel Y>0)&&(Pos Y>=0)
+value=5100
+;---------------------------------------------------------------------------
+
+;***************************************************************************
+;--------------------------バウンドエフェ右-------------------------------
+;***************************************************************************
+[Statedef 5603]
+type=A
+movetype=I
+physics=N
+ctrl=0
+anim=0
+sprpriority=0
+
+[State 9741,Safety];一応
+type=selfstate
+trigger1=!ishelper
+value=0
+
+[State -2];常時完全無敵
+type=Nothitby
+trigger1=1
+value=SCA,AA,AT,AP
+
+[State -2];不可視化＆影消し。
+type=assertspecial
+trigger1=1
+flag=noshadow
+flag2=invisible
+ignorehitpause=1
+
+[State -3,エフェクト表示]
+type=Explod
+triggerall=!NumExplod(30020)
+trigger1=time=0
+anim=30020
+id=30020
+pos=0,floor(ScreenPos Y)-50
+postype=right
+sprpriority=-1
+facing=1
+IgnoreHitPause=1
+Persistent=0
+
+[State -2,ヒット音]
+type=PlaySnd
+trigger1=time=0
+value=1,3
+ignorehitpause=1
+
+[State 815,6]
+type=DestroySelf
+trigger1=Time=10
+;***************************************************************************
+;--------------------------バウンドエフェ左-------------------------------
+;***************************************************************************
+[Statedef 5604]
+type=A
+movetype=I
+physics=N
+ctrl=0
+anim=0
+sprpriority=0
+
+[State 9741,Safety];一応
+type=selfstate
+trigger1=!ishelper
+value=0
+
+[State -2];常時完全無敵
+type=Nothitby
+trigger1=1
+value=SCA,AA,AT,AP
+
+[State -2];不可視化＆影消し。
+type=assertspecial
+trigger1=1
+flag=noshadow
+flag2=invisible
+ignorehitpause=1
+
+[State -3,エフェクト表示]
+type=Explod
+triggerall=!NumExplod(30020)
+trigger1=time=0
+anim=30020
+id=30020
+pos=0,floor(ScreenPos Y)-50
+postype=left
+sprpriority=-1
+facing=-1
+IgnoreHitPause=1
+Persistent=0
+
+[State -3,音を鳴らす]
+type=PlaySnd
+trigger1=time=0
+value=1,3
+Persistent=0
+
+[State 815,6]
+type=DestroySelf
+trigger1=Time=10
+
+;---------------------------------------------------------------------------
+;崩れＫＯ
+[Statedef 5950]
+type=U
+movetype=H
+physics=S
+ctrl=0
+
+[State 5950,アニメ変更]
+type=ChangeAnim
+trigger1=time=0
+value=5950
+IgnoreHitPause=1
+Persistent=0
+
+[State 5950,無敵]
+type=NotHitBy
+trigger1=1
+value=SCA,AA,AT,AP
+time=2
+
+[State 5950,ダウン判定]
+type=HitFallSet
+trigger1=1
+value=0
+
+[State 5950,押し判定]
+type=PlayerPush
+trigger1=1
+value=0
+
+[State 5950,軸位置]
+type=PosSet
+trigger1=1
+y=0
+
+[State 5950,移動速度]
+type=VelSet
+trigger1=1
+y=0
+
+[State 5950,食らい中の速度]
+type=HitVelSet
+trigger1=Time=0
+x=GetHitVar(XVel)
+
+[State 5950,ステート変更]
+type=ChangeState
+triggerall=(Anim=5950)
+trigger1=animtime=0
+value=ifelse((Lose),5150,5110)
+
+
+
+
+
+
+
+;---------------------------------------------------------------------------
+;壁ヘルパー用
+[Statedef 2525]
+type=S
+movetype=I
+physics=S
+ctrl=0
+anim=99999
+xscale=0
+
+[State 5950,無敵]
+type=NotHitBy
+trigger1=1
+value=SCA,AA,AT,AP
+time=500
+
+[State 4];
+type=velset
+trigger1=1
+x=10
+
+[State 4];ぶつかり
+type=PlayerPush
+trigger1=1
+value=0
+
+[State ]
+type=velSet
+trigger1=root,numprojID(10010)>0
+x=10
+
+[State 30000];判定用飛び道具射出
+type=Projectile
+trigger1=time=0
+projID=10010
+projanim=99999
+velocity=10,0
+projpriority=7
+projsprpriority=2
+projstagebound=0
+projedgebound=99999
+offset=0,0
+postype=p1
+supermovetime=99999
+pausemovetime=99999
+projremovetime=-1
+
+[State 5950,移動速度]
+type=VelSet
+trigger1=time>1
+trigger1=root,numprojID(10010)<1
+x=0
+
+
+
+;---------------------------------------------------------------------------
+;壁ヘルパー用2
+[Statedef 2526]
+type=S
+movetype=I
+physics=S
+ctrl=0
+anim=99999
+xscale=0
+
+[State 5950,無敵]
+type=NotHitBy
+trigger1=1
+value=SCA,AA,AT,AP
+time=500
+
+[State 4];
+type=velset
+trigger1=1
+x=-10
+
+[State 4];ぶつかり
+type=PlayerPush
+trigger1=1
+value=0
+
+[State ]
+type=velSet
+trigger1=root,numprojID(10011)>0
+x=-10
+
+[State 30000];判定用飛び道具射出
+type=Projectile
+trigger1=time=0
+projID=10011
+projanim=99999
+velocity=-10,0
+projpriority=7
+projsprpriority=2
+projstagebound=0
+projedgebound=99999
+offset=0,0
+postype=p1
+supermovetime=99999
+pausemovetime=99999
+projremovetime=-1
+
+[State 5950,移動速度]
+type=VelSet
+trigger1=time>1
+trigger1=root,numprojID(10011)<1
+x=0
+
+;---------------------------------------------------------------------------
+; ＡＩ用バックジャンプ開始
+[Statedef 2531]
+type=S
+physics=S
+;anim=40
+ctrl=0
+sprpriority=1
+
+[state ]
+type=changeanim
+value=2531
+trigger1=anim!=2531
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+[state ]
+type=nothitby
+trigger1=!ishelper
+value=sca
+ignorehitpause=1
+
+[State 40,移動速度];ＡＩオン
+type=VelSet
+trigger1=var(59)
+trigger1=AnimTime=0
+x=const(velocity.jump.back.x)*3
+y=const(velocity.jump.y)*1
+
+[State 40,振り返る]
+type=Turn
+triggerall=(PrevStateNo=52)
+trigger1=(animelemtime(1)=0)&&(P2Dist X<0)
+Persistent=0
+
+[State 40,ステート変更]
+type=statetypeset
+trigger1=AnimTime=0
+statetype=A
+physics=A
+
+[State 40,ステート変更]
+type=null;Changeanim
+trigger1=AnimTime=0
+value=43
+
+[State 40,ステート変更]
+type=Ctrlset
+;trigger1=anim=43
+trigger1=sysfvar(4)>10
+value=1
+
+[State 40,ハイジャンプ音]
+type=null;PlaySnd
+;trigger1=Anim=43
+;trigger1=animelem=1
+trigger1=sysfvar(4)=2
+value=40,2
+
+[State 40,ステート変更]
+type=Changestate
+trigger1=sysfvar(4)>10
+trigger1=pos y>=0
+value=52
+[State 40,ステート変更]
+type=Changestate
+trigger2=sysfvar(4)>50
+trigger1=pos y<=-50
+value=99
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+
+;---------------------------------------------------------------------------
+;三角跳び 
+[Statedef 99]
+type=A
+physics=A
+ctrl=0
+
+[state ]
+type=changeanim
+value=2315
+trigger1=anim!=2315
+ignorehitpause=1
+[state 時間管理用]
+type=varset
+triggerall=!ishelper
+trigger1=animelemtime(1)=0
+sysfvar(4)=1
+ignorehitpause=1
+[state ]
+type=nothitby
+trigger1=!ishelper
+value=sca
+ignorehitpause=1
+
+[State 40,振り返る]
+type=Turn
+trigger1=(animelemtime(1)=0)&&(P2Dist X<0)
+
+[State 40,ハイジャンプ音]
+type=PlaySnd
+trigger1=animelemtime(1)=0
+value=40,1
+
+[State 40,ハイジャンプ残像]
+type=AfterImage
+trigger1=animelemtime(1)=0
+time=30
+trans=add1
+
+[State 50,1]
+type=VarSet
+trigger1=animelemtime(1)=0
+sysvar(1)=0
+
+[State 50,1]
+type=VelSet
+trigger1=animelemtime(1)=0
+x=6
+y=-6
+
+[State ]
+type=ctrlset
+trigger1=sysfvar(4)>=10
+value=1
+
+[State 50,2]
+type=Changestate
+trigger1=pos y>=0
+value=52
+[state 準ステ固定]
+type=changestate
+triggerall=palno=12
+trigger1=!ishelper
+value=120
+ignorehitpause=1
+
+;---------------------------------------------------------------------------
+; GUARD (start)
+[Statedef 120]
+type=u
+movetype=u
+physics=u
+movehitpersist=1
+hitdefpersist=1
+
+[state ]
+type=null
+triggerall=palno=12
+trigger1=!ishelper
+trigger2=ishelper
+ignorehitpause=1
+
+[State 120,1]
+type=ChangeAnim
+triggerall=palno!=12
+trigger1=Time=0
+value=120+(statetype=C)+(statetype=A)*2
+
+[State 120,2]
+type=StateTypeSet
+triggerall=palno!=12
+trigger1=Time=0&&statetype=S
+physics=S
+
+[State 120,3]
+type=StateTypeSet
+triggerall=palno!=12
+trigger1=Time=0&&statetype=C
+physics=C
+
+[State 120,4]
+type=StateTypeSet
+triggerall=palno!=12
+trigger1=Time=0&&statetype=A
+physics=A
+
+[State 120,HitoLo]
+type=StateTypeSet
+triggerall=palno!=12
+trigger1=var(59)<=0&&statetype=S&&command="holddown"
+trigger2=var(59)>=1&&statetype=S&&(enemynear,movetype=A)
+trigger2=enemynear,statetype=C
+statetype=C
+physics=C
+
+[State 120,LotoHi]
+type=StateTypeSet
+triggerall=palno!=12
+trigger1=var(59)<=0&&statetype=C&&command!="holddown"
+trigger2=var(59)>=1&&statetype=C&&(enemynear,movetype=A)&&(enemynear,statetype!=C)
+statetype=S
+physics=S
+
+[State 120,5]
+type=ChangeState
+triggerall=palno!=12
+trigger1=AnimTime=0||var(59)>=1
+value=130+(statetype=C)+(statetype=A)*2
+
+[State 120,StopGuarding]
+type=ChangeState
+triggerall=palno!=12
+trigger1=(var(59)<=0&&command!="holdback")
+trigger2=var(59)<=0&&!inguarddist
+;AI
+Trigger3=var(59)>=1
+Trigger3=!InguardDist
+Trigger4=roundstate!=2
+value=140
+
+;---------------------------------------------------------------------------
+; STAND GUARD (guarding)
+[Statedef 130]
+type=S
+physics=S
+
+[State 130,1]
+type=ChangeAnim
+trigger1=Anim!=130
+value=130
+
+[State 130,HitoLo]
+type=ChangeState
+trigger1=var(59)<=0&&command="holddown"
+trigger2=var(59)>=1
+trigger2=(enemynear,movetype=A)&&random<970
+value=131
+
+[State 120,StopGuarding]
+type=ChangeState
+trigger1=(var(59)<=0&&command!="holdback")
+trigger2=var(59)<=0&&!inguarddist
+;AI
+Trigger3=var(59)>=1
+Trigger3=!InguardDist
+Trigger4=roundstate!=2
+value=140
+
+;---------------------------------------------------------------------------
+; CROUCH GUARD (guarding)
+[Statedef 131]
+type=C
+physics=C
+
+[State 131,1]
+type=ChangeAnim
+trigger1=Anim!=131
+value=131
+
+[State 131,LotoHi]
+type=ChangeState
+trigger1=var(59)<=0&&command!="holddown"
+trigger2=var(59)>=1&&random<15
+trigger2=(enemynear,movetype=A)&&(enemynear,statetype!=C)
+Trigger3=(Enemy,stateType=A)||(Enemy,pos Y<0)
+trigger3=var(59)>=1
+value=130
+
+[State 120,StopGuarding]
+type=ChangeState
+trigger1=(var(59)<=0&&command!="holdback")
+trigger2=var(59)<=0&&!inguarddist
+;AI
+Trigger3=var(59)>=1
+Trigger3=!InguardDist
+Trigger4=roundstate!=2
+value=140
+
+;■■■■■■■■■■■■■■■■■■■■■■■■■
+;	[本体]ガード（終了）
+;--------------------------------------------------
+[statedef 140]
+type=u
+physics=u
+ctrl=1
+
+[state ]
+type=changeanim
+trigger1=time=0
+value=140+(statetype=c)+(statetype=a)*2
+
+[state ]
+type=statetypeset
+trigger1=time=0&&statetype=s
+Physics=S
+[state ]
+type=statetypeset
+trigger1=time=0&&statetype=c
+Physics=C
+[state ]
+type=statetypeset
+trigger1=time=0&&statetype=a
+Physics=A
+
+[state ]
+type=changestate
+trigger1=1
+value=0
+ctrl=1
+
+;---------------------------------------------------------------------------
+; RUN_FWD
+[Statedef 102]
+type=S
+physics=S
+anim=100
+sprpriority=1
+
+[State 100,1]
+type=VelSet
+trigger1=1
+x=const(velocity.run.fwd.x)
+
+[State 100,2];Prevent run from canceling into walk
+type=AssertSpecial
+trigger1=1
+flag=NoWalk
+
+[State 100,3];Prevent from turning
+type=AssertSpecial
+trigger1=1
+flag=NoAutoTurn
+
+[State 100,1]
+type=ctrlSet
+trigger1=var(59)=1
+value=0
+
+[State 100,4]
+type=ChangeState
+trigger1=var(59)<=0
+trigger1=command!="holdfwd"
+value=0
+
+[statedef 156]
+
+[state ]
+type=statetypeset
+trigger1=ishelper(156)
+movetype=i
+physics=n
+ignorehitpause=1
+[state ]
+type=changeanim
+trigger1=ishelper(156)
+value=root,anim
+ignorehitpause=1
+[state ]
+type=ctrlset
+trigger1=ishelper(156)
+value=0
+ignorehitpause=1
+[state ]
+type=assertspecial
+trigger1=ishelper(156)
+flag=invisible
+flag2=noshadow
+ignorehitpause=1
+[state ]
+type=lifeset
+trigger1=ishelper(156)
+value=99999999
+ignorehitpause=1
+[state ]
+type=screenbound
+trigger1=ishelper(156)
+value=0
+ignorehitpause=1
+[state ]
+type=bindtoroot
+trigger1=ishelper(156)
+pos=0,0
+ignorehitpause=1
+[state ]
+type=playerpush
+trigger1=ishelper(156)
+value=1
+ignorehitpause=1
+[state ]
+type=turn
+triggerall=ishelper(156)
+trigger1=facing!=root,facing
+ignorehitpause=1
+[state ]
+type=hitoverride
+trigger1=ishelper(156)
+time=-1
+slot=1
+attr=sca,aa,at,ap
+stateno=120
+ignorehitpause=1
+
+[state ]
+type=null;nothitby
+triggerall=ishelper(156)
+trigger1=gethitvar(damage)
+trigger1=root,sysvar(3)=0
+value=sca
+time=1
+ignorehitpause=1
+[state ]
+type=nothitby
+triggerall=ishelper(156)
+trigger1=gethitvar(damage)
+trigger1=root,sysvar(3)>0
+value=sca
+time=30
+ignorehitpause=1
+
+[state ]
+type=destroyself
+triggerall=ishelper(156)
+trigger1=!root,alive
+trigger2=root,palno<12
+trigger2=root,anim!=[0,20]
+trigger3=root,palno=12
+trigger3=root,movetype=a
+trigger4=roundstate>=3
+ignorehitpause=1
+
+[statedef 102180]
+type=s
+movetype=a
+physics=s
+juggle=0
+velset=0,0
+ctrl=0
+sprpriority=2
+;facep2=1
+hitdefpersist=1
+
+[state ]
+type=selfstate
+trigger1=!ishelper
+value=0
+ctrl=1
+[state ]
+type=changeanim
+value=30001
+triggerall=ishelper(103001)
+trigger1=anim!=30001
+ignorehitpause=1
+[state ]
+type=changeanim
+value=2316
+triggerall=ishelper(102180)
+trigger1=anim!=2316
+ignorehitpause=1
+[state ]
+type=changeanim
+value=2300
+triggerall=ishelper(102300)
+trigger1=anim!=2300
+ignorehitpause=1
+
+[state ]
+type=nothitby
+trigger1=ishelper(102180)||ishelper(102300)||ishelper(103001)
+value=sca,nt,st,ht,na,sa,ha,np,sp,hp
+time=-1
+ignorehitpause=1
+[state ]
+type=assertspecial
+trigger1=ishelper(102180)||ishelper(102300)||ishelper(103001)
+flag=invisible
+flag2=noshadow
+ignorehitpause=1
+[state ]
+type=lifeset
+trigger1=ishelper(102180)||ishelper(102300)||ishelper(103001)
+value=9999999999
+ignorehitpause=1
+[state ]
+type=screenbound
+trigger1=ishelper(102180)||ishelper(102300)||ishelper(103001)
+value=0
+ignorehitpause=1
+[state ]
+type=bindtoroot
+trigger1=ishelper(102180)||ishelper(102300)||ishelper(103001)
+pos=0,0
+ignorehitpause=1
+[state ]
+type=playerpush
+trigger1=ishelper(102180)||ishelper(102300)||ishelper(103001)
+value=1
+ignorehitpause=1
+
+[state ]
+type=reversaldef
+triggerall=ishelper(103001)
+triggerall=root,palno>7
+trigger1=root,anim=2330
+reversal.attr=sca,aa,at,ap
+pausetime=1,8
+numhits=0
+ground.hittime=-1
+p2stateno=556
+[state ]
+type=reversaldef
+triggerall=ishelper(102180)
+triggerall=root,palno=[1,9]
+triggerall=root,movetype=a
+trigger1=root,anim=2316
+reversal.attr=sca,aa,at,ap
+pausetime=1,8
+numhits=0
+sparkno=s30000+random%4
+hitsound=s500,0
+ground.hittime=-1
+p2stateno=2185+(root,palno=7)*1
+[state ]
+type=reversaldef
+triggerall=ishelper(102300)
+triggerall=root,palno=[1,7]
+triggerall=root,movetype=a
+trigger1=root,anim=2300
+reversal.attr=sca,aa,at,ap
+pausetime=1,8
+numhits=0
+sparkno=s30010+random%4
+hitsound=s500,0
+ground.hittime=-1
+p2stateno=80800
+[state ]
+type=reversaldef
+triggerall=root,movetype=a
+trigger1=root,palno=[10,12]
+trigger1=ishelper(102180)
+trigger1=root,anim=2316
+trigger2=root,palno=[8,12]
+trigger2=ishelper(102300)
+trigger2=root,anim=2300
+triggerall=root,var(52)
+reversal.attr=sca,aa,at,ap
+pausetime=1,8
+numhits=0
+sparkno=s30010+random%4
+hitsound=s500,0
+ground.hittime=-1
+p2stateno=5153
+[state ]
+type=targetlifeadd
+triggerall=ishelper(102180)||ishelper(102300)
+triggerall=!target,ishelper
+triggerall=numtarget>0
+trigger1=root,var(52)
+trigger1=root,movetype=a
+trigger1=root,palno=[9,12]
+value=-999999999999999
+kill=1
+absolute=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state ]
+type=destroyself
+triggerall=ishelper(102180)
+trigger1=!alive
+trigger2=!root,alive
+trigger3=root,anim!=2316
+ignorehitpause=1
+[state ]
+type=destroyself
+triggerall=ishelper(102300)
+trigger1=!alive
+trigger2=!root,alive
+trigger3=root,anim!=2300
+ignorehitpause=1
+[state ]
+type=destroyself
+triggerall=ishelper(103001)
+trigger1=!alive
+trigger2=!root,alive
+trigger3=root,anim!=2330
+ignorehitpause=1
+
+[statedef 80800]
+type=a
+movetype=h
+physics=n
+sprpriority=-1
+
+[state ]
+type=hitby
+trigger1=1
+value=sca,aa,at,ap
+ignorehitpause=1
+[state ]
+type=defencemulset
+trigger1=1
+value=1
+ignorehitpause=1
+[state ]
+type=lifeadd
+trigger1=time=0
+trigger1=enemynear,palno=[1,2]
+value=-ceil(ifelse(enemy,const(data.life)>1000,enemy,const(data.life)*.1,100))
+[state ]
+type=lifeadd
+trigger1=time=0
+trigger1=enemynear,palno=[3,4]
+value=-ceil(ifelse(enemy,const(data.life)>1000,enemy,const(data.life)*.2,200))
+[state ]
+type=lifeadd
+trigger1=time=0
+trigger1=enemynear,palno=[5,6]
+value=-ceil(ifelse(enemy,const(data.life)>1000,enemy,const(data.life)*.3,300))
+[state ]
+type=lifeset
+trigger1=life<2
+value=0
+[state ]
+type=veladd
+trigger1=time>0
+trigger2=!alive
+x=-.4
+y=.1
+[state ]
+type=changeanim
+trigger1=time=0
+value=5050
+[state ]
+type=selfstate
+trigger1=!alive
+value=5100
+[state ]
+type=selfstate
+trigger1=vel y>0
+trigger1=pos y>=0
+trigger2=time>600
+value=5050
+
+[statedef 13007];カットイン
+type=a
+movetype=i
+physics=n
+anim=29013;表示なし
+ctrl=0
+sprpriority=7
+
+[state ]
+type=screenbound
+trigger1=1
+value=0
+[state ]
+type=assertspecial
+trigger1=ishelper
+flag=noshadow
+flag2=nobardisplay
+ignorehitpause=1
+[state ]
+type=varadd
+trigger1=ishelper
+sysfvar(3)=1
+ignorehitpause=1
+[state ]
+type=varadd
+triggerall=ishelper
+trigger1=sysfvar(3)=[1,16]
+sysfvar(1)=5;10
+ignorehitpause=1
+[state ]
+type=bgpalfx
+trigger1=ishelper
+mul=sysfvar(1),sysfvar(1),sysfvar(1)
+time=2
+
+[state ]
+type=null;explod
+triggerall=ishelper(13007)
+trigger1=sysfvar(3)=1
+anim=29011
+id=29011
+postype=back
+;scale=.5,.5
+pos=290,120;190,120
+facing=1
+sprpriority=-1
+bindtime=-1
+removetime=16
+ownpal=0
+supermovetime=9999
+pausemovetime=9999
+[state ]
+type=null;modifyexplod
+triggerall=ishelper(13007)
+trigger1=sysfvar(3)>=1
+trigger1=sysfvar(3)<17
+id=29011
+scale=.5*(2-((sysfvar(3)-11)*0.2)),.5*(2-((sysfvar(3)-11)*0.2))
+postype=back
+pos=190-sysfvar(1),120
+[state ]
+type=explod
+triggerall=ishelper(13007)
+trigger1=sysfvar(3)=1;17
+anim=29012
+id=29012
+postype=back
+pos=-60,60;30,120
+vel=-0.5,0
+scale=1,1
+facing=1
+bindtime=1
+removetime=-2
+ownpal=0
+removetime=63;35
+supermovetime=9999
+pausemovetime=9999
+sprpriority=-1
+
+[state ]
+type=destroyself
+trigger1=ishelper(13007)
+trigger1=sysfvar(3)>60;3
+
+[statedef 1611]
+type=u
+movetype=u
+physics=n
+
+[state ]
+type=changestate
+triggerall=name="baki"
+trigger1=!ishelper
+value=0
+ctrl=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+[state ]
+type=changeanim
+trigger1=ishelper(1611)||ishelper(1613)
+value=300002
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+[state ]
+type=statetypeset
+trigger1=ishelper(1611)||ishelper(1613)
+statetype=s
+movetype=i
+physics=n
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+[state ];相手に迷惑がかからないように
+type=bindtoroot
+trigger1=ishelper(1611)||ishelper(1613)
+pos=0,1000
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+[state ]
+type=screenbound
+trigger1=ishelper(1611)||ishelper(1613)
+value=0
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+[state ]
+type=nothitby
+trigger1=ishelper(1611)||ishelper(1613)
+value=sca
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+[state ];相手のprojに当たるように
+type=hitby
+trigger1=ishelper(1611)
+value=sca,hp
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+[state ];相手のprojに当たるように
+type=hitby
+trigger1=ishelper(1613)
+value=sca,np
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state ]
+type=destroyself
+triggerall=ishelper(1611)||ishelper(1613)
+trigger1=!root,alive
+trigger2=!alive
+trigger3=root,anim!=2330
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[statedef 5152];超即死投げ
+type=u
+movetype=u
+physics=n
+velset=0,0
+ctrl=0
+
+[state ]
+type=selfstate
+triggerall=name="baki"
+trigger1=!ishelper
+value=0
+ctrl=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+[state ]
+type=assertspecial
+trigger1=1
+flag=invisible
+flag2=noshadow
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+[state ]
+type=lifeset
+trigger1=1
+value=0
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+[state ]
+type=nothitby
+trigger1=1
+value=sca
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+[state ];hitdefを撃たせるため
+type=changeanim2
+trigger1=alive
+value=300001;←攻撃判定のある自分のアニメ
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+[state ];hitdefを撃たせるため
+type=statetypeset
+trigger1=!ishelper
+trigger1=alive
+movetype=a
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+[state ]
+type=hitdef
+trigger1=!ishelper
+trigger1=alive
+attr=sca,np
+animtype=hard
+damage=0,0
+priority=4
+hitflag=mhlafdp
+guardflag=ma
+pausetime=7,7
+sparkxy=999,999
+hitsound=-1
+guardsound=-1
+ground.type=low
+ignorehitpause=1
+pausemovetime=9999999
+supermovetime=9999999
+[state ]
+type=screenbound
+trigger1=1
+value=0
+movecamera=0,0
+[state ];超即死
+type=changestate
+triggerall=!ishelper
+triggerall=alive
+trigger1=hitpausetime>=4
+value=5153
+ctrl=0
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+[state ]
+type=selfstate
+triggerall=!ishelper
+trigger1=!alive
+value=5100
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+[state ]
+type=destroyself
+trigger1=ishelper
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[statedef 5153]
+type=s
+movetype=h
+physics=n
+
+[state ]
+type=changestate
+triggerall=name="baki"
+trigger1=!ishelper
+value=0
+ctrl=1
+ignorehitpause=1
+[state ]
+type=removeexplod
+trigger1=1
+ignorehitpause=1
+[state ]
+type=destroyself
+trigger1=ishelper
+ignorehitpause=1
+[state ]
+type=lifeset
+value=0
+;trigger1=!ishelper
+trigger1=name!="baki"
+ignorehitpause=1
+[state ]
+type=selfstate
+value=0
+ctrl=1
+trigger1=!ishelper&&alive
+trigger1=hitpausetime<=1
+ignorehitpause=1
+[state ]
+type=hitby
+value=
+time=1
+trigger1=1
+ignorehitpause=1
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state 0];ぬるぬる
+type=null
+trigger1=1
+ignorehitpause=1
+pausemovetime=99999999
+supermovetime=99999999
+
+[state ]
+type=selfstate
+value=5100
+triggerall=!ishelper
+trigger1=!alive
+ignorehitpause=1
+[state ]
+type=selfstate
+value=51
+triggerall=!ishelper
+trigger1=alive
+trigger1=time>=10
+ignorehitpause=1
+
+
+
+
+
+
+;この下、一行以上空ける事！
+
+
+
+

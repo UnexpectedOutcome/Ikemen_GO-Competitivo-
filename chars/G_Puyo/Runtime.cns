@@ -1,0 +1,2318 @@
+;---------------------------------------------------------------------------
+;Player X Dropped Puyo
+[Statedef 1200]
+;Var(0) = X Half-Step Counter
+;Var(1) = X Fast-Forward Counter
+;Var(2) = X Grid Pos
+;Var(3) = Y Grid Pos
+;Var(4) = Direction Counter
+;Var(5) = Rotation-Display Communication
+;Var(6) = Double Rotation Counter
+;Var(7) = Distance from Nearest Ground
+;Var(8) = Landing Timeout
+;Var(9) = Controllessness
+;Var(10-15) = Column Helper PlayerIDs
+;Var(20) = Horizontal Button
+;Var(21) = Down Button
+;Var(22) = Rotation Button
+;Var(30) = Pivot animation
+;Var(31) = Annex animation
+;Var(40) = Sound Var
+;Var(50) = Pivot color
+;Var(51) = Annex color
+;Var(59) = Temp
+;=======
+;FVar(0) = Rotation Var
+;FVar(1) = Double Rotation Var
+
+[State 0, Bye]
+type = RemoveExplod
+trigger1 = IsHelper(1250) && Cond(NumHelper(1101), (Helper(1101), StateNo = 1109), 1)
+trigger2 = IsHelper(2250) && Cond(NumHelper(2101), (Helper(2101), StateNo = 1109), 1)
+
+[State 0, Bye]
+type = ChangeState
+trigger1 = IsHelper(1250) && Cond(NumHelper(1101), (Helper(1101), StateNo = 1109), 1)
+trigger2 = IsHelper(2250) && Cond(NumHelper(2101), (Helper(2101), StateNo = 1109), 1)
+value = 1251
+
+[State 0, Column Helper Initialize]
+type = Null
+triggerall = time = 0
+trigger1 = IsHelper(1250)
+trigger1 = Var(10) := Helper(1101), ID || 1
+trigger1 = Var(11) := Helper(1102), ID || 1
+trigger1 = Var(12) := Helper(1103), ID || 1
+trigger1 = Var(13) := Helper(1104), ID || 1
+trigger1 = Var(14) := Helper(1105), ID || 1
+trigger1 = Var(15) := Helper(1106), ID || 1
+trigger2 = IsHelper(2250)
+trigger2 = Var(10) := Helper(2101), ID || 1
+trigger2 = Var(11) := Helper(2102), ID || 1
+trigger2 = Var(12) := Helper(2103), ID || 1
+trigger2 = Var(13) := Helper(2104), ID || 1
+trigger2 = Var(14) := Helper(2105), ID || 1
+trigger2 = Var(15) := Helper(2106), ID || 1
+
+[State 0, Grid Pos Checker]
+type = Null
+triggerall = Var(3) := Floor((GameHeight-ScreenPos Y-24)/8) || 1
+trigger1 = IsHelper(1250)
+trigger1 = Var(2) := Floor((ScreenPos X - 16)/8) || 1
+trigger2 = IsHelper(2250)
+trigger2 = Var(2) := Floor((ScreenPos X - 208)/8) || 1
+
+;=============== Control Manager ====================
+;Var(20) = Horizontal Button
+;Var(21) = Down Button
+;Var(22) = Rotation Button
+
+[State 191, Find Controller]
+type = Null
+trigger1 = IsHelper(1250)
+trigger1 = Var(59) := Helper(1300), ID
+trigger2 = IsHelper(2250)
+trigger2 = Var(59) := Helper(2300), ID
+
+[State 191, Button Handlers]
+type = Null
+trigger1 = Var(20) := PlayerID(Var(59)), Var(30) || 1
+trigger1 = Var(21) := PlayerID(Var(59)), Var(31) || 1
+trigger1 = Var(22) := PlayerID(Var(59)), Var(32) || 1
+
+[State 191, Controllessness Assignment]
+type = Null
+triggerall = Var(9) = 0
+trigger1 = Var(8) = 43
+trigger1 = Var(9) := 1
+;trigger2 = Var(8) = 1 && (Var(21) > 0)
+;trigger2 = Var(9) := 1
+;trigger2 = Var(8) := 23
+
+[State 191, Controllessness]
+type = Null
+trigger1 = Var(9)
+trigger1 = Var(20) := 0 || 1
+trigger1 = Var(21) := 0 || 1
+trigger1 = Var(22) := 0 || 1
+
+;=============== Fast Forward Counter ====================
+[State 191, Reset Counter]
+type = VarSet
+trigger1 = Var(20) = 0
+trigger2 = Var(20) > 0
+trigger2 = Var(1) < 0
+trigger3 = Var(20) < 0
+trigger3 = Var(1) > 0
+v = 1
+value = 0
+
+[State 191, Counter Right]
+type = VarAdd
+trigger1 = Var(20) > 0
+v = 1
+value = 1
+
+[State 191, Counter Left]
+type = VarAdd
+trigger1 = Var(20) < 0
+v = 1
+value = -1
+
+;================= (Double) Rotation Area ======================
+;0 = up, 1=right, 2=down, 3=left
+
+[State 191, Double Rotation Cleanup]
+type = VarSet
+triggerall = Var(6) != 0
+trigger1 = (Var(2)+Var(0))/2 > 0					;No wall on left side
+trigger1 = Var(59) := Var(((Var(2)+Var(0))/2)+10-1)			;Set temp var to Left Column ID
+trigger1 = Var(3)/2 >= PlayerID(Var(59)), Var(13)				;No Puyo on left side
+trigger2 = (Var(2)+Var(0))/2 < 5					;No wall on right side
+trigger2 = Var(59) := Var(((Var(2)+Var(0))/2)+10+1)			;Set temp var to Right Column ID
+trigger2 = Var(3)/2 >= PlayerID(Var(59)), Var(13)				;No Puyo on right side
+trigger3 = Var(4)%2=1
+v = 6
+value = 0
+
+[State 191, Rotate CCW]
+type = VarAdd
+triggerall = Var(22) < 0
+trigger1 = (Var(2)+Var(0))/2 > 0					;No wall on left side
+trigger1 = Var(59) := Var(((Var(2)+Var(0))/2)+10-1)			;Set temp var to Left Column ID
+trigger1 = Var(3)/2 >= PlayerID(Var(59)), Var(13)				;No Puyo on left side
+trigger1 = Var(5) := -1
+trigger2 = (Var(2)+Var(0))/2 < 5					;No wall on right side
+trigger2 = Var(59) := Var(((Var(2)+Var(0))/2)+10+1)			;Set temp var to Right Column ID
+trigger2 = Var(3)/2 >= PlayerID(Var(59)), Var(13)				;No Puyo on right side
+trigger2 = Var(5) := -1
+trigger3 = Var(4)%2=1
+trigger3 = Var(5) := -1
+v = 4
+value = -1
+
+[State 191, Double Rotation CCW]
+type = VarAdd
+triggerall = Var(22) < 0
+trigger1 = Var(6) = -1						;Pressed a twice
+trigger1 = Var(6) := 0 || 1
+trigger1 = Var(5) := -2
+trigger2 = Var(5) = 0						;Last controller didn't catch the a press
+trigger2 = Var(6) := -1 && 0
+v = 4
+value = -2
+
+[State 191, Rotate CW]
+type = VarAdd
+triggerall = Var(22) > 0
+trigger1 = (Var(2)+Var(0))/2 > 0					;No wall on left side
+trigger1 = Var(59) := Var(((Var(2)+Var(0))/2)+10-1)			;Set temp var to Left Column ID
+trigger1 = Var(3)/2 >= PlayerID(Var(59)), Var(13)				;No Puyo on left side
+trigger1 = Var(5) := 1
+trigger2 = (Var(2)+Var(0))/2 < 5					;No wall on right side
+trigger2 = Var(59) := Var(((Var(2)+Var(0))/2)+10+1)			;Set temp var to Right Column ID
+trigger2 = Var(3)/2 >= PlayerID(Var(59)), Var(13)				;No Puyo on right side
+trigger2 = Var(5) := 1
+trigger3 = Var(4)%2=1
+trigger3 = Var(5) := -1
+v = 4
+value = 1
+
+[State 191, Double Rotation CW]
+type = VarAdd
+triggerall = Var(22) > 0
+trigger1 = Var(6) = 1						;Pressed b/c twice
+trigger1 = Var(6) := 0 || 1
+trigger1 = Var(5) := 2
+trigger2 = Var(5) = 0						;Last controller didn't catch the a press
+trigger2 = Var(6) := 1 && 0
+v = 4
+value = 2
+
+[State 191, CCW Roll Over]
+type = VarAdd
+trigger1 = Var(4) < 0
+v = 4
+value = 4
+
+[State 191, CW Roll Over]
+type = VarAdd
+trigger1 = Var(4) > 3
+v = 4
+value = -4
+
+;====================================================
+[State 191, Visual Perpetuate]
+type = Null
+;Perpetuate
+trigger1 = FVar(0) = (-1,0)
+trigger1 = FVar(0) := FVar(0) - 0.125
+trigger2 = FVar(0) = (0,1)
+trigger2 = FVar(0) := FVar(0) + 0.125
+;Double Perpetuate
+trigger3 = FVar(1) = (-2,0)
+trigger3 = FVar(1) := FVar(1) - 0.25
+trigger4 = FVar(1) = (0,2)
+trigger4 = FVar(1) := FVar(1) + 0.25
+
+[State 191, Visual Rotate]
+type = Null
+;Rotate
+trigger1 = Var(5) = 1 || Var(5) = -1
+trigger1 = FVar(0) := Var(5)*0.125
+trigger1 = Var(5) := 0 || 1
+trigger1 = FVar(1) := 0 || 1
+;Double Rotate
+trigger2 = Var(5) = 2 || Var(5) = -2
+trigger2 = FVar(1) := Var(5)*0.125
+trigger2 = Var(5) := 0 || 1
+trigger2 = FVar(0) := 0 || 1
+
+[State 191, Visual End Cycle]
+type = Null
+trigger1 = FVar(0) = 1 || FVar(0) = -1
+trigger1 = FVar(0) := 0 || 1
+
+[State 191, Visual End Cycle Double]
+type = Null
+trigger1 = FVar(1) = 2 || FVar(1) = -2
+trigger1 = FVar(1) := 0 || 1
+
+;=============== Horizontal Movement ====================
+[State 191, Move Left]
+type = PosAdd
+triggerall = Var(2)/2 > Cond(Var(4) = 3, 1, 0)				;Make sure puyo isn't at leftmost position
+triggerall = Var(59) := Var(((Var(2)+Var(0))/2)+10-Cond(Var(4) = 3, 2, 1))	;Set temp var to Left Column ID
+triggerall = Var(3)/2 >= PlayerID(Var(59)), Var(13) + Cond(Var(4) = 2, 1, 0)	;Bottom puyo is higher than left column
+triggerall = Var(0) = 0 						;Not in half-step
+trigger1 = Var(20) = -1						;Pressing back
+trigger1 = Var(0) := -2
+trigger1 = Var(40) := 1
+trigger2 = Var(20) < 0 && Var(1) < -8					;Holding back for 8 seconds
+trigger2 = Var(0) := -2
+trigger2 = Var(40) := 1
+x = -8
+
+[State 191, Move Left Half-Step]
+type = PosAdd
+trigger1 = Var(0) = -1 && Var(2)%2 = 1					;Halfway through moving left
+trigger1 = Var(0) := 0 || 1
+trigger2 = Var(0) = -2
+trigger2 = Var(0) := -1 && 0
+x = -8
+
+[State 191, Left Side Snap]
+type = PosAdd
+trigger1 = (Var(2)+Var(0))/2 = 0 && Var(4) = 3				;On left corner, and with appendage on left
+trigger2 = (Var(2)+Var(0))/2 > 0 && Var(4) = 3				;Not on left corner, and with appendage on left
+trigger2 = Var(59) := Var(((Var(2)+Var(0))/2)+10-1)			;Set temp var to Left Column ID
+trigger2 = Var(3)/2 < PlayerID(Var(59)), Var(13)				;Appendage is overlapping with existing puyo
+x = 16
+
+[State 191, Move Right]
+type = PosAdd
+triggerall = Var(2)/2 < Cond(Var(4) = 1, 4, 5)				;Make sure puyo isn't at rightmost position
+triggerall = Var(59) := Var(((Var(2)+Var(0))/2)+10+Cond(Var(4) = 1, 2, 1))	;Set temp var to Right Column ID
+triggerall = Var(3)/2 >= PlayerID(Var(59)), Var(13) + Cond(Var(4) = 2, 1, 0)	;Bottom puyo is higher than right column
+triggerall = Var(0) = 0 						;Not in half-step
+trigger1 = Var(20) = 1						;Pressing forward
+trigger1 = Var(0) := 2
+trigger1 = Var(40) := 1
+trigger2 = Var(20) > 0 && Var(1) > 8					;Holding forward for 8 seconds
+trigger2 = Var(0) := 2
+trigger2 = Var(40) := 1
+x = 8
+
+[State 191, Move Right Half-Step]
+type = PosAdd
+trigger1 = Var(0) = 1 && Var(2)%2 = 1					;Halfway through moving right
+trigger1 = Var(0) := 0 || 1
+trigger2 = Var(0) = 2
+trigger2 = Var(0) := 1 && 0
+x = 8
+
+[State 191, Right Side Snap]
+type = PosAdd
+trigger1 = (Var(2)+Var(0))/2 = 5 && Var(4) = 1				;On right corner, and with appendage on right
+trigger2 = (Var(2)+Var(0))/2 < 5 && Var(4) = 1				;Not on right corner, and with appendage on right
+trigger2 = Var(59) := Var(((Var(2)+Var(0))/2)+10+1)			;Set temp var to Right Column ID
+trigger2 = Var(3)/2 < PlayerID(Var(59)), Var(13)				;Appendage is overlapping with existing puyo
+x = -16
+
+[State 0, Grid Pos Checker]
+type = Null
+triggerall = Var(3) := Floor((GameHeight-ScreenPos Y-24)/8) || 1
+trigger1 = IsHelper(1250)
+trigger1 = Var(2) := Floor((ScreenPos X - 16)/8) || 1
+trigger2 = IsHelper(2250)
+trigger2 = Var(2) := Floor((ScreenPos X - 208)/8) || 1
+
+[State 0, Distance From Nearest Ground]
+type = Null
+triggerall = Var(59) := Var(((Var(2)+Var(0))/2)+10)			;Set temp var to Current Column ID
+triggerall = Var(7) := (Var(3) - Cond(Var(4) = 2, 2, 0) - (PlayerID(Var(59)), Var(13) * 2));Compare current column height to bottom puyo y pos??????????????
+
+trigger1 = Var(2) > 1 && Var(4) = 3					;Not on left corner, and annex is on left
+trigger1 = Var(59) := Var(((Var(2)+Var(0))/2)+10-1)			;Set temp var to Left Column ID
+trigger1 = Var(7) > (Var(3) - (PlayerID(Var(59)), Var(13) * 2))		;Check if existing value is smaller than following result
+trigger1 = Var(7) := (Var(3) - (PlayerID(Var(59)), Var(13) * 2))		;Compare left column height to left puyo y pos
+
+trigger2 = Var(2) < 9 && Var(4) = 1					;Not on right corner, and annex is on right
+trigger2 = Var(59) := Var(((Var(2)+Var(0))/2)+10+1)			;Set temp var to Right Column ID
+trigger2 = Var(7) > (Var(3) - (PlayerID(Var(59)), Var(13) * 2))		;Check if existing value is smaller than following result
+trigger2 = Var(7) := (Var(3) - (PlayerID(Var(59)), Var(13) * 2))		;Compare right column height to right puyo y pos
+
+;=============== Vertical Movement/Collision ====================
+[State 0, Grid Pos Checker]
+type = Null
+triggerall = Var(3) := Floor((GameHeight-ScreenPos Y-24)/8) || 1
+trigger1 = IsHelper(1250)
+trigger1 = Var(2) := Floor((ScreenPos X - 16)/8) || 1
+trigger2 = IsHelper(2250)
+trigger2 = Var(2) := Floor((ScreenPos X - 208)/8) || 1
+
+[State 0, Distance From Nearest Ground]
+type = Null
+triggerall = Var(59) := Var(((Var(2)+Var(0))/2)+10)			;Set temp var to Current Column ID
+triggerall = Var(7) := (Var(3) - Cond(Var(4) = 2, 2, 0) - (PlayerID(Var(59)), Var(13) * 2));Compare current column height to bottom puyo y pos??????????????
+
+trigger1 = Var(2) > 1 && Var(4) = 3					;Not on left corner, and annex is on left
+trigger1 = Var(59) := Var(((Var(2)+Var(0))/2)+10-1)			;Set temp var to Left Column ID
+trigger1 = Var(7) > (Var(3) - (PlayerID(Var(59)), Var(13) * 2))		;Check if existing value is smaller than following result
+trigger1 = Var(7) := (Var(3) - (PlayerID(Var(59)), Var(13) * 2))		;Compare left column height to left puyo y pos
+
+trigger2 = Var(2) < 9 && Var(4) = 1					;Not on right corner, and annex is on right
+trigger2 = Var(59) := Var(((Var(2)+Var(0))/2)+10+1)			;Set temp var to Right Column ID
+trigger2 = Var(7) > (Var(3) - (PlayerID(Var(59)), Var(13) * 2))		;Check if existing value is smaller than following result
+trigger2 = Var(7) := (Var(3) - (PlayerID(Var(59)), Var(13) * 2))		;Compare right column height to right puyo y pos
+
+[State 191, Diving]
+type = PosAdd
+triggerall = Var(7) > 0
+;triggerall = (time > 0 && time%8=0) || Var(21) > 0
+triggerall = time%Cond(IsHelper(1250) && NumHelper(1000), Cond((Helper(1000), Var(1) = 5), 4, 8), Cond(NumHelper(2000), Cond((Helper(2000), Var(1) = 5), 4, 8), 8))=0 || Var(21) > 0
+trigger1 = Floor(GameHeight-ScreenPos Y-24)%16=0 && !(Floor((GameHeight-ScreenPos Y-24)/16)-Cond(Var(4)=2,1,0) = 0)
+trigger2 = Floor(GameHeight-ScreenPos Y-24)%16!=0
+y = 8
+
+[State 191, Bottom Snap]
+type = PosAdd
+trigger1 = Var(4) = 2 ;Annex is down
+trigger1 = Var(7) < 0 ;Bottom puyo is below ground
+y = Var(7) * 8
+
+[State 191, Bottom Snap 2]
+type = PosAdd
+trigger1 = Var(4) = 1 || Var(4) = 3 ;Annex is left or right
+trigger1 = Var(7) > 1 ;Bottom puyo at least 2 cells high
+trigger1 = FVar(0) != 0 ;Is rotating
+trigger1 = FVar(0) = [-0.15, 0.15] ;First frame of rotation
+y = 8
+
+[State 0, Grid Pos Checker]
+type = Null
+triggerall = Var(3) := Floor((GameHeight-ScreenPos Y-24)/8) || 1
+trigger1 = IsHelper(1250)
+trigger1 = Var(2) := Floor((ScreenPos X - 16)/8) || 1
+trigger2 = IsHelper(2250)
+trigger2 = Var(2) := Floor((ScreenPos X - 208)/8) || 1
+
+[State 0, Distance From Nearest Ground]
+type = Null
+triggerall = Var(59) := Var(((Var(2)+Var(0))/2)+10)			;Set temp var to Current Column ID
+triggerall = Var(7) := (Var(3) - Cond(Var(4) = 2, 2, 0) - (PlayerID(Var(59)), Var(13) * 2));Compare current column height to bottom puyo y pos??????????????
+
+trigger1 = Var(2) > 1 && Var(4) = 3					;Not on left corner, and annex is on left
+trigger1 = Var(59) := Var(((Var(2)+Var(0))/2)+10-1)			;Set temp var to Left Column ID
+trigger1 = Var(7) > (Var(3) - (PlayerID(Var(59)), Var(13) * 2))		;Check if existing value is smaller than following result
+trigger1 = Var(7) := (Var(3) - (PlayerID(Var(59)), Var(13) * 2))		;Compare left column height to left puyo y pos
+
+trigger2 = Var(2) < 9 && Var(4) = 1					;Not on right corner, and annex is on right
+trigger2 = Var(59) := Var(((Var(2)+Var(0))/2)+10+1)			;Set temp var to Right Column ID
+trigger2 = Var(7) > (Var(3) - (PlayerID(Var(59)), Var(13) * 2))		;Check if existing value is smaller than following result
+trigger2 = Var(7) := (Var(3) - (PlayerID(Var(59)), Var(13) * 2))		;Compare right column height to right puyo y pos
+
+;=============== Post-Vertical Controllers ====================
+[State 0, Grid Pos Checker]
+type = Null
+triggerall = Var(3) := Floor((GameHeight-ScreenPos Y-24)/8) || 1
+trigger1 = IsHelper(1250)
+trigger1 = Var(2) := Floor((ScreenPos X - 16)/8) || 1
+trigger2 = IsHelper(2250)
+trigger2 = Var(2) := Floor((ScreenPos X - 208)/8) || 1
+
+[State 0, Puyos make you lose control]
+type = Null
+trigger1 = Var(7) <= 0 && Var(8) = 0
+trigger1 = Var(8) := 1
+trigger1 = Cond((Var(21) > 0), (Var(9) := 1 && Var(8) := 23), 1) || 1
+trigger2 = Var(8) > 0
+trigger2 = Var(8) := Var(8) + 1
+
+[State 0, Bouncing Annex]
+type = Null
+trigger1 = Var(31) = 0
+trigger1 = (Var(8) = 1) || (Var(8) = 23 && Var(9) = 1)
+trigger1 = Var(31) := 1
+trigger2 = Var(31) > 0
+trigger2 = Var(31) := Var(31) + 1
+
+[State 0, Bouncing Pivot]
+type = Null
+trigger1 = Var(30) = 0 && Var(31) > 1
+trigger1 = random <= Ceil(Var(31)*(999/8.0))
+trigger1 = Var(30) := 1
+trigger2 = Var(30) > 0
+trigger2 = Var(30) := Var(30) + 1
+
+[State 0, Too high]
+type = Null
+trigger1 = Var(7) > 1 && Var(8) > 0
+trigger1 = Var(8) := 0 || 1
+trigger1 = Var(9) := 0 || 1
+trigger1 = Var(30) := -2 || 1
+trigger1 = Var(31) := -2 || 1
+
+[State 191, Score Sender]
+type = Null
+triggerall = NumHelper(300)
+triggerall = (Var(21) > 0 && Var(7)%2 = 1) || (Var(8) = 24 && Var(9) = 1)
+trigger1 = IsHelper(1250)
+trigger1 = Helper(300), Cond(1, Var(0) := Var(0) + 1, 0) || 1
+trigger2 = IsHelper(2250)
+trigger2 = Helper(300), Cond(1, Var(20) := Var(20) + 1, 0) || 1
+
+;================= Graphical Area ======================
+[State 191, Startup Pivot]
+type = RemoveExplod
+triggerall = NumExplod(50504)
+triggerall = Var(30) = 1
+trigger1 = Var(4)%2 = 1						;Facing Left or Right
+trigger1 = Var(59) := Var(((Var(2)+Var(0))/2)+10)				;Set Temp Var to Current Column ID
+trigger1 = PlayerID(Var(59)), Var(13) = Var(3)/2
+trigger2 = Var(4)%2 = 0						;Facing Up or Down
+id = 50504
+
+[State 191, Startup Annex]
+type = RemoveExplod
+triggerall = NumExplod(50505)
+triggerall = Var(31) = 1
+trigger1 = Var(4) = 1						;Facing Right
+trigger1 = Var(59) := Var(((Var(2)+Var(0))/2)+10+1)			;Set Temp Var to Right Column ID
+trigger1 = PlayerID(Var(59)), Var(13) = Var(3)/2
+trigger2 = Var(4) = 3						;Facing Left
+trigger2 = Var(59) := Var(((Var(2)+Var(0))/2)+10-1)			;Set Temp Var to Left Column ID
+trigger2 = PlayerID(Var(59)), Var(13) = Var(3)/2
+trigger3 = Var(4)%2 = 0						;Facing Up or Down
+id = 50505
+
+[State 191, Lifting Pivot]
+type = RemoveExplod
+trigger1 = Var(30) = -2 || Var(30) = 15
+id = 50504
+
+[State 191, Lifting Annex]
+type = RemoveExplod
+trigger1 = Var(31) = -2 || Var(31) = 15
+id = 50505
+
+[State 191, Bouncing Pivot]
+type = Explod
+trigger1 = Var(30) = 1 && !NumExplod(50504)
+anim = ((Var(50))*10000) + 110;(root, Var((PlayerID(root, Var(10)), Var(0))+2))*10000+2
+id = 50504
+postype = p1
+pos = 0,0
+bindtime = -1
+removetime = -1
+sprpriority = 3
+ownpal = 0
+
+[State 191, Bouncing Annex]
+type = Explod
+trigger1 = Var(31) = 1 && !NumExplod(50505)
+trigger1 = Var(40) := 2
+anim = ((Var(51))*10000) + 110;(root, Var((PlayerID(root, Var(10)), Var(1))+2))*10000+1
+id = 50505
+postype = p1
+pos = 0,0
+bindtime = -1
+removetime = -1
+sprpriority = 3
+ownpal = 0
+
+[State 191, Basic Pivot]
+type = Explod
+trigger1 = !NumExplod(50504)
+anim = ((Var(50))*10000) + 100;(root, Var((PlayerID(root, Var(10)), Var(0))+2))*10000+2
+id = 50504
+postype = p1
+pos = 0,0
+bindtime = -1
+removetime = -1
+sprpriority = 3
+ownpal = 0
+
+[State 191, Basic Annex]
+type = Explod
+trigger1 = !NumExplod(50505)
+anim = ((Var(51))*10000);(root, Var((PlayerID(root, Var(10)), Var(1))+2))*10000+1
+id = 50505
+postype = p1
+pos = 0,-16
+bindtime = -1
+removetime = -1
+sprpriority = 3
+ownpal = 0
+
+[State 191, Explod 2]
+type = ModifyExplod
+triggerall = NumExplod(50505)
+triggerall = FVar(39) := FVar(0) + Cond(FVar(0) > 0, -1, Cond(FVar(0) < 0, 1, 0)) || 1 ;Rotation Temp Var
+trigger1 = FVar(1) != 0
+trigger1 = FVar(39) := FVar(1) + Cond(FVar(1) > 0, -2, Cond(FVar(1) < 0, 2, 0)) || 1 ;Double Rotation Temp Var
+trigger2 = 1
+id = 50505
+postype = p1
+pos = Sin((Var(4)+FVar(39))*pi/2)*16, Cos((Var(4)+FVar(39))*pi/2)*-16
+
+;======================= Misc. ======================
+[State 0, Reset Animations]
+type = Null
+trigger1 = Var(7) > 0
+trigger1 = Var(30) := 0 || 1
+trigger1 = Var(31) := 0 || 1
+
+;Debug
+[State 0, Grid Pos Checker]
+type = Null
+triggerall = Var(3) := Floor((GameHeight-ScreenPos Y-24)/8) || 1
+trigger1 = IsHelper(1250)
+trigger1 = Var(2) := Floor((ScreenPos X - 16)/8) || 1
+trigger2 = IsHelper(2250)
+trigger2 = Var(2) := Floor((ScreenPos X - 208)/8) || 1
+
+[State 0, HitDef]
+type = DisplayToClipboard
+trigger1 = 1
+text = "%d, %d, %d"
+params = Var(2), Var(3), Var(4)
+
+[State 0, Sounds]
+type = PlaySnd
+trigger1 = Var(40) != 0
+trigger1 = Var(59) := Var(40)
+trigger1 = Var(40) := 0 || 1
+value = 0, -1 + Var(59)
+channel = -1
+;lowpriority = -1
+
+[State 0, Falling down]
+type = ChangeState
+trigger1 = Var(8) = 44
+value = 1201
+
+;---------------------------------------------------------------------------
+;Player X Puyo Freefall
+[Statedef 1201]
+;Var(40) = Puyo 2 End Y Grid
+;Var(41) = Bouncing Countdown
+;Var(42) = Which puyo is falling? -1 = Pivot, 1 = Annex
+;FVar(10) = Puyo 2 Relative Position
+
+[State 0, Bye]
+type = RemoveExplod
+trigger1 = IsHelper(1250) && Cond(NumHelper(1101), (Helper(1101), StateNo = 1109), 1)
+trigger2 = IsHelper(2250) && Cond(NumHelper(2101), (Helper(2101), StateNo = 1109), 1)
+
+[State 0, Bye]
+type = ChangeState
+trigger1 = IsHelper(1250) && Cond(NumHelper(1101), (Helper(1101), StateNo = 1109), 1)
+trigger2 = IsHelper(2250) && Cond(NumHelper(2101), (Helper(2101), StateNo = 1109), 1)
+value = 1251
+
+[State 0, Grid Pos Checker]
+type = Null
+triggerall = time = 0
+triggerall = Var(3) := Floor((GameHeight-ScreenPos Y-24)/8) || 1
+trigger1 = IsHelper(1250)
+trigger1 = Var(2) := Floor((ScreenPos X - 16)/8) || 1
+trigger2 = IsHelper(2250)
+trigger2 = Var(2) := Floor((ScreenPos X - 208)/8) || 1
+
+[State 0, Which Puyo is falling?]
+type = Null
+triggerall = time = 0
+triggerall = Var(4)%2 = 1
+trigger1 = Var(59) := Var(((Var(2)+Var(0))/2)+10)				;Set Temp Var to Current Column ID
+trigger1 = PlayerID(Var(59)), Var(13) < Var(3)/2
+trigger1 = Var(42) := -1
+trigger2 = Var(4) = 1						;Facing Right
+trigger2 = Var(59) := Var(((Var(2)+Var(0))/2)+10+1)			;Set Temp Var to Right Column ID
+trigger2 = PlayerID(Var(59)), Var(13) < Var(3)/2
+trigger2 = Var(42) := 1
+trigger3 = Var(4) = 3						;Facing Left
+trigger3 = Var(59) := Var(((Var(2)+Var(0))/2)+10-1)			;Set Temp Var to Left Column ID
+trigger3 = PlayerID(Var(59)), Var(13) < Var(3)/2
+trigger3 = Var(42) := 1
+
+[State 0, Preemptive Ending]
+type = ChangeState
+trigger1 = Var(42) = 0
+value = 1202
+
+[State 0, Pos Change]
+type = PosAdd
+trigger1 = time = 0
+trigger1 = Var(42) = -1
+x = -16*(Var(4)-2)
+
+;Edit later
+[State 0, Anim Change]
+type = ChangeAnim
+trigger1 = time = 0
+value = ((Cond(Var(42) = -1, Var(51), Var(50)))*10000)
+
+[State 0, Last Temp]
+type = Null
+trigger1 = Var(42) = -1
+trigger1 = Var(59) := Var(((Var(2)+Var(0))/2)+10)
+trigger2 = Var(42) = 1 && Var(4) = 1
+trigger2 = Var(59) := Var(((Var(2)+Var(0))/2)+10+1)
+trigger3 = Var(42) = 1 && Var(4) = 3
+trigger3 = Var(59) := Var(((Var(2)+Var(0))/2)+10-1)
+
+[State 0, Explod Position Simulator]
+type = Null
+trigger1 = FVar(10) = 0
+trigger1 = FVar(10) := 1000
+trigger2 = FVar(10) = 1000
+trigger2 = FVar(10) := ((GameHeight-ScreenPos Y-24) - PlayerID(Var(59)), Var(13)*16) - 1
+trigger3 = FVar(10) > 0
+trigger3 = FVar(10) := FVar(10) - 1 - (0.39*(time-1))
+
+[State 0, HitDef]
+type = DisplayToClipboard
+trigger1 = 1
+text = "%f, %f, %f"
+params = (GameHeight-ScreenPos Y-24), (PlayerID(Var(59)), Var(13)*16), FVar(10)
+
+[State 191, Purge]
+type = RemoveExplod
+trigger1 = time = 0
+trigger2 = FVar(10) = [-100, 0]
+trigger2 = FVar(10) := -1000
+
+[State 191, Bouncing Puyo]
+type = Explod
+trigger1 = FVar(10) < 0 && !NumExplod(50510)
+anim = ((Cond(Var(42) = -1, Var(50), Var(51)))*10000) + 110
+id = 50510
+postype = p1
+pos = (16*(Var(4)-2))*Cond(Var(42) = 1,-1,1),Floor((GameHeight-ScreenPos Y-24) - PlayerID(Var(59)), Var(13)*16)
+removetime = -1
+sprpriority = 3
+
+[State 191, Falling Puyo]
+type = Explod
+trigger1 = !NumExplod(50510)
+anim = ((Cond(Var(42) = -1, Var(50), Var(51)))*10000)
+id = 50510
+postype = p1
+pos = (16*(Var(4)-2))*Cond(Var(42) = 1,-1,1),0
+vel = 0,1
+accel = 0,0.39
+removetime = -1
+sprpriority = 3
+
+[State 0, Ending]
+type = ChangeState
+trigger1 = FVar(10) < 0
+trigger1 = Var(41) < 15
+trigger1 = Var(41) := Var(41) + 1 && 0
+trigger2 = Var(41) >= 15
+value = 1202
+
+;[State 191, Startup Annex]
+;type = RemoveExplod
+;triggerall = NumExplod(50505)
+;triggerall = Var(31) = 1
+;trigger1 = Var(4) = 1						;Facing Right
+;trigger1 = Var(59) := Var(((Var(2)+Var(0))/2)+10+1)			;Set Temp Var to Right Column ID
+;trigger1 = PlayerID(Var(59)), Var(13) = Var(3)/2
+;trigger2 = Var(4) = 3						;Facing Left
+;trigger2 = Var(59) := Var(((Var(2)+Var(0))/2)+10-1)			;Set Temp Var to Left Column ID
+;trigger2 = PlayerID(Var(59)), Var(13) = Var(3)/2
+;trigger3 = Var(4)%2 = 0						;Facing Up or Down
+;id = 50505
+
+;---------------------------------------------------------------------------
+;Player X Puyo End
+[Statedef 1202]
+anim = 0
+
+[State 0, Bye]
+type = RemoveExplod
+trigger1 = IsHelper(1250) && Cond(NumHelper(1101), (Helper(1101), StateNo = 1109), 1)
+trigger2 = IsHelper(2250) && Cond(NumHelper(2101), (Helper(2101), StateNo = 1109), 1)
+
+[State 0, Bye]
+type = ChangeState
+trigger1 = IsHelper(1250) && Cond(NumHelper(1101), (Helper(1101), StateNo = 1109), 1)
+trigger2 = IsHelper(2250) && Cond(NumHelper(2101), (Helper(2101), StateNo = 1109), 1)
+value = 1251
+
+[State 191, Purge]
+type = RemoveExplod
+trigger1 = time = 0
+
+[State 191, Puyo 1]
+type = Explod
+trigger1 = time = 0
+anim = ((Cond(Var(42) = -1, Var(51), Var(50)))*10000)
+id = 50504
+postype = left
+pos = ScreenPos X,ScreenPos Y
+removetime = 1
+sprpriority = 3
+bindtime = 1
+
+[State 191, Puyo 2 V]
+type = Explod
+trigger1 = Var(4)%2 = 0
+trigger1 = time = 0
+anim = ((Cond(Var(42) = -1, Var(50), Var(51)))*10000)
+id = 50505
+postype = left
+pos = ScreenPos X,ScreenPos Y + 16*(Var(4)-1)
+removetime = 1
+sprpriority = 3
+bindtime = 1
+
+[State 191, Puyo 2 levelled]
+type = Explod
+trigger1 = Var(4)%2 = 1
+trigger1 = Var(42) = 0
+trigger1 = time = 0
+anim = ((Cond(Var(42) = -1, Var(50), Var(51)))*10000)
+id = 50505
+postype = left
+pos = ScreenPos X + ((16*(Var(4)-2))*Cond(Var(42) = 1,1,-1)), ScreenPos Y + Floor((GameHeight-ScreenPos Y-24) - PlayerID(Var(59)), Var(13)*16)
+removetime = 1
+sprpriority = 3
+bindtime = 1
+
+[State 191, Puyo 2]
+type = Explod
+trigger1 = Var(4)%2 = 1
+trigger1 = Var(42) != 0
+trigger1 = time = 0
+anim = ((Cond(Var(42) = -1, Var(50), Var(51)))*10000)
+id = 50505
+postype = left
+pos = ScreenPos X + ((16*(Var(4)-2))*Cond(Var(42) = 1,-1,1)), ScreenPos Y + Floor((GameHeight-ScreenPos Y-24) - PlayerID(Var(59)), Var(13)*16)
+removetime = 1
+sprpriority = 3
+bindtime = 1
+
+[State 0, Puyo 1 Temp]
+type = Null
+trigger1 = Cond(Var(4) = 0, Var(58) := 0, Cond(Var(4) = 2, Var(58) := 1, 0)) || 1
+trigger1 = Var(59) := Var(((Var(2)+Var(0))/2)+10)
+
+[State 0, Puyo 1 Set 1]
+type = Null
+triggerall = Var(58) = 0
+trigger1 = Var(50) = 1 ;Is red
+trigger1 = PlayerID(Var(59)), Cond(1,Var(Var(13)) := 1, 1)
+trigger2 = Var(50) = 2 ;Is blue
+trigger2 = PlayerID(Var(59)), Cond(1,Var(Var(13)) := 2, 1)
+trigger3 = Var(50) = 3 ;Is green
+trigger3 = PlayerID(Var(59)), Cond(1,Var(Var(13)) := 3, 1)
+trigger4 = Var(50) = 4 ;Is yellow
+trigger4 = PlayerID(Var(59)), Cond(1,Var(Var(13)) := 4, 1)
+trigger5 = Var(50) = 5 ;Is purple
+trigger5 = PlayerID(Var(59)), Cond(1,Var(Var(13)) := 5, 1)
+
+[State 0, Puyo 1 Set 2]
+type = Null
+triggerall = Var(58) = 1
+trigger1 = Var(50) = 1 ;Is red
+trigger1 = PlayerID(Var(59)), Cond(1,Var(Var(13)+1) := 1, 1)
+trigger2 = Var(50) = 2 ;Is blue
+trigger2 = PlayerID(Var(59)), Cond(1,Var(Var(13)+1) := 2, 1)
+trigger3 = Var(50) = 3 ;Is green
+trigger3 = PlayerID(Var(59)), Cond(1,Var(Var(13)+1) := 3, 1)
+trigger4 = Var(50) = 4 ;Is yellow
+trigger4 = PlayerID(Var(59)), Cond(1,Var(Var(13)+1) := 4, 1)
+trigger5 = Var(50) = 5 ;Is purple
+trigger5 = PlayerID(Var(59)), Cond(1,Var(Var(13)+1) := 5, 1)
+
+[State 0, Puyo 2 Temp]
+type = Null
+triggerall = Cond(Var(4) = 0, Var(58) := 1, Cond(Var(4) = 2, Var(58) := 0, 0)) || 1
+trigger1 = Var(4) = 1
+trigger1 = Var(59) := Var(((Var(2)+Var(0))/2)+10+1)
+trigger2 = Var(4) = 3
+trigger2 = Var(59) := Var(((Var(2)+Var(0))/2)+10-1)
+
+[State 0, Puyo 2 Set 1]
+type = Null
+triggerall = Var(58) = 0
+trigger1 = Var(51) = 1 ;Is red
+trigger1 = PlayerID(Var(59)), Cond(1,Var(Var(13)) := 1, 1)
+trigger2 = Var(51) = 2 ;Is blue
+trigger2 = PlayerID(Var(59)), Cond(1,Var(Var(13)) := 2, 1)
+trigger3 = Var(51) = 3 ;Is green
+trigger3 = PlayerID(Var(59)), Cond(1,Var(Var(13)) := 3, 1)
+trigger4 = Var(51) = 4 ;Is yellow
+trigger4 = PlayerID(Var(59)), Cond(1,Var(Var(13)) := 4, 1)
+trigger5 = Var(51) = 5 ;Is purple
+trigger5 = PlayerID(Var(59)), Cond(1,Var(Var(13)) := 5, 1)
+
+[State 0, Puyo 2 Set 2]
+type = Null
+triggerall = Var(58) = 1
+trigger1 = Var(51) = 1 ;Is red
+trigger1 = PlayerID(Var(59)), Cond(1,Var(Var(13)+1) := 1, 1)
+trigger2 = Var(51) = 2 ;Is blue
+trigger2 = PlayerID(Var(59)), Cond(1,Var(Var(13)+1) := 2, 1)
+trigger3 = Var(51) = 3 ;Is green
+trigger3 = PlayerID(Var(59)), Cond(1,Var(Var(13)+1) := 3, 1)
+trigger4 = Var(51) = 4 ;Is yellow
+trigger4 = PlayerID(Var(59)), Cond(1,Var(Var(13)+1) := 4, 1)
+trigger5 = Var(51) = 5 ;Is purple
+trigger5 = PlayerID(Var(59)), Cond(1,Var(Var(13)+1) := 5, 1)
+
+;[State 0, Which Puyo is falling?]
+;type = Null
+;trigger1 = Var(58) := Var(((Var(2)+Var(0))/2)+10)				;Set Temp Var to Current Column ID
+;trigger2 = Var(58) := Var(((Var(2)+Var(0))/2)+10+1)			;Set Temp Var to Right Column ID
+;trigger3 = Var(58) := Var(((Var(2)+Var(0))/2)+10-1)			;Set Temp Var to Left Column ID
+;trigger3 = PlayerID(Var(59)), Cond(1,Var(12)
+;trigger3 = Var(42) := 1
+
+[State 0, Remove]
+type = ChangeState
+trigger1 = time = 0
+value = 1250
+
+;---------------------------------------------------------------------------
+;Player X Puyo Processing Initialization
+[Statedef 1210]
+
+[State 0, Column Helper Initialize]
+type = Null
+triggerall = time = 0
+trigger1 = IsHelper(1250)
+trigger1 = FVar(10) := Helper(1101), ID || 1
+trigger1 = FVar(11) := Helper(1102), ID || 1
+trigger1 = FVar(12) := Helper(1103), ID || 1
+trigger1 = FVar(13) := Helper(1104), ID || 1
+trigger1 = FVar(14) := Helper(1105), ID || 1
+trigger1 = FVar(15) := Helper(1106), ID || 1
+trigger2 = IsHelper(2250)
+trigger2 = FVar(10) := Helper(2101), ID || 1
+trigger2 = FVar(11) := Helper(2102), ID || 1
+trigger2 = FVar(12) := Helper(2103), ID || 1
+trigger2 = FVar(13) := Helper(2104), ID || 1
+trigger2 = FVar(14) := Helper(2105), ID || 1
+trigger2 = FVar(15) := Helper(2106), ID || 1
+
+[State 0, And here we go]
+type = ChangeState
+trigger1 = FVar(2) := 0 || 1 ;Set current puyo to very first puyo
+trigger1 = FVar(0) := 0 || 1 ;Point to set of vars that store current chain
+;I just noticed I don't actually have to do those, but it helps for clarity
+value = 1211
+
+;---------------------------------------------------------------------------
+;Player X Puyo Processing Start
+[Statedef 1211]
+
+[State 0, A small step for a puyo]
+type = Null
+trigger1 = (PlayerID(Floor(FVar(10+(Floor(FVar(2))%6)))), Var(Floor(FVar(2))/6)) != [1,5] ;Current puyo is not a color (is empty/garbage/etc.)
+trigger1 = Var(56+Floor(FVar(2))/24) := (Var(56+Floor(FVar(2))/24) | (2**(Floor(FVar(2))%24))) || 1 ;Add current Puyo to absolute checked list
+trigger1 = Var(59) := 1 ;Flag to go straight to the end
+
+trigger2 = Var(Floor(FVar(0))) := (PlayerID(Floor(FVar(10+(Floor(FVar(2))%6)))), Var(Floor(FVar(2))/6)) * (2**24) || 1 ;Set current chain color to color of current Puyo
+trigger2 = FVar(1) := Var(Floor(FVar(0))) / (2**24) || 1 ;Set current color to color of chain
+trigger2 = FVar(3) := FVar(2) || 1 ;Set current chain origin to current Puyo
+trigger2 = Var(50+Floor(FVar(2))/24) := (2**(Floor(FVar(2))%24)) ;Set Puyo backlog to check very first Puyo
+trigger2 = Var(59) := 0 || 1 ;Flag to go to the main loop
+
+[State 0, But a big step to do this hellish task]
+type = ChangeState
+trigger1 = 1
+value = 1212+Var(59)
+
+;---------------------------------------------------------------------------
+;Player X Puyo Processing
+[Statedef 1212]
+
+[State 0, Get First Puyo in Backlog]
+type = Null
+trigger1 = FVar(2) := FVar(3) || 1
+trigger1 = Floor(FVar(2)) < 72
+trigger1 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger2 = FVar(2) := FVar(2) + 1 || 1
+trigger2 = Floor(FVar(2)) < 72
+trigger2 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger3 = FVar(2) := FVar(2) + 1 || 1
+trigger3 = Floor(FVar(2)) < 72
+trigger3 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger4 = FVar(2) := FVar(2) + 1 || 1
+trigger4 = Floor(FVar(2)) < 72
+trigger4 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger5 = FVar(2) := FVar(2) + 1 || 1
+trigger5 = Floor(FVar(2)) < 72
+trigger5 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger6 = FVar(2) := FVar(2) + 1 || 1
+trigger6 = Floor(FVar(2)) < 72
+trigger6 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger7 = FVar(2) := FVar(2) + 1 || 1
+trigger7 = Floor(FVar(2)) < 72
+trigger7 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger8 = FVar(2) := FVar(2) + 1 || 1
+trigger8 = Floor(FVar(2)) < 72
+trigger8 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger9 = FVar(2) := FVar(2) + 1 || 1
+trigger9 = Floor(FVar(2)) < 72
+trigger9 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger10 = FVar(2) := FVar(2) + 1 || 1
+trigger10 = Floor(FVar(2)) < 72
+trigger10 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger11 = FVar(2) := FVar(2) + 1 || 1
+trigger11 = Floor(FVar(2)) < 72
+trigger11 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger12 = FVar(2) := FVar(2) + 1 || 1
+trigger12 = Floor(FVar(2)) < 72
+trigger12 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger13 = FVar(2) := FVar(2) + 1 || 1
+trigger13 = Floor(FVar(2)) < 72
+trigger13 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger14 = FVar(2) := FVar(2) + 1 || 1
+trigger14 = Floor(FVar(2)) < 72
+trigger14 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger15 = FVar(2) := FVar(2) + 1 || 1
+trigger15 = Floor(FVar(2)) < 72
+trigger15 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger16 = FVar(2) := FVar(2) + 1 || 1
+trigger16 = Floor(FVar(2)) < 72
+trigger16 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger17 = FVar(2) := FVar(2) + 1 || 1
+trigger17 = Floor(FVar(2)) < 72
+trigger17 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger18 = FVar(2) := FVar(2) + 1 || 1
+trigger18 = Floor(FVar(2)) < 72
+trigger18 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger19 = FVar(2) := FVar(2) + 1 || 1
+trigger19 = Floor(FVar(2)) < 72
+trigger19 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger20 = FVar(2) := FVar(2) + 1 || 1
+trigger20 = Floor(FVar(2)) < 72
+trigger20 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger21 = FVar(2) := FVar(2) + 1 || 1
+trigger21 = Floor(FVar(2)) < 72
+trigger21 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger22 = FVar(2) := FVar(2) + 1 || 1
+trigger22 = Floor(FVar(2)) < 72
+trigger22 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger23 = FVar(2) := FVar(2) + 1 || 1
+trigger23 = Floor(FVar(2)) < 72
+trigger23 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger24 = FVar(2) := FVar(2) + 1 || 1
+trigger24 = Floor(FVar(2)) < 72
+trigger24 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger25 = FVar(2) := FVar(2) + 1 || 1
+trigger25 = Floor(FVar(2)) < 72
+trigger25 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger26 = FVar(2) := FVar(2) + 1 || 1
+trigger26 = Floor(FVar(2)) < 72
+trigger26 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger27 = FVar(2) := FVar(2) + 1 || 1
+trigger27 = Floor(FVar(2)) < 72
+trigger27 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger28 = FVar(2) := FVar(2) + 1 || 1
+trigger28 = Floor(FVar(2)) < 72
+trigger28 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger29 = FVar(2) := FVar(2) + 1 || 1
+trigger29 = Floor(FVar(2)) < 72
+trigger29 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger30 = FVar(2) := FVar(2) + 1 || 1
+trigger30 = Floor(FVar(2)) < 72
+trigger30 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger31 = FVar(2) := FVar(2) + 1 || 1
+trigger31 = Floor(FVar(2)) < 72
+trigger31 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger32 = FVar(2) := FVar(2) + 1 || 1
+trigger32 = Floor(FVar(2)) < 72
+trigger32 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger33 = FVar(2) := FVar(2) + 1 || 1
+trigger33 = Floor(FVar(2)) < 72
+trigger33 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger34 = FVar(2) := FVar(2) + 1 || 1
+trigger34 = Floor(FVar(2)) < 72
+trigger34 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger35 = FVar(2) := FVar(2) + 1 || 1
+trigger35 = Floor(FVar(2)) < 72
+trigger35 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger36 = FVar(2) := FVar(2) + 1 || 1
+trigger36 = Floor(FVar(2)) < 72
+trigger36 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger37 = FVar(2) := FVar(2) + 1 || 1
+trigger37 = Floor(FVar(2)) < 72
+trigger37 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger38 = FVar(2) := FVar(2) + 1 || 1
+trigger38 = Floor(FVar(2)) < 72
+trigger38 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger39 = FVar(2) := FVar(2) + 1 || 1
+trigger39 = Floor(FVar(2)) < 72
+trigger39 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger40 = FVar(2) := FVar(2) + 1 || 1
+trigger40 = Floor(FVar(2)) < 72
+trigger40 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger41 = FVar(2) := FVar(2) + 1 || 1
+trigger41 = Floor(FVar(2)) < 72
+trigger41 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger42 = FVar(2) := FVar(2) + 1 || 1
+trigger42 = Floor(FVar(2)) < 72
+trigger42 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger43 = FVar(2) := FVar(2) + 1 || 1
+trigger43 = Floor(FVar(2)) < 72
+trigger43 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger44 = FVar(2) := FVar(2) + 1 || 1
+trigger44 = Floor(FVar(2)) < 72
+trigger44 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger45 = FVar(2) := FVar(2) + 1 || 1
+trigger45 = Floor(FVar(2)) < 72
+trigger45 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger46 = FVar(2) := FVar(2) + 1 || 1
+trigger46 = Floor(FVar(2)) < 72
+trigger46 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger47 = FVar(2) := FVar(2) + 1 || 1
+trigger47 = Floor(FVar(2)) < 72
+trigger47 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger48 = FVar(2) := FVar(2) + 1 || 1
+trigger48 = Floor(FVar(2)) < 72
+trigger48 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger49 = FVar(2) := FVar(2) + 1 || 1
+trigger49 = Floor(FVar(2)) < 72
+trigger49 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger50 = FVar(2) := FVar(2) + 1 || 1
+trigger50 = Floor(FVar(2)) < 72
+trigger50 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger51 = FVar(2) := FVar(2) + 1 || 1
+trigger51 = Floor(FVar(2)) < 72
+trigger51 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger52 = FVar(2) := FVar(2) + 1 || 1
+trigger52 = Floor(FVar(2)) < 72
+trigger52 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger53 = FVar(2) := FVar(2) + 1 || 1
+trigger53 = Floor(FVar(2)) < 72
+trigger53 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger54 = FVar(2) := FVar(2) + 1 || 1
+trigger54 = Floor(FVar(2)) < 72
+trigger54 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger55 = FVar(2) := FVar(2) + 1 || 1
+trigger55 = Floor(FVar(2)) < 72
+trigger55 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger56 = FVar(2) := FVar(2) + 1 || 1
+trigger56 = Floor(FVar(2)) < 72
+trigger56 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger57 = FVar(2) := FVar(2) + 1 || 1
+trigger57 = Floor(FVar(2)) < 72
+trigger57 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger58 = FVar(2) := FVar(2) + 1 || 1
+trigger58 = Floor(FVar(2)) < 72
+trigger58 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger59 = FVar(2) := FVar(2) + 1 || 1
+trigger59 = Floor(FVar(2)) < 72
+trigger59 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger60 = FVar(2) := FVar(2) + 1 || 1
+trigger60 = Floor(FVar(2)) < 72
+trigger60 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger61 = FVar(2) := FVar(2) + 1 || 1
+trigger61 = Floor(FVar(2)) < 72
+trigger61 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger62 = FVar(2) := FVar(2) + 1 || 1
+trigger62 = Floor(FVar(2)) < 72
+trigger62 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger63 = FVar(2) := FVar(2) + 1 || 1
+trigger63 = Floor(FVar(2)) < 72
+trigger63 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger64 = FVar(2) := FVar(2) + 1 || 1
+trigger64 = Floor(FVar(2)) < 72
+trigger64 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger65 = FVar(2) := FVar(2) + 1 || 1
+trigger65 = Floor(FVar(2)) < 72
+trigger65 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger66 = FVar(2) := FVar(2) + 1 || 1
+trigger66 = Floor(FVar(2)) < 72
+trigger66 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger67 = FVar(2) := FVar(2) + 1 || 1
+trigger67 = Floor(FVar(2)) < 72
+trigger67 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger68 = FVar(2) := FVar(2) + 1 || 1
+trigger68 = Floor(FVar(2)) < 72
+trigger68 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger69 = FVar(2) := FVar(2) + 1 || 1
+trigger69 = Floor(FVar(2)) < 72
+trigger69 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger70 = FVar(2) := FVar(2) + 1 || 1
+trigger70 = Floor(FVar(2)) < 72
+trigger70 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger71 = FVar(2) := FVar(2) + 1 || 1
+trigger71 = Floor(FVar(2)) < 72
+trigger71 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger72 = FVar(2) := FVar(2) + 1 || 1
+trigger72 = Floor(FVar(2)) < 72
+trigger72 = (Var(50+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) != 0
+trigger73 = FVar(2) := -1
+
+[State 0, Misc. Stuff 1]
+type = Null
+triggerall = FVar(2) = [0,71] ;Check if valid
+triggerall = Var(50+Floor(FVar(2))/24) := (Var(50+Floor(FVar(2))/24) & (-1-(2**(Floor(FVar(2))%24)))) || 1 ;Remove from backlog
+triggerall = Var(53+Floor(FVar(2))/24):= (Var(53+Floor(FVar(2))/24) | (2**(Floor(FVar(2))%24))) || 1 ;Add to relative checked Puyos list
+triggerall = PlayerID(Floor(FVar(10+(Floor(FVar(2))%6)))), Var(Floor(FVar(2))/6) = Floor(FVar(1)) ;Check if same color
+triggerall = Var(56+Floor(FVar(2))/24) := (Var(56+Floor(FVar(2))/24) | (2**(Floor(FVar(2))%24))) || 1 ;Add to absolute checked Puyos list
+triggerall = Var(Floor(FVar(0))+Floor(FVar(2))/24) := (Var(Floor(FVar(0))+Floor(FVar(2))/24) | (2**(Floor(FVar(2))%24))) || 1 ;Add to current chain list
+
+trigger1 = Floor(FVar(2))%6 > 0 ;Not on left edge
+trigger1 = Var(59) := Floor(FVar(2)) - 1 ;Put left puyo on temp var
+trigger1 = (Var(53+Var(59)/24) & (2**(Var(59)%24))) = 0 ;Left puyo not on relative checked list
+trigger1 = Var(50+Var(59)/24) := (Var(50+Var(59)/24) | (2**(Var(59)%24))) ;Add left puyo to backlog
+trigger1 = 0 ;We have to check the other directions, after all
+
+trigger2 = Floor(FVar(2))%6 < 5 ;Not on right edge
+trigger2 = Var(59) := Floor(FVar(2)) + 1 ;Put right puyo on temp var
+trigger2 = (Var(53+Var(59)/24) & (2**(Var(59)%24))) = 0 ;Right puyo not on relative checked list
+trigger2 = Var(50+Var(59)/24) := (Var(50+Var(59)/24) | (2**(Var(59)%24))) ;Add right puyo to backlog
+trigger2 = 0 ;We have to check the other directions, after all
+
+trigger3 = Floor(FVar(2))/6 > 0 ;Not on bottom edge
+trigger3 = Var(59) := Floor(FVar(2)) - 6 ;Put bottom puyo on temp var
+trigger3 = (Var(53+Var(59)/24) & (2**(Var(59)%24))) = 0 ;Bottom puyo not on relative checked list
+trigger3 = Var(50+Var(59)/24) := (Var(50+Var(59)/24) | (2**(Var(59)%24))) ;Add bottom puyo to backlog
+trigger3 = 0 ;We have to check the other directions, after all
+
+trigger4 = Floor(FVar(2))/6 < 11 ;Not on top edge
+trigger4 = Var(59) := Floor(FVar(2)) + 6 ;Put top puyo on temp var
+trigger4 = (Var(53+Var(59)/24) & (2**(Var(59)%24))) = 0 ;Top puyo not on relative checked list
+trigger4 = Var(50+Var(59)/24) := (Var(50+Var(59)/24) | (2**(Var(59)%24))) ;Add top puyo to backlog
+
+[State 0, And now we loop]
+type = ChangeState
+trigger1 = FVar(2) = [0,71]
+value = 1212
+
+[State 0, End Loop]
+type = ChangeState
+trigger1 = FVar(2) != [0,71]
+value = 1213
+
+;---------------------------------------------------------------------------
+;Player X Puyo Processing End
+[Statedef 1213]
+
+[State 0, Add all chain values together]
+type = Null
+trigger1 = Var(59) := Cond((Var(Floor(FVar(0))+0) & (2**0)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**1)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**2)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**3)), 1, 0) || 1
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+0) & (2**4)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**5)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**6)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**7)), 1, 0) || 1
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+0) & (2**8)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**9)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**10)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**11)), 1, 0) || 1
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+0) & (2**12)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**13)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**14)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**15)), 1, 0) || 1
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+0) & (2**16)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**17)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**18)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**19)), 1, 0) || 1
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+0) & (2**20)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**21)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**22)), 1, 0) + Cond((Var(Floor(FVar(0))+0) & (2**23)), 1, 0) || 1
+
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+1) & (2**0)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**1)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**2)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**3)), 1, 0) || 1
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+1) & (2**4)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**5)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**6)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**7)), 1, 0) || 1
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+1) & (2**8)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**9)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**10)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**11)), 1, 0) || 1
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+1) & (2**12)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**13)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**14)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**15)), 1, 0) || 1
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+1) & (2**16)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**17)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**18)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**19)), 1, 0) || 1
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+1) & (2**20)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**21)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**22)), 1, 0) + Cond((Var(Floor(FVar(0))+1) & (2**23)), 1, 0) || 1
+
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+2) & (2**0)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**1)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**2)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**3)), 1, 0) || 1
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+2) & (2**4)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**5)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**6)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**7)), 1, 0) || 1
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+2) & (2**8)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**9)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**10)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**11)), 1, 0) || 1
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+2) & (2**12)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**13)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**14)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**15)), 1, 0) || 1
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+2) & (2**16)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**17)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**18)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**19)), 1, 0) || 1
+trigger1 = Var(59) := Var(59) + Cond((Var(Floor(FVar(0))+2) & (2**20)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**21)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**22)), 1, 0) + Cond((Var(Floor(FVar(0))+2) & (2**23)), 1, 0) || 1
+
+trigger1 = Var(Floor(FVar(0))+1) := (Var(Floor(FVar(0))+1) | (Var(59) * (2**24)))
+
+[State 0, Misc. Stuff 2]
+type = Null
+trigger1 = (Var(Floor(FVar(0))+1) / (2**24)) < (root, Var(52)) ;Chain is less than 4
+;Delete chain
+trigger1 = Var(Floor(FVar(0))) := 0 || 1
+trigger1 = Var(Floor(FVar(0))+1) := 0 || 1
+trigger1 = Var(Floor(FVar(0))+2) := 0 || 1
+;Go to next chain vars
+trigger2 = FVar(0) := Floor(FVar(0)) + 3
+
+[State 0, Misc. Stuff 3]
+type = Null
+;Set relative checked Puyos list to absolute checked Puyos list
+trigger1 = Var(53) := Var(56) || 1
+trigger1 = Var(54) := Var(57) || 1
+trigger1 = Var(55) := Var(58) || 1
+
+[State 0, Get First Puyo not in absolute checked list]
+type = Null
+trigger1 = FVar(2) := FVar(3) || 1
+trigger1 = Floor(FVar(2)) < 72
+trigger1 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger2 = FVar(2) := FVar(2) + 1 || 1
+trigger2 = Floor(FVar(2)) < 72
+trigger2 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger3 = FVar(2) := FVar(2) + 1 || 1
+trigger3 = Floor(FVar(2)) < 72
+trigger3 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger4 = FVar(2) := FVar(2) + 1 || 1
+trigger4 = Floor(FVar(2)) < 72
+trigger4 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger5 = FVar(2) := FVar(2) + 1 || 1
+trigger5 = Floor(FVar(2)) < 72
+trigger5 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger6 = FVar(2) := FVar(2) + 1 || 1
+trigger6 = Floor(FVar(2)) < 72
+trigger6 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger7 = FVar(2) := FVar(2) + 1 || 1
+trigger7 = Floor(FVar(2)) < 72
+trigger7 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger8 = FVar(2) := FVar(2) + 1 || 1
+trigger8 = Floor(FVar(2)) < 72
+trigger8 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger9 = FVar(2) := FVar(2) + 1 || 1
+trigger9 = Floor(FVar(2)) < 72
+trigger9 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger10 = FVar(2) := FVar(2) + 1 || 1
+trigger10 = Floor(FVar(2)) < 72
+trigger10 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger11 = FVar(2) := FVar(2) + 1 || 1
+trigger11 = Floor(FVar(2)) < 72
+trigger11 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger12 = FVar(2) := FVar(2) + 1 || 1
+trigger12 = Floor(FVar(2)) < 72
+trigger12 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger13 = FVar(2) := FVar(2) + 1 || 1
+trigger13 = Floor(FVar(2)) < 72
+trigger13 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger14 = FVar(2) := FVar(2) + 1 || 1
+trigger14 = Floor(FVar(2)) < 72
+trigger14 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger15 = FVar(2) := FVar(2) + 1 || 1
+trigger15 = Floor(FVar(2)) < 72
+trigger15 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger16 = FVar(2) := FVar(2) + 1 || 1
+trigger16 = Floor(FVar(2)) < 72
+trigger16 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger17 = FVar(2) := FVar(2) + 1 || 1
+trigger17 = Floor(FVar(2)) < 72
+trigger17 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger18 = FVar(2) := FVar(2) + 1 || 1
+trigger18 = Floor(FVar(2)) < 72
+trigger18 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger19 = FVar(2) := FVar(2) + 1 || 1
+trigger19 = Floor(FVar(2)) < 72
+trigger19 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger20 = FVar(2) := FVar(2) + 1 || 1
+trigger20 = Floor(FVar(2)) < 72
+trigger20 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger21 = FVar(2) := FVar(2) + 1 || 1
+trigger21 = Floor(FVar(2)) < 72
+trigger21 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger22 = FVar(2) := FVar(2) + 1 || 1
+trigger22 = Floor(FVar(2)) < 72
+trigger22 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger23 = FVar(2) := FVar(2) + 1 || 1
+trigger23 = Floor(FVar(2)) < 72
+trigger23 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger24 = FVar(2) := FVar(2) + 1 || 1
+trigger24 = Floor(FVar(2)) < 72
+trigger24 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger25 = FVar(2) := FVar(2) + 1 || 1
+trigger25 = Floor(FVar(2)) < 72
+trigger25 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger26 = FVar(2) := FVar(2) + 1 || 1
+trigger26 = Floor(FVar(2)) < 72
+trigger26 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger27 = FVar(2) := FVar(2) + 1 || 1
+trigger27 = Floor(FVar(2)) < 72
+trigger27 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger28 = FVar(2) := FVar(2) + 1 || 1
+trigger28 = Floor(FVar(2)) < 72
+trigger28 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger29 = FVar(2) := FVar(2) + 1 || 1
+trigger29 = Floor(FVar(2)) < 72
+trigger29 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger30 = FVar(2) := FVar(2) + 1 || 1
+trigger30 = Floor(FVar(2)) < 72
+trigger30 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger31 = FVar(2) := FVar(2) + 1 || 1
+trigger31 = Floor(FVar(2)) < 72
+trigger31 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger32 = FVar(2) := FVar(2) + 1 || 1
+trigger32 = Floor(FVar(2)) < 72
+trigger32 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger33 = FVar(2) := FVar(2) + 1 || 1
+trigger33 = Floor(FVar(2)) < 72
+trigger33 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger34 = FVar(2) := FVar(2) + 1 || 1
+trigger34 = Floor(FVar(2)) < 72
+trigger34 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger35 = FVar(2) := FVar(2) + 1 || 1
+trigger35 = Floor(FVar(2)) < 72
+trigger35 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger36 = FVar(2) := FVar(2) + 1 || 1
+trigger36 = Floor(FVar(2)) < 72
+trigger36 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger37 = FVar(2) := FVar(2) + 1 || 1
+trigger37 = Floor(FVar(2)) < 72
+trigger37 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger38 = FVar(2) := FVar(2) + 1 || 1
+trigger38 = Floor(FVar(2)) < 72
+trigger38 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger39 = FVar(2) := FVar(2) + 1 || 1
+trigger39 = Floor(FVar(2)) < 72
+trigger39 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger40 = FVar(2) := FVar(2) + 1 || 1
+trigger40 = Floor(FVar(2)) < 72
+trigger40 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger41 = FVar(2) := FVar(2) + 1 || 1
+trigger41 = Floor(FVar(2)) < 72
+trigger41 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger42 = FVar(2) := FVar(2) + 1 || 1
+trigger42 = Floor(FVar(2)) < 72
+trigger42 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger43 = FVar(2) := FVar(2) + 1 || 1
+trigger43 = Floor(FVar(2)) < 72
+trigger43 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger44 = FVar(2) := FVar(2) + 1 || 1
+trigger44 = Floor(FVar(2)) < 72
+trigger44 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger45 = FVar(2) := FVar(2) + 1 || 1
+trigger45 = Floor(FVar(2)) < 72
+trigger45 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger46 = FVar(2) := FVar(2) + 1 || 1
+trigger46 = Floor(FVar(2)) < 72
+trigger46 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger47 = FVar(2) := FVar(2) + 1 || 1
+trigger47 = Floor(FVar(2)) < 72
+trigger47 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger48 = FVar(2) := FVar(2) + 1 || 1
+trigger48 = Floor(FVar(2)) < 72
+trigger48 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger49 = FVar(2) := FVar(2) + 1 || 1
+trigger49 = Floor(FVar(2)) < 72
+trigger49 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger50 = FVar(2) := FVar(2) + 1 || 1
+trigger50 = Floor(FVar(2)) < 72
+trigger50 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger51 = FVar(2) := FVar(2) + 1 || 1
+trigger51 = Floor(FVar(2)) < 72
+trigger51 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger52 = FVar(2) := FVar(2) + 1 || 1
+trigger52 = Floor(FVar(2)) < 72
+trigger52 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger53 = FVar(2) := FVar(2) + 1 || 1
+trigger53 = Floor(FVar(2)) < 72
+trigger53 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger54 = FVar(2) := FVar(2) + 1 || 1
+trigger54 = Floor(FVar(2)) < 72
+trigger54 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger55 = FVar(2) := FVar(2) + 1 || 1
+trigger55 = Floor(FVar(2)) < 72
+trigger55 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger56 = FVar(2) := FVar(2) + 1 || 1
+trigger56 = Floor(FVar(2)) < 72
+trigger56 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger57 = FVar(2) := FVar(2) + 1 || 1
+trigger57 = Floor(FVar(2)) < 72
+trigger57 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger58 = FVar(2) := FVar(2) + 1 || 1
+trigger58 = Floor(FVar(2)) < 72
+trigger58 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger59 = FVar(2) := FVar(2) + 1 || 1
+trigger59 = Floor(FVar(2)) < 72
+trigger59 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger60 = FVar(2) := FVar(2) + 1 || 1
+trigger60 = Floor(FVar(2)) < 72
+trigger60 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger61 = FVar(2) := FVar(2) + 1 || 1
+trigger61 = Floor(FVar(2)) < 72
+trigger61 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger62 = FVar(2) := FVar(2) + 1 || 1
+trigger62 = Floor(FVar(2)) < 72
+trigger62 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger63 = FVar(2) := FVar(2) + 1 || 1
+trigger63 = Floor(FVar(2)) < 72
+trigger63 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger64 = FVar(2) := FVar(2) + 1 || 1
+trigger64 = Floor(FVar(2)) < 72
+trigger64 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger65 = FVar(2) := FVar(2) + 1 || 1
+trigger65 = Floor(FVar(2)) < 72
+trigger65 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger66 = FVar(2) := FVar(2) + 1 || 1
+trigger66 = Floor(FVar(2)) < 72
+trigger66 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger67 = FVar(2) := FVar(2) + 1 || 1
+trigger67 = Floor(FVar(2)) < 72
+trigger67 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger68 = FVar(2) := FVar(2) + 1 || 1
+trigger68 = Floor(FVar(2)) < 72
+trigger68 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger69 = FVar(2) := FVar(2) + 1 || 1
+trigger69 = Floor(FVar(2)) < 72
+trigger69 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger70 = FVar(2) := FVar(2) + 1 || 1
+trigger70 = Floor(FVar(2)) < 72
+trigger70 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger71 = FVar(2) := FVar(2) + 1 || 1
+trigger71 = Floor(FVar(2)) < 72
+trigger71 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger72 = FVar(2) := FVar(2) + 1 || 1
+trigger72 = Floor(FVar(2)) < 72
+trigger72 = (Var(56+Floor(FVar(2))/24) & (2**(Floor(FVar(2))%24))) = 0
+trigger73 = FVar(2) := -1
+
+[State 0, End Loop]
+type = ChangeState
+trigger1 = FVar(2) != [0,71] ;Puyo is invalid
+value = 1214
+
+[State 0, Loop again]
+type = ChangeState
+trigger1 = 1
+value = 1211
+
+;---------------------------------------------------------------------------
+;Player X Puyo Processing Stagnation
+[Statedef 1214]
+
+;[State 0, DisplayToClipboard]
+;type = DisplayToClipboard
+;trigger1 = 1
+;text = "%d, %d, %d"
+;params = Var(56), Var(57), Var(58)
+;
+;[State 0, DisplayToClipboard]
+;type = AppendToClipboard
+;trigger1 = 1
+;text = "\n%f"
+;params = FVar(0)
+
+[State 0, Wiping All Out]
+type = VarRangeSet
+trigger1 = time = 0
+value = 0
+first = 50
+last = 59
+
+[State 0, Score Calculations]
+type = Null
+triggerall = time = 0
+trigger1 = Var(59) := Floor(FVar(0)) - 3 || 1
+trigger1 = Var(59) >= 0
+trigger1 = Var(50) := Var(50) + (Var(Var(59)+1) / (2**24)) || 1
+trigger1 = Var(53) := Var(53) + Cond((root, Var(52)) >= 4, Cond((Var(Var(59)+1) / (2**24)) > 4, Cond((Var(Var(59)+1) / (2**24)) >= 11, 10, (Var(Var(59)+1) / (2**24)) - 3), 0), Cond((Var(Var(59)+1) / (2**24)) > (root, Var(52)), Cond((Var(Var(59)+1) / (2**24)) >= ((root, Var(52))+7), 10, ((Var(Var(59)+1) / (2**24)) - (root, Var(52)) + 1)), 0)) || 1
+trigger1 = Var(52) := (Var(52) | (2**(Var(Var(59)) / (2**24)))) || 1
+trigger1 = Var(56) := (Var(56) | Var(Var(59))) || 1
+trigger1 = Var(57) := (Var(57) | Var(Var(59)+1)) || 1
+trigger1 = Var(58) := (Var(58) | Var(Var(59)+2)) && 0
+trigger2 = Var(59) := Var(59) - 3 || 1
+trigger2 = Var(59) >= 0
+trigger2 = Var(50) := Var(50) + (Var(Var(59)+1) / (2**24)) || 1
+trigger2 = Var(53) := Var(53) + Cond((root, Var(52)) >= 4, Cond((Var(Var(59)+1) / (2**24)) > 4, Cond((Var(Var(59)+1) / (2**24)) >= 11, 10, (Var(Var(59)+1) / (2**24)) - 3), 0), Cond((Var(Var(59)+1) / (2**24)) > (root, Var(52)), Cond((Var(Var(59)+1) / (2**24)) >= ((root, Var(52))+7), 10, ((Var(Var(59)+1) / (2**24)) - (root, Var(52)) + 1)), 0)) || 1
+trigger2 = Var(52) := (Var(52) | (2**(Var(Var(59)) / (2**24)))) || 1
+trigger2 = Var(56) := (Var(56) | Var(Var(59))) || 1
+trigger2 = Var(57) := (Var(57) | Var(Var(59)+1)) || 1
+trigger2 = Var(58) := (Var(58) | Var(Var(59)+2)) && 0
+trigger3 = Var(59) := Var(59) - 3 || 1
+trigger3 = Var(59) >= 0
+trigger3 = Var(50) := Var(50) + (Var(Var(59)+1) / (2**24)) || 1
+trigger3 = Var(53) := Var(53) + Cond((root, Var(52)) >= 4, Cond((Var(Var(59)+1) / (2**24)) > 4, Cond((Var(Var(59)+1) / (2**24)) >= 11, 10, (Var(Var(59)+1) / (2**24)) - 3), 0), Cond((Var(Var(59)+1) / (2**24)) > (root, Var(52)), Cond((Var(Var(59)+1) / (2**24)) >= ((root, Var(52))+7), 10, ((Var(Var(59)+1) / (2**24)) - (root, Var(52)) + 1)), 0)) || 1
+trigger3 = Var(52) := (Var(52) | (2**(Var(Var(59)) / (2**24)))) || 1
+trigger3 = Var(56) := (Var(56) | Var(Var(59))) || 1
+trigger3 = Var(57) := (Var(57) | Var(Var(59)+1)) || 1
+trigger3 = Var(58) := (Var(58) | Var(Var(59)+2)) && 0
+trigger4 = Var(59) := Var(59) - 3 || 1
+trigger4 = Var(59) >= 0
+trigger4 = Var(50) := Var(50) + (Var(Var(59)+1) / (2**24)) || 1
+trigger4 = Var(53) := Var(53) + Cond((root, Var(52)) >= 4, Cond((Var(Var(59)+1) / (2**24)) > 4, Cond((Var(Var(59)+1) / (2**24)) >= 11, 10, (Var(Var(59)+1) / (2**24)) - 3), 0), Cond((Var(Var(59)+1) / (2**24)) > (root, Var(52)), Cond((Var(Var(59)+1) / (2**24)) >= ((root, Var(52))+7), 10, ((Var(Var(59)+1) / (2**24)) - (root, Var(52)) + 1)), 0)) || 1
+trigger4 = Var(52) := (Var(52) | (2**(Var(Var(59)) / (2**24)))) || 1
+trigger4 = Var(56) := (Var(56) | Var(Var(59))) || 1
+trigger4 = Var(57) := (Var(57) | Var(Var(59)+1)) || 1
+trigger4 = Var(58) := (Var(58) | Var(Var(59)+2)) && 0
+trigger5 = Var(59) := Var(59) - 3 || 1
+trigger5 = Var(59) >= 0
+trigger5 = Var(50) := Var(50) + (Var(Var(59)+1) / (2**24)) || 1
+trigger5 = Var(53) := Var(53) + Cond((root, Var(52)) >= 4, Cond((Var(Var(59)+1) / (2**24)) > 4, Cond((Var(Var(59)+1) / (2**24)) >= 11, 10, (Var(Var(59)+1) / (2**24)) - 3), 0), Cond((Var(Var(59)+1) / (2**24)) > (root, Var(52)), Cond((Var(Var(59)+1) / (2**24)) >= ((root, Var(52))+7), 10, ((Var(Var(59)+1) / (2**24)) - (root, Var(52)) + 1)), 0)) || 1
+trigger5 = Var(52) := (Var(52) | (2**(Var(Var(59)) / (2**24)))) || 1
+trigger5 = Var(56) := (Var(56) | Var(Var(59))) || 1
+trigger5 = Var(57) := (Var(57) | Var(Var(59)+1)) || 1
+trigger5 = Var(58) := (Var(58) | Var(Var(59)+2)) && 0
+trigger6 = Var(59) := Var(59) - 3 || 1
+trigger6 = Var(59) >= 0
+trigger6 = Var(50) := Var(50) + (Var(Var(59)+1) / (2**24)) || 1
+trigger6 = Var(53) := Var(53) + Cond((root, Var(52)) >= 4, Cond((Var(Var(59)+1) / (2**24)) > 4, Cond((Var(Var(59)+1) / (2**24)) >= 11, 10, (Var(Var(59)+1) / (2**24)) - 3), 0), Cond((Var(Var(59)+1) / (2**24)) > (root, Var(52)), Cond((Var(Var(59)+1) / (2**24)) >= ((root, Var(52))+7), 10, ((Var(Var(59)+1) / (2**24)) - (root, Var(52)) + 1)), 0)) || 1
+trigger6 = Var(52) := (Var(52) | (2**(Var(Var(59)) / (2**24)))) || 1
+trigger6 = Var(56) := (Var(56) | Var(Var(59))) || 1
+trigger6 = Var(57) := (Var(57) | Var(Var(59)+1)) || 1
+trigger6 = Var(58) := (Var(58) | Var(Var(59)+2)) && 0
+trigger7 = Var(59) := Var(59) - 3 || 1
+trigger7 = Var(59) >= 0
+trigger7 = Var(50) := Var(50) + (Var(Var(59)+1) / (2**24)) || 1
+trigger7 = Var(53) := Var(53) + Cond((root, Var(52)) >= 4, Cond((Var(Var(59)+1) / (2**24)) > 4, Cond((Var(Var(59)+1) / (2**24)) >= 11, 10, (Var(Var(59)+1) / (2**24)) - 3), 0), Cond((Var(Var(59)+1) / (2**24)) > (root, Var(52)), Cond((Var(Var(59)+1) / (2**24)) >= ((root, Var(52))+7), 10, ((Var(Var(59)+1) / (2**24)) - (root, Var(52)) + 1)), 0)) || 1
+trigger7 = Var(52) := (Var(52) | (2**(Var(Var(59)) / (2**24)))) || 1
+trigger7 = Var(56) := (Var(56) | Var(Var(59))) || 1
+trigger7 = Var(57) := (Var(57) | Var(Var(59)+1)) || 1
+trigger7 = Var(58) := (Var(58) | Var(Var(59)+2)) && 0
+trigger8 = Var(59) := Var(59) - 3 || 1
+trigger8 = Var(59) >= 0
+trigger8 = Var(50) := Var(50) + (Var(Var(59)+1) / (2**24)) || 1
+trigger8 = Var(53) := Var(53) + Cond((root, Var(52)) >= 4, Cond((Var(Var(59)+1) / (2**24)) > 4, Cond((Var(Var(59)+1) / (2**24)) >= 11, 10, (Var(Var(59)+1) / (2**24)) - 3), 0), Cond((Var(Var(59)+1) / (2**24)) > (root, Var(52)), Cond((Var(Var(59)+1) / (2**24)) >= ((root, Var(52))+7), 10, ((Var(Var(59)+1) / (2**24)) - (root, Var(52)) + 1)), 0)) || 1
+trigger8 = Var(52) := (Var(52) | (2**(Var(Var(59)) / (2**24)))) || 1
+trigger8 = Var(56) := (Var(56) | Var(Var(59))) || 1
+trigger8 = Var(57) := (Var(57) | Var(Var(59)+1)) || 1
+trigger8 = Var(58) := (Var(58) | Var(Var(59)+2)) && 0
+trigger9 = Var(59) := Var(59) - 3 || 1
+trigger9 = Var(59) >= 0
+trigger9 = Var(50) := Var(50) + (Var(Var(59)+1) / (2**24)) || 1
+trigger9 = Var(53) := Var(53) + Cond((root, Var(52)) >= 4, Cond((Var(Var(59)+1) / (2**24)) > 4, Cond((Var(Var(59)+1) / (2**24)) >= 11, 10, (Var(Var(59)+1) / (2**24)) - 3), 0), Cond((Var(Var(59)+1) / (2**24)) > (root, Var(52)), Cond((Var(Var(59)+1) / (2**24)) >= ((root, Var(52))+7), 10, ((Var(Var(59)+1) / (2**24)) - (root, Var(52)) + 1)), 0)) || 1
+trigger9 = Var(52) := (Var(52) | (2**(Var(Var(59)) / (2**24)))) || 1
+trigger9 = Var(56) := (Var(56) | Var(Var(59))) || 1
+trigger9 = Var(57) := (Var(57) | Var(Var(59)+1)) || 1
+trigger9 = Var(58) := (Var(58) | Var(Var(59)+2)) && 0
+trigger10 = Var(59) := Var(59) - 3 || 1
+trigger10 = Var(59) >= 0
+trigger10 = Var(50) := Var(50) + (Var(Var(59)+1) / (2**24)) || 1
+trigger10 = Var(53) := Var(53) + Cond((root, Var(52)) >= 4, Cond((Var(Var(59)+1) / (2**24)) > 4, Cond((Var(Var(59)+1) / (2**24)) >= 11, 10, (Var(Var(59)+1) / (2**24)) - 3), 0), Cond((Var(Var(59)+1) / (2**24)) > (root, Var(52)), Cond((Var(Var(59)+1) / (2**24)) >= ((root, Var(52))+7), 10, ((Var(Var(59)+1) / (2**24)) - (root, Var(52)) + 1)), 0)) || 1
+trigger10 = Var(52) := (Var(52) | (2**(Var(Var(59)) / (2**24)))) || 1
+trigger10 = Var(56) := (Var(56) | Var(Var(59))) || 1
+trigger10 = Var(57) := (Var(57) | Var(Var(59)+1)) || 1
+trigger10 = Var(58) := (Var(58) | Var(Var(59)+2)) && 0
+trigger11 = Var(59) := Var(59) - 3 || 1
+trigger11 = Var(59) >= 0
+trigger11 = Var(50) := Var(50) + (Var(Var(59)+1) / (2**24)) || 1
+trigger11 = Var(53) := Var(53) + Cond((root, Var(52)) >= 4, Cond((Var(Var(59)+1) / (2**24)) > 4, Cond((Var(Var(59)+1) / (2**24)) >= 11, 10, (Var(Var(59)+1) / (2**24)) - 3), 0), Cond((Var(Var(59)+1) / (2**24)) > (root, Var(52)), Cond((Var(Var(59)+1) / (2**24)) >= ((root, Var(52))+7), 10, ((Var(Var(59)+1) / (2**24)) - (root, Var(52)) + 1)), 0)) || 1
+trigger11 = Var(52) := (Var(52) | (2**(Var(Var(59)) / (2**24)))) || 1
+trigger11 = Var(56) := (Var(56) | Var(Var(59))) || 1
+trigger11 = Var(57) := (Var(57) | Var(Var(59)+1)) || 1
+trigger11 = Var(58) := (Var(58) | Var(Var(59)+2)) && 0
+trigger12 = Var(59) := Var(59) - 3 || 1
+trigger12 = Var(59) >= 0
+trigger12 = Var(50) := Var(50) + (Var(Var(59)+1) / (2**24)) || 1
+trigger12 = Var(53) := Var(53) + Cond((root, Var(52)) >= 4, Cond((Var(Var(59)+1) / (2**24)) > 4, Cond((Var(Var(59)+1) / (2**24)) >= 11, 10, (Var(Var(59)+1) / (2**24)) - 3), 0), Cond((Var(Var(59)+1) / (2**24)) > (root, Var(52)), Cond((Var(Var(59)+1) / (2**24)) >= ((root, Var(52))+7), 10, ((Var(Var(59)+1) / (2**24)) - (root, Var(52)) + 1)), 0)) || 1
+trigger12 = Var(52) := (Var(52) | (2**(Var(Var(59)) / (2**24)))) || 1
+trigger12 = Var(56) := (Var(56) | Var(Var(59))) || 1
+trigger12 = Var(57) := (Var(57) | Var(Var(59)+1)) || 1
+trigger12 = Var(58) := (Var(58) | Var(Var(59)+2)) && 0
+trigger13 = Var(59) := Var(59) - 3 || 1
+trigger13 = Var(59) >= 0
+trigger13 = Var(50) := Var(50) + (Var(Var(59)+1) / (2**24)) || 1
+trigger13 = Var(53) := Var(53) + Cond((root, Var(52)) >= 4, Cond((Var(Var(59)+1) / (2**24)) > 4, Cond((Var(Var(59)+1) / (2**24)) >= 11, 10, (Var(Var(59)+1) / (2**24)) - 3), 0), Cond((Var(Var(59)+1) / (2**24)) > (root, Var(52)), Cond((Var(Var(59)+1) / (2**24)) >= ((root, Var(52))+7), 10, ((Var(Var(59)+1) / (2**24)) - (root, Var(52)) + 1)), 0)) || 1
+trigger13 = Var(52) := (Var(52) | (2**(Var(Var(59)) / (2**24)))) || 1
+trigger13 = Var(56) := (Var(56) | Var(Var(59))) || 1
+trigger13 = Var(57) := (Var(57) | Var(Var(59)+1)) || 1
+trigger13 = Var(58) := (Var(58) | Var(Var(59)+2)) && 0
+trigger14 = Var(59) := Var(59) - 3 || 1
+trigger14 = Var(59) >= 0
+trigger14 = Var(50) := Var(50) + (Var(Var(59)+1) / (2**24)) || 1
+trigger14 = Var(53) := Var(53) + Cond((root, Var(52)) >= 4, Cond((Var(Var(59)+1) / (2**24)) > 4, Cond((Var(Var(59)+1) / (2**24)) >= 11, 10, (Var(Var(59)+1) / (2**24)) - 3), 0), Cond((Var(Var(59)+1) / (2**24)) > (root, Var(52)), Cond((Var(Var(59)+1) / (2**24)) >= ((root, Var(52))+7), 10, ((Var(Var(59)+1) / (2**24)) - (root, Var(52)) + 1)), 0)) || 1
+trigger14 = Var(52) := (Var(52) | (2**(Var(Var(59)) / (2**24)))) || 1
+trigger14 = Var(56) := (Var(56) | Var(Var(59))) || 1
+trigger14 = Var(57) := (Var(57) | Var(Var(59)+1)) || 1
+trigger14 = Var(58) := (Var(58) | Var(Var(59)+2)) && 0
+trigger15 = Var(59) := Var(59) - 3 || 1
+trigger15 = Var(59) >= 0
+trigger15 = Var(50) := Var(50) + (Var(Var(59)+1) / (2**24)) || 1
+trigger15 = Var(53) := Var(53) + Cond((root, Var(52)) >= 4, Cond((Var(Var(59)+1) / (2**24)) > 4, Cond((Var(Var(59)+1) / (2**24)) >= 11, 10, (Var(Var(59)+1) / (2**24)) - 3), 0), Cond((Var(Var(59)+1) / (2**24)) > (root, Var(52)), Cond((Var(Var(59)+1) / (2**24)) >= ((root, Var(52))+7), 10, ((Var(Var(59)+1) / (2**24)) - (root, Var(52)) + 1)), 0)) || 1
+trigger15 = Var(52) := (Var(52) | (2**(Var(Var(59)) / (2**24)))) || 1
+trigger15 = Var(56) := (Var(56) | Var(Var(59))) || 1
+trigger15 = Var(57) := (Var(57) | Var(Var(59)+1)) || 1
+trigger15 = Var(58) := (Var(58) | Var(Var(59)+2)) && 0
+
+[State 0, Score Calculations 2]
+type = Null
+triggerall = time = 0
+trigger1 = Var(50) := Var(50) * 10 || 1
+trigger1 = Var(52) := Cond((Var(52) & (2**1)), 1, 0) + Cond((Var(52) & (2**2)), 1, 0) + Cond((Var(52) & (2**3)), 1, 0) + Cond((Var(52) & (2**4)), 1, 0) + Cond((Var(52) & (2**5)), 1, 0) || 1
+trigger1 = Var(52) := Cond(Var(52) = 2, 3, Cond(Var(52) = 3, 6, Cond(Var(52) = 4, 12, Cond(Var(52) = 5, 24, 0)))) || 1
+trigger1 = Var(59) := Cond(Helper(Cond(IsHelper(1250), 1000, 2000)), Var(0) = 0, 0, Cond(Helper(Cond(IsHelper(1250), 1000, 2000)), Var(0) = 1, 8, Cond(Helper(Cond(IsHelper(1250), 1000, 2000)), Var(0) = 2, 16, Cond(Helper(Cond(IsHelper(1250), 1000, 2000)), Var(0) >= 23, 8*84, 32*(Helper(Cond(IsHelper(1250), 1000, 2000)), Var(0)-2))))) || 1
+trigger1 = Var(51) := Var(59) + Var(52) + Var(53) || 1
+trigger1 = Var(51) := Cond(Var(51) < 1, 1, Cond(Var(51) > 999, 999, Var(51))) || 1
+
+Helper(Cond(IsHelper(1250), 1000, 2000))
+
+[State 0, Garbage Collector]
+type = ChangeState
+trigger1 = Var(59) := 0 || 1
+trigger1 = Var(53) := 0 || 1
+trigger1 = Var(54) := 0 || 1
+trigger1 = Var(55) := 0 || 1
+value = 1215
+
+;---------------------------------------------------------------------------
+;Garbage Scan
+[Statedef 1215]
+
+[State 0, Garbage Puyo Run]
+type = Null
+triggerall = Var(59) = [0,71] ;Check if valid
+triggerall = (Var(56+Var(59)/24) & (2**(Var(59)%24))) != 0 ;Check if match
+
+trigger1 = Var(59)%6 > 0 ;Not on left edge
+trigger1 = PlayerID(Floor(FVar(10+((Var(59)-1)%6)))), Var(Var(59)/6) = 6 ;Check if left is garbage
+trigger1 = Var(53+(Var(59)-1)/24) := (Var(53+(Var(59)-1)/24) | (2**((Var(59)-1)%24))) ;Mark on garbage array
+trigger1 = 0
+
+trigger2 = Var(59)%6 < 5 ;Not on right edge
+trigger2 = PlayerID(Floor(FVar(10+((Var(59)+1)%6)))), Var(Var(59)/6) = 6 ;Check if right is garbage
+trigger2 = Var(53+(Var(59)+1)/24) := (Var(53+(Var(59)+1)/24) | (2**((Var(59)+1)%24))) ;Mark on garbage array
+trigger2 = 0
+
+trigger3 = Var(59)/6 > 0 ;Not on bottom edge
+trigger3 = PlayerID(Floor(FVar(10+((Var(59)-6)%6)))), Var((Var(59)-6)/6) = 6 ;Check if bottom is garbage
+trigger3 = Var(53+(Var(59)-6)/24) := (Var(53+(Var(59)-6)/24) | (2**((Var(59)-6)%24))) ;Mark on garbage array
+trigger3 = 0
+
+trigger4 = Var(59)/6 < 11 ;Not on top edge
+trigger4 = PlayerID(Floor(FVar(10+((Var(59)+6)%6)))), Var((Var(59)+6)/6) = 6 ;Check if top is garbage
+trigger4 = Var(53+(Var(59)+6)/24) := (Var(53+(Var(59)+6)/24) | (2**((Var(59)+6)%24))) ;Mark on garbage array
+trigger4 = 0
+
+[State 0, Garbage Puyo Loop]
+type = ChangeState
+trigger1 = Var(59) := Var(59) + 1 || 1
+trigger1 = Var(59) = [0,71] ;Check if valid
+value = 1215
+
+[State 0, Garbage Puyo End]
+type = ChangeState
+trigger1 = Var(59) != [0,71] ;Check if not valid
+value = 1216
+
+;---------------------------------------------------------------------------
+;Stagnation
+[Statedef 1216]
+
+[State 0, Final Garbage]
+type = Null
+trigger1 = time = 0
+trigger1 = Var(56) := (Var(56) | Var(53)) || 1
+trigger1 = Var(57) := (Var(57) | Var(54)) || 1
+trigger1 = Var(58) := (Var(58) | Var(55)) || 1
+trigger1 = FVar(39) := 1 || 1
+
+[State 0, Send Message To Parent]
+type = Null
+triggerall = time = 0
+trigger1 = Var(50) != 0
+trigger1 = Helper(Cond(IsHelper(1250), 1000, 2000)), Cond(1, Var(0) := Var(0) + 1, 0) || 1
+trigger2 = Helper(Cond(IsHelper(1250), 1000, 2000)), Cond(1, Var(0) := 0, 0) || 1
+
+[State 0, Send Message To Score Helper]
+type = Null
+triggerall = time = 0 && NumHelper(300)
+trigger1 = IsHelper(1250)
+trigger1 = Helper(300), Cond(1, Var(2) := Helper(1250), Var(50), 0) || 1
+trigger1 = Helper(300), Cond(1, Var(3) := Helper(1250), Var(51), 0) || 1
+trigger2 = IsHelper(2250)
+trigger2 = Helper(300), Cond(1, Var(22) := Helper(2250), Var(50), 0) || 1
+trigger2 = Helper(300), Cond(1, Var(23) := Helper(2250), Var(51), 0) || 1
+
+[State 0, DisplayToClipboard]
+type = DisplayToClipboard
+trigger1 = 1
+text = "%d * %d\t%d, %d, %d"
+params = Var(50), Var(51), Var(53), Var(54), Var(55)
+
+[State 0, DisplayToClipboard]
+type = AppendToClipboard
+trigger1 = 1
+text = "\n%d, %d, %d"
+params = Var(56), Var(57), Var(58)
+
+[State 0, Sudoku]
+type = ChangeState
+trigger1 = time = 1
+value = 1250
+
+;---------------------------------------------------------------------------
+;Player X Intro Selector Intro
+[Statedef 1220]
+anim = 200
+sprpriority = 3
+
+;Var(0) = Control Handler
+;Var(1) = Difficulty
+;Var(2) = Time
+
+[State 0, Here we go]
+type = Null
+triggerall = time = 0
+trigger1 = IsHelper(1250)
+trigger1 = Var(0) := Helper(1300), ID
+trigger2 = IsHelper(2250)
+trigger2 = Var(0) := Helper(2300), ID
+
+[State 0, Here we go]
+type = ChangeState
+trigger1 = AnimTime = 0
+trigger1 = Var(1) := 3 || 1
+trigger1 = Var(2) := 6 || 1
+value = 1221
+
+;---------------------------------------------------------------------------
+;Player X Intro Selector
+[Statedef 1221]
+
+[State 0, A Wild Curry Appears!]
+type = PlaySnd
+trigger1 = time = 0
+value = 4,0
+channel = -1
+;lowpriority = -1
+
+[State 0, Time's ticking]
+type = PlaySnd
+trigger1 = time%60 = 0 && time != 0
+value = 4,1
+channel = -1
+;lowpriority = -1
+
+[State 0, Here we go]
+type = ChangeAnim
+trigger1 = 1
+value = 200+Var(1)
+
+[State 0, Decrement]
+type = Null
+trigger1 = time%60 = 0 && time != 0
+trigger1 = Var(2) := Var(2) - 1 || 1
+
+[State 0, Cursor Move]
+type = PlaySnd
+trigger1 = (PlayerID(Var(0)), Var(12) = 1) && (PlayerID(Var(0)), Var(13) != 1) && Var(1) > 1
+trigger1 = Var(1) := Var(1) - 1 || 1
+trigger2 = (PlayerID(Var(0)), Var(13) = 1) && (PlayerID(Var(0)), Var(12) != 1) && Var(1) < 5
+trigger2 = Var(1) := Var(1) + 1 || 1
+value = 4,2
+channel = -1
+;lowpriority = -1
+
+[State 191, Number Del]
+type = RemoveExplod
+trigger1 = 1
+id = 352
+
+[State 191, Number Del]
+type = RemoveExplod
+trigger1 = Cond(NumExplod(220) && Var(1) != 1, Var(59) := 1, 0)
+trigger2 = Cond(NumExplod(221) && Var(1) != 2, Var(59) := 2, 0)
+trigger3 = Cond(NumExplod(222) && Var(1) != 3, Var(59) := 3, 0)
+trigger4 = Cond(NumExplod(223) && Var(1) != 4, Var(59) := 4, 0)
+trigger5 = Cond(NumExplod(224) && Var(1) != 5, Var(59) := 5, 0)
+id = 219+Var(59)
+
+[State 191, Number Del]
+type = RemoveExplod
+trigger1 = Cond(NumExplod(225) && Var(1) != 1, Var(59) := 1, 0)
+trigger2 = Cond(NumExplod(226) && Var(1) != 2, Var(59) := 2, 0)
+trigger3 = Cond(NumExplod(227) && Var(1) != 3, Var(59) := 3, 0)
+trigger4 = Cond(NumExplod(228) && Var(1) != 4, Var(59) := 4, 0)
+trigger5 = Cond(NumExplod(229) && Var(1) != 5, Var(59) := 5, 0)
+id = 224+Var(59)
+
+[State 191, Curry]
+type = Explod
+trigger1 = !NumExplod(219+Var(1))
+anim = 219+Var(1)
+id = 219+Var(1)
+postype = p1
+pos = 52, -15+(Var(1)*24)
+sprpriority = 5
+removetime = -1
+
+[State 191, Curry Text]
+type = Explod
+trigger1 = !NumExplod(224+Var(1))
+anim = 224+Var(1)
+id = 224+Var(1)
+postype = p1
+pos = 58, 1+(Var(1)*24)
+sprpriority = 5
+removetime = -1
+
+[State 191, Select Level]
+type = Explod
+trigger1 = !NumExplod(350)
+anim = 350 + IsHelper(2220)
+id = 350
+postype = p1
+pos = -8, -23
+sprpriority = 5
+removetime = -1
+
+[State 191, Time]
+type = Explod
+trigger1 = !NumExplod(351)
+anim = 352 + IsHelper(2220)
+id = 351
+postype = p1
+pos = 16, 145
+sprpriority = 5
+removetime = -1
+
+[State 191, Number]
+type = Explod
+trigger1 = !NumExplod(352)
+anim = 300+Var(2) + (IsHelper(2220)*20)
+id = 352
+postype = p1
+pos = 56, 145
+sprpriority = 5
+removetime = 1
+
+[State 0, DisplayToClipboard]
+type = DisplayToClipboard
+trigger1 = 1
+text = "%d, %d"
+params = Var(1), Var(2)
+
+[State 0, DisplayToClipboard]
+type = AppendToClipboard
+trigger1 = 1
+text = "\n%d, %d, %d, %d, %d"
+params = NumExplod(220), NumExplod(221), NumExplod(222), NumExplod(223), NumExplod(224)
+
+[State 0, ChangeState]
+type = ChangeState
+trigger1 = Var(2) = 0
+trigger2 = PlayerID(Var(0)), Var(14) || PlayerID(Var(0)), Var(15) || PlayerID(Var(0)), Var(16)
+value = 1222
+
+;---------------------------------------------------------------------------
+;Player X Intro Ending
+[Statedef 1222]
+
+[State 0, Option Select]
+type = PlaySnd
+trigger1 = time = 0
+value = 4,3
+channel = -1
+;lowpriority = -1
+
+[State 191, Send Message to Controller]
+type = Null
+triggerall = time = 0
+trigger1 = IsHelper(1250)
+trigger1 = Helper(1000), Cond(1, Var(1) := (Helper(1250), Var(1)), 1)
+trigger2 = IsHelper(2250)
+trigger2 = Helper(2000), Cond(1, Var(1) := (Helper(2250), Var(1)), 1)
+
+[State 0, Here we go]
+type = ChangeAnim
+trigger1 = time < 26
+value = Cond(random%2 = 0, 206, 200+Var(1))
+
+[State 0, Here we go]
+type = ChangeAnim
+trigger1 = time = 26
+value = 207
+
+[State 191, Number Del]
+type = RemoveExplod
+trigger1 = time = 0
+id = 351
+[State 191, Number Del]
+type = RemoveExplod
+trigger1 = time = 0
+id = 352
+
+[State 191, Number Del]
+type = RemoveExplod
+trigger1 = time = 26
+id = 219+Var(1)
+[State 191, Number Del]
+type = RemoveExplod
+trigger1 = time = 26
+id = 224+Var(1)
+
+[State 191, Number Del]
+type = RemoveExplod
+trigger1 = AnimTime = 0
+
+[State 191, Send Garbage]
+type = Null
+triggerall = AnimTime = 0 && NumHelper(500) && (Var(1) = 2 || Var(1) = 5)
+trigger1 = IsHelper(1250)
+trigger1 = Helper(500), Cond(1, Var(4) := 12 && Var(16) := 1, 0) || 1
+trigger2 = IsHelper(2250)
+trigger2 = Helper(500), Cond(1, Var(24) := 12 && Var(36) := 1, 0) || 1
+
+[State 191, Bye Bye]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 1250
+
+;---------------------------------------------------------------------------
+; Victory Intro
+[Statedef 1704]
+type = S
+movetype = I
+physics = N
+
+[State 0, Add Score to Root]
+type = Null
+triggerall = time = 0
+trigger1 = (IsHelper(1250) && root, TeamSide = 1) || (IsHelper(2250) && root, TeamSide = 2)
+trigger1 = root, Cond(1, Var(15) := Var(15) + 1, 0)
+trigger2 = (IsHelper(2250) && root, TeamSide = 1) || (IsHelper(1250) && root, TeamSide = 2)
+trigger2 = root, Cond(1, Var(16) := Var(16) + 1, 0)
+
+[State 191, PosSet]
+type = PosAdd
+trigger1 = time <= 48 && time%16 = 0
+x = -ScreenPos X + Cond(IsHelper(1250), 16, 208) + 16 + (random/999.0*48)
+y = -ScreenPos Y + 24 + 16 + (random/999.0*48)
+
+[State 191, Gib Bottom]
+type = Explod
+trigger1 = time <= 48 && time%16 = 0
+trigger1 = FVar(0) := pi*0 || 1
+anim = 150 + 10000 * Cond((time/16) = 0, 1, Cond((time/16) = 1, 4, Cond((time/16) = 2, 2, 5)))
+id = 600
+postype = p1
+pos = 0, 0
+vel = sin(FVar(0))*1, cos(FVar(0))*1
+accel = 0, 0.05
+sprpriority = 9
+removetime = -2
+
+[State 191, Gib Bottom Right]
+type = Explod
+trigger1 = time <= 48 && time%16 = 0
+trigger1 = FVar(0) := pi*0.25 || 1
+anim = 150 + 10000 * Cond((time/16) = 0, 1, Cond((time/16) = 1, 4, Cond((time/16) = 2, 2, 5)))
+id = 600
+postype = p1
+pos = 0, 0
+vel = sin(FVar(0))*1, cos(FVar(0))*1
+accel = 0, 0.05
+sprpriority = 9
+removetime = -2
+
+[State 191, Gib Right]
+type = Explod
+trigger1 = time <= 48 && time%16 = 0
+trigger1 = FVar(0) := pi*0.5 || 1
+anim = 150 + 10000 * Cond((time/16) = 0, 1, Cond((time/16) = 1, 4, Cond((time/16) = 2, 2, 5)))
+id = 600
+postype = p1
+pos = 0, 0
+vel = sin(FVar(0))*1, cos(FVar(0))*1
+accel = 0, 0.05
+sprpriority = 9
+removetime = -2
+
+[State 191, Gib Top Right]
+type = Explod
+trigger1 = time <= 48 && time%16 = 0
+trigger1 = FVar(0) := pi*0.75 || 1
+anim = 150 + 10000 * Cond((time/16) = 0, 1, Cond((time/16) = 1, 4, Cond((time/16) = 2, 2, 5)))
+id = 600
+postype = p1
+pos = 0, 0
+vel = sin(FVar(0))*1, cos(FVar(0))*1
+accel = 0, 0.05
+sprpriority = 9
+removetime = -2
+
+[State 191, Gib Top]
+type = Explod
+trigger1 = time <= 48 && time%16 = 0
+trigger1 = FVar(0) := pi*1 || 1
+anim = 150 + 10000 * Cond((time/16) = 0, 1, Cond((time/16) = 1, 4, Cond((time/16) = 2, 2, 5)))
+id = 600
+postype = p1
+pos = 0, 0
+vel = sin(FVar(0))*1, cos(FVar(0))*1
+accel = 0, 0.05
+sprpriority = 9
+removetime = -2
+
+[State 191, Gib Top Left]
+type = Explod
+trigger1 = time <= 48 && time%16 = 0
+trigger1 = FVar(0) := pi*1.25 || 1
+anim = 150 + 10000 * Cond((time/16) = 0, 1, Cond((time/16) = 1, 4, Cond((time/16) = 2, 2, 5)))
+id = 600
+postype = p1
+pos = 0, 0
+vel = sin(FVar(0))*1, cos(FVar(0))*1
+accel = 0, 0.05
+sprpriority = 9
+removetime = -2
+
+[State 191, Gib Left]
+type = Explod
+trigger1 = time <= 48 && time%16 = 0
+trigger1 = FVar(0) := pi*1.5 || 1
+anim = 150 + 10000 * Cond((time/16) = 0, 1, Cond((time/16) = 1, 4, Cond((time/16) = 2, 2, 5)))
+id = 600
+postype = p1
+pos = 0, 0
+vel = sin(FVar(0))*1, cos(FVar(0))*1
+accel = 0, 0.05
+sprpriority = 9
+removetime = -2
+
+[State 191, Gib Bottom Left]
+type = Explod
+trigger1 = time <= 48 && time%16 = 0
+trigger1 = FVar(0) := pi*1.75 || 1
+anim = 150 + 10000 * Cond((time/16) = 0, 1, Cond((time/16) = 1, 4, Cond((time/16) = 2, 2, 5)))
+id = 600
+postype = p1
+pos = 0, 0
+vel = sin(FVar(0))*1, cos(FVar(0))*1
+accel = 0, 0.05
+sprpriority = 9
+removetime = -2
+
+[State 0, ChangeState]
+type = ChangeState
+trigger1 = Var(32) = 1705
+value = 1705
+
+;---------------------------------------------------------------------------
+; Victory!
+[Statedef 1705]
+type    = S
+movetype= I
+physics = N
+anim = 0
+sprpriority = -1
+
+[State 191, Wipe Gibs]
+type = RemoveExplod
+trigger1 = Var(1) = 0 && Var(0) = 0
+
+[State 191, PosSet]
+type = PosAdd
+trigger1 = Var(1) = 0 && Var(0) = 0
+x = -ScreenPos X + Cond(IsHelper(1250), 16, 208) + 48
+y = -ScreenPos Y + 112
+
+[State 191, Countdown]
+type = Null
+trigger1 = Var(0) = 15
+trigger1 = Var(1) := Var(1) + 1
+trigger1 = Var(0) := 0 || 1
+trigger2 = Var(0) = [0,15)
+trigger2 = Var(0) := Var(0) + 1
+
+[State 191, Define basics]
+type = Null
+trigger1 = FVar(30) := 48
+trigger1 = FVar(32) := 33
+trigger1 = FVar(31) := ((Var(1)+Var(0)*16)*(pi/128.0)) || 1
+trigger1 = FVar(33) := ((Var(1)+Var(0)*16)*(pi/-128.0)) || 1
+
+[State 191, Remove Rings]
+type = RemoveExplod
+trigger1 = Var(0) = 0
+id = 750
+
+[State 191, Remove Win]
+type = RemoveExplod
+trigger1 = Var(0) = 0
+id = 700
+
+[State 191, Win]
+type = Explod
+trigger1 = Var(0) = 0;FVar(31) = [0, pi*2]
+anim = 700
+id = 700
+postype = p1
+pos = 0, abs(sin(Var(1)*pi/16.0))*-15
+sprpriority = 5
+removetime = -1
+
+[State 191, Outer Ring]
+type = Explod
+trigger1 = 1;FVar(31) = [0, pi*2]
+anim = 750+(Var(1)/5)%3 + (Var(0)%4)*3
+id = 750
+postype = p1
+;pos = sin(FVar(31))*FVar(30), cos(FVar(31))*(FVar(30)/4.0) - (sin(FVar(31))*(FVar(30)/2.0))
+pos = sin(FVar(31))*FVar(30), (cos(FVar(31))-sin(FVar(31))*1.75)*(FVar(30)/4.0) - 16
+sprpriority = 3
+removetime = -1
+
+[State 191, Inner Ring]
+type = Explod
+trigger1 = 1;FVar(31) = [0, pi*2]
+anim = 750+(Var(1)/5)%3 + (Var(0)%4)*3
+id = 750
+postype = p1
+;pos = sin(FVar(31))*FVar(30), cos(FVar(31))*(FVar(30)/4.0) - (sin(FVar(31))*(FVar(30)/2.0))
+pos = sin(FVar(33))*FVar(32), (cos(FVar(33))-sin(FVar(33))*1.75)*(FVar(32)/4.0) - 16
+sprpriority = 3
+removetime = -1
+
+[State 0, Ugh]
+type = ChangeState
+trigger1 = Var(0) = [0,15)
+value = 1705
+
+;---------------------------------------------------------------------------
+; Defeat!
+[Statedef 1710]
+type    = S
+movetype= I
+physics = N
+anim = 701
+velset = 0,.5
+sprpriority = 3
+
+[State 0, Explosion]
+type = PlaySnd
+trigger1 = Var(20) = 1
+trigger1 = Var(20) := 0 || 1
+value = 3, Cond(IsHelper(1250), 0, 1)
+channel = -1
+abspan = 0
+;lowpriority = -1
+
+[State 0, Do the Mario]
+type = Offset
+trigger1 = time < 192
+x = (time%32 - (time%16) * 2 * ((time%32)/16)) * (((time%64)/32)*2-1)
+
+[State 0, Reset Pos]
+type = PosAdd
+trigger1 = time >= 192
+trigger1 = (time-192)%100 = 0
+x = -ScreenPos X + Cond(IsHelper(1250), 64, 256)
+y = -ScreenPos Y + 124
+
+[State 0, Going Up]
+type = VelSet
+trigger1 = time >= 192
+trigger1 = (time-192)%100 = 0
+y = -1
+
+[State 0, Freeze]
+type = VelSet
+trigger1 = time >= 192
+trigger1 = (time-192)%100 = 65
+y = 0
+
+[State 0, Watch out below]
+type = VelSet
+trigger1 = time >= 192
+trigger1 = (time-192)%100 = [70,99]
+y = (13/93.0)*(((time-192)%100)-69)
+
+;---------------------------------------------------------------------------
+;I'm just
+[Statedef 1250]
+anim = 0
+
+[State 0, DisplayToClipboard]
+type = DisplayToClipboard
+trigger1 = 1
+text = ""
+
+[State 0, PosSet]
+type = PosSet
+trigger1 = 1
+x = 0
+y = 0
+
+[State 191, Null]
+type = ChangeState
+trigger1 = Var(0) := 0 || 1
+trigger1 = Var(1) := 0 || 1
+trigger1 = Var(2) := 0 || 1
+trigger1 = Var(3) := 0 || 1
+trigger1 = Var(4) := 0 || 1
+trigger1 = Var(5) := 0 || 1
+trigger1 = Var(6) := 0 || 1
+trigger1 = Var(7) := 0 || 1
+trigger1 = Var(8) := 0 || 1
+trigger1 = Var(9) := 0 || 1
+trigger1 = Var(10) := 0 || 1
+trigger1 = Var(11) := 0 || 1
+trigger1 = Var(12) := 0 || 1
+trigger1 = Var(13) := 0 || 1
+trigger1 = Var(14) := 0 || 1
+trigger1 = Var(15) := 0 || 1
+trigger1 = Var(16) := 0 || 1
+trigger1 = Var(17) := 0 || 1
+trigger1 = Var(18) := 0 || 1
+trigger1 = Var(19) := 0 || 1
+trigger1 = Var(20) := 0 || 1
+trigger1 = Var(21) := 0 || 1
+trigger1 = Var(22) := 0 || 1
+trigger1 = Var(23) := 0 || 1
+trigger1 = Var(24) := 0 || 1
+trigger1 = Var(25) := 0 || 1
+trigger1 = Var(26) := 0 || 1
+trigger1 = Var(27) := 0 || 1
+trigger1 = Var(28) := 0 || 1
+trigger1 = Var(29) := 0 || 1
+trigger1 = Var(30) := 0 || 1
+trigger1 = Var(31) := 0 || 1
+trigger1 = Var(32) := 0 || 1
+trigger1 = Var(33) := 0 || 1
+trigger1 = Var(34) := 0 || 1
+trigger1 = Var(35) := 0 || 1
+trigger1 = Var(36) := 0 || 1
+trigger1 = Var(37) := 0 || 1
+trigger1 = Var(38) := 0 || 1
+trigger1 = Var(39) := 0 || 1
+trigger1 = Var(40) := 0 || 1
+trigger1 = Var(41) := 0 || 1
+trigger1 = Var(42) := 0 || 1
+trigger1 = Var(43) := 0 || 1
+trigger1 = Var(44) := 0 || 1
+trigger1 = Var(45) := 0 || 1
+trigger1 = Var(46) := 0 || 1
+trigger1 = Var(47) := 0 || 1
+trigger1 = Var(48) := 0 || 1
+trigger1 = Var(49) := 0 || 1
+trigger1 = Var(50) := 0 || 1
+trigger1 = Var(51) := 0 || 1
+trigger1 = Var(52) := 0 || 1
+trigger1 = Var(53) := 0 || 1
+trigger1 = Var(54) := 0 || 1
+trigger1 = Var(55) := 0 || 1
+trigger1 = Var(56) := 0 || 1
+trigger1 = Var(57) := 0 || 1
+trigger1 = Var(58) := 0 || 1
+trigger1 = Var(59) := 0 || 1
+
+trigger1 = FVar(0) := 0 || 1
+trigger1 = FVar(1) := 0 || 1
+trigger1 = FVar(2) := 0 || 1
+trigger1 = FVar(3) := 0 || 1
+trigger1 = FVar(4) := 0 || 1
+trigger1 = FVar(5) := 0 || 1
+trigger1 = FVar(6) := 0 || 1
+trigger1 = FVar(7) := 0 || 1
+trigger1 = FVar(8) := 0 || 1
+trigger1 = FVar(9) := 0 || 1
+trigger1 = FVar(10) := 0 || 1
+trigger1 = FVar(11) := 0 || 1
+trigger1 = FVar(12) := 0 || 1
+trigger1 = FVar(13) := 0 || 1
+trigger1 = FVar(14) := 0 || 1
+trigger1 = FVar(15) := 0 || 1
+trigger1 = FVar(16) := 0 || 1
+trigger1 = FVar(17) := 0 || 1
+trigger1 = FVar(18) := 0 || 1
+trigger1 = FVar(19) := 0 || 1
+trigger1 = FVar(20) := 0 || 1
+trigger1 = FVar(21) := 0 || 1
+trigger1 = FVar(22) := 0 || 1
+trigger1 = FVar(23) := 0 || 1
+trigger1 = FVar(24) := 0 || 1
+trigger1 = FVar(25) := 0 || 1
+trigger1 = FVar(26) := 0 || 1
+trigger1 = FVar(27) := 0 || 1
+trigger1 = FVar(28) := 0 || 1
+trigger1 = FVar(29) := 0 || 1
+trigger1 = FVar(30) := 0 || 1
+trigger1 = FVar(31) := 0 || 1
+trigger1 = FVar(32) := 0 || 1
+trigger1 = FVar(33) := 0 || 1
+trigger1 = FVar(34) := 0 || 1
+trigger1 = FVar(35) := 0 || 1
+trigger1 = FVar(36) := 0 || 1
+trigger1 = FVar(37) := 0 || 1
+trigger1 = FVar(38) := 0 || 1
+trigger1 = FVar(39) := 0 || 1
+
+value = 1251
+;---------------------------------------------------------------------------
+;Just standing here
+[Statedef 1251]
+
+[State 0, PosSet]
+type = PosSet
+trigger1 = FVar(30) || FVar(31)
+x = FVar(30)
+y = FVar(31)
+
+[State 191, Null]
+type = ChangeState
+trigger1 = Var(32) != 0
+trigger1 = ((FVar(30) := 0) && (FVar(31) := 0)) || 1
+value = Var(32) + (Var(32) := 0)

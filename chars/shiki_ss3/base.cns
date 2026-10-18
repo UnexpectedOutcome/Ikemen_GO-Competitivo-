@@ -1,0 +1,400 @@
+;　基本データ、イントロ関連  
+
+[Data]  
+life = 1000  ;体力ゲージの初期値
+attack = 90  
+defence = 90  ;防御力（これ以上に設定すると強くなる）
+fall.defence_up = 55  ;コンボをくらっている時にあがる防御力
+liedown.time = 60  ;倒れてから起上がるまでのフレーム数
+airjuggle = 18  ;空中でどれだけコンボが繋がるか
+sparkno = s6200  ;hitdefで設定していない時の基本ヒットスパークナンバー
+guard.sparkno = s6150  ;設定してない時のガードナンバー）
+KO.echo = 0           ;KOした時に声にエコーをかけるか（１でＯＮ
+volume = 255
+IntPersistIndex = -1;60
+FloatPersistIndex = -1;40
+
+[Size]
+xscale = 1           ;水平方向の縮尺（通常１）
+yscale = 1           ;垂直方向の縮尺（通常１）
+ground.back = 10     ;キャラの幅(後方,地上)
+ground.front = 17    ;キャラの幅(前方,地上)
+air.back = 14        ;キャラの幅(後方,空中)
+air.front = 14       ;キャラの幅(前方,空中)
+height = 70          ;キャラの高さ
+attack.dist = 160    ;攻撃をした時相手がガード体制に入る最低距離
+proj.attack.dist = 90;攻撃をした時相手がガード体制に入る最低距離（飛び道具）
+proj.doscale = 0     ;上で設定した縮尺を飛び道具にも適用するか（１でＯＮ）   
+head.pos = -5, -85   ;頭の大体の座標
+mid.pos = -5, -65    ;体の中心の大体の座標
+shadowoffset = 0     ;影の垂直方向のオフセット
+draw.offset = 0,0    ;使用しない
+
+[Velocity]
+walk.fwd  = 3.5      ;前進の速度
+walk.back = -3.5     ;後退の速度
+run.fwd  = 5.8, 0    ;前ダッシュの速度（ホップする時はyを-にする）
+run.back = -4.6,-4.1 ;後ダッシュの速度（ホップする時はyを-にする）
+jump.neu = 0,-9.4    ;垂直ジャンプの速度
+jump.back = -3.50    ;後ジャンプの速度
+jump.fwd = 3.50       ;前ジャンプの速度
+runjump.back = -3.80,-9.0.1 ;後ダッシュしながらのジャンプ速度(オプション)
+runjump.fwd = 4,-10.8      ;前ダッシュしながらのジャンプ速度(オプション)
+airjump.neu = 0,-10.4      ;２段ジャンプ以降の垂直ジャンプの速度(オプション)
+airjump.back = -3.00      ;２段ジャンプ以降の後ジャンプの速度(オプション)
+airjump.fwd = 3.00         ;２段ジャンプ以降の前ジャンプの速度
+
+[Movement]
+airjump.num = 0      ;空中でジャンプする回数
+airjump.height = 35  ;空中でジャンプする最低限の高さ
+yaccel = 0.5         ;重力
+stand.friction = .82  ;立ち状態の摩擦係数
+crouch.friction = .80 ;屈み状態の摩擦係数
+
+;---------------------------------------------------------------------------
+; ステイトの解説
+; [Statedef STATENO]
+; type = ?      S/C/A/L  Ｓ：立ち/Ｃ：屈み/Ａ：空中/Ｌ：ダウン
+; movetype = ?  I/A/H    Ｉ：通常状態/Ａ：攻撃状態/Ｈ：ダメージをくらってる状態
+; physics = ?   S/C/A/N  Ｓ：立ち/Ｃ：屈み/Ａ：空中/Ｎ：無し
+; juggle = ?             その攻撃に使うジャグル数
+;
+
+;  ーーーーーーーーーーーーーーーーキャラチェック
+[statedef 169]
+type = s
+
+;--------------------相手がどうかのチェック--------------------
+[state 169,var]
+type = varadd
+triggerall = time = 0
+trigger1= !var(58) && !var(59)
+trigger1 = P2name = "SHIKI SS3"
+var(51) = 1
+
+;-----------------------------
+;-他、対応すべきキャラ…-----------------------------
+;-----------------------------
+
+[state 169, char chk];190に戻す
+type = changestate
+trigger1 = time = 0
+VALUE = 190
+
+;---------------------------------------------------------------------------
+; タイムオーバーで負けた時
+[Statedef 170]
+type = S
+ctrl = 0
+anim = 170
+velset = 0,0
+
+[State 170, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;---------------------------------------------------------------------------
+; 勝った動作 start staet
+[Statedef 180]
+type = S
+
+[State 180, 1];
+type = ChangeState
+trigger1 = time = 0
+value = 181+ random % 2
+
+;---------------------------------------------------------------------------
+; 勝ちポーズ 1　s181,win1_1  後ろむく
+[Statedef 181]
+type = S
+ctrl = 0
+anim = 180
+velset = 0,0
+
+[State 181, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 181, 4]
+type = AssertSpecial
+trigger1 = Time  <= 160
+flag = RoundNotOver
+
+;------------------------背中のびしてセリフ（聞こえない
+[Statedef 182]
+type = S
+ctrl = 0
+anim = 181
+velset = 0,0
+
+[state 180,voice];
+type = playsnd
+trigger1 = animelem = 13
+value = 180,random % 2
+channel = 0
+persistent  =0
+
+[state 181,]
+type = changeanim
+trigger1 = anim = 181
+trigger1 = time >= 200
+value = 182
+
+[State 181, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 181, 4]
+type = AssertSpecial
+trigger1 = Time  <= 250
+flag = RoundNotOver
+
+;---------------------------------------------------------------------------
+; 勝ちポーズ ２ ナコルとなんかやる？
+[Statedef 183]
+type = S
+movetype = i
+physics = n
+ctrl = 0
+anim = 182
+
+[State 183, 4]
+type = AssertSpecial
+trigger1 = Time  <= 250
+flag = RoundNotOver
+
+;---------------------------------------------------------------------------
+; 開始前の動作 PREINTRO override common190
+[Statedef 190]
+type = S
+ctrl = 0
+velset = 0,0
+
+[state 190,];キャラチェック
+type = changestate
+trigger1 = time = 0
+trigger1 = prevstateno != 169
+value = 169
+
+[state 191, changestate];VS色特殊イントロ  仮に1pのみ発動,そっちで絵とか処理る
+type = changestate
+triggerall = 0;var(51) = 1
+trigger1 = time = 0
+VALUE = ifelse(teamside = 1,193,194)
+
+[state 191, changestate]
+type = changestate
+trigger1 = time = 0
+VALUE = 191; + random % 2 
+
+[State 190, 2] ;Go straight to intro.安全のため
+type = ChangeState
+trigger1 = Time = 0
+value = 191
+
+;----以下イントロ1---見かえり　「はじめましょうか…」
+[Statedef 191]
+type = S
+ctrl = 0
+velset = 0,0
+anim = 190
+
+[state 194,];はじめましょうか…
+type = playsnd
+trigger1 = time = 0
+value = s190,0
+
+[State 191, 2] 
+type = AssertSpecial
+trigger1 = 1
+flag = Intro
+
+[State 191, 4] 
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+
+;---------intro2　
+[Statedef 192]
+type = S
+ctrl = 0
+anim = 192
+velset = 0,0
+
+[State 192, 2] 
+type = AssertSpecial
+trigger1 = 1
+flag = Intro
+
+[State 192, 4] 
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+
+;------------------------------VS色特殊イントロ　撮影用：SVC再現   p1側
+[Statedef 193]
+type = S
+ctrl = 0
+anim = 190
+velset = 0,0
+
+[State 192, 2] 
+type = AssertSpecial
+trigger1 = 1
+flag = Intro
+flag2 = nobardisplay
+flag3 = noFG
+
+[state 193,];はじめましょうか…
+type = playsnd
+trigger1 = time = 0
+value = s190,0
+
+[state 193,]
+type = changeanim
+trigger1 = anim = 190 && animtime = 0
+value = 0
+
+[state -3,test];顔1
+type = Explod
+triggerall = Numexplod(9530) = 0
+trigger1 = anim = 0
+anim = 9530
+id = 9530
+postype = left
+pos = 0,100
+sprpriority = 4
+bindtime = -1
+removetime = -1
+ontop = 1
+ownpal=1
+persistent = 0
+
+[state -3,test];1
+type = Explod
+triggerall = Numexplod(9535) = 0
+trigger1 = anim = 0
+anim = 9700
+id = 9535
+postype = left
+pos = 140,80
+sprpriority = 4
+bindtime = -1
+removetime = -1
+ontop = 1
+ownpal=1
+persistent = 0
+
+[State 3000,00]
+type = bgPalfx
+trigger1 = time = 0
+add = -100,-100,-100
+time = 50
+
+[State 192, 4] 
+type = ChangeState
+trigger1 = anim = 0
+trigger1 = Time >= 550
+value = 0
+
+;----------------------------------2ｐ側
+[Statedef 194]
+type = S
+ctrl = 0
+anim = 190
+velset = 0,0
+
+[State 192, 2] 
+type = AssertSpecial
+trigger1 = 1
+flag = Intro
+flag2 = nobardisplay
+flag3 = noFG
+
+[state 193,];はじめましょうか…
+type = playsnd
+trigger1 = time = 0
+value = s190,0
+
+[state -3,test];顔1
+type = Explod
+triggerall = Numexplod(9560) = 0
+trigger1 = anim = 0
+anim = 9560
+id = 9560
+postype = left
+facing = -1
+pos = 320,210
+sprpriority = 4
+bindtime = -1
+removetime = -1
+ontop = 1
+ownpal=1
+persistent = 0
+
+[state -3,test];
+type = Explod
+triggerall = Numexplod(9565) = 0
+trigger1 = anim = 0
+anim = 9710
+id = 9565
+postype = left
+facing = 1
+pos = 60,180
+sprpriority = 4
+bindtime = -1
+removetime = -1
+ontop = 1
+ownpal=1
+persistent = 0
+
+[state 193,]
+type = changeanim
+trigger1 = anim = 190 && animtime = 0
+value = 0
+
+;---------------------------------------------------------------------------
+; 挑発の動作
+[Statedef 195]
+type = S
+ctrl = 0
+anim = 195
+velset = 0,0
+movetype = I
+physics = S
+sprpriority = 2
+
+[state 195,];
+type = playsnd
+trigger1 = animelem = 9
+value = s195,0
+persistent =0
+
+[State 195, 2]
+type = ChangeState
+trigger1 = Time >= 100
+value = 196
+ctrl = 0
+
+[Statedef 196]
+type = S
+ctrl = 0
+anim = 196
+velset = 0,0
+movetype = I
+physics = S
+sprpriority = 2
+
+[State 195, 2]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+

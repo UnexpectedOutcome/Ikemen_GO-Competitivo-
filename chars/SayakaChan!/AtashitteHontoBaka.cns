@@ -1,0 +1,2031 @@
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;基本データ部分
+[Data]
+life              = 2500  ;体力ゲージの最大値を決めます
+power             = 3000  ;パワーゲージ最大値（デフォルトは 3000 = Lv.3 になります・オプション）
+attack            = 100   ;攻撃力パーセンテージ（デフォルトは 100% になります）
+defence           = 100   ;防御力パーセンテージ（デフォルトは 100% になります）
+fall.defence_up   = 50    ;一時的に上昇するダウン時の防御力パーセンテージ
+liedown.time      = 60    ;倒れてから起き上がるまでの時間
+airjuggle         = 15    ;ジャグルポイント限界値　★１
+sparkno           = 2     ;デフォルトのヒットスパーク番号（fightfx.airか、キャラのairから呼び出す）
+guard.sparkno     = 40    ;デフォルトのガードスパーク番号（fightfx.airか、キャラのairから呼び出す）
+KO.echo           = 0
+volume            = 128   ;キャラの音量　255が最高
+intpersistindex   = 20    ;Varを次のラウンドへ持ち越しが可能 (最小=0, 最大=59)  ★２
+floatpersistindex = 40    ;FVarを次のラウンドへ持ち越しが可能 (最小=0, 最大=39) ★２
+
+
+;---------------------------------------------------------------------------
+;サイズ設定
+[Size]
+xscale           = 0.7        ;キャラ画像の横のスケール
+yscale           = 0.7        ;キャラ画像の縦のスケール
+ground.back      = 15       ;キャラの幅（地上後方）
+ground.front     = 16       ;キャラの幅（地上前方）
+air.back         = 12       ;キャラの幅（空中後方）
+air.front        = 12       ;キャラの幅（空中前方）
+height           = 60       ;跳び越す相手のためのキャラの高さ
+attack.dist      = 260      ;攻撃を出した時に相手がガード体勢に入る最低の距離
+proj.attack.dist = 90       ;相手がガード体勢に入る発射物との最低の距離
+proj.doscale     = 0        ;xscaleとyscaleが発射物のスケールにも影響するかどうか（0=しない・1=する）
+head.pos         = -5, -90  ;BindToTargetの時に必要な頭の座標
+mid.pos          = -5, -60  ;BindToTargetの時に必要な体中心の座標
+shadowoffset     = 0        ;影の垂直方向の位置
+draw.offset      = 0,0      ;キャラ描画表示位置（Ｘ軸,Ｙ軸）
+
+;---------------------------------------------------------------------------
+;移動速度設定
+[Velocity]
+walk.fwd     = 1.4         ;前進歩行速度
+walk.back    = -1.4        ;後退歩行速度
+run.fwd      = 8.6, 0      ;前に走る時の速度（Ｘ軸,Ｙ軸）
+run.back     = -8.6,0   ;後ろに走る時の速度（Ｘ軸,Ｙ軸）
+jump.neu     = 0,-8.4      ;垂直ジャンプ速度（Ｘ軸,Ｙ軸）
+jump.back    = -2.5        ;後ジャンプ速度
+jump.fwd     = 2.55        ;前ジャンプ速度
+runjump.back = -2.55,-8.1  ;後ろに走りながらのジャンプ速度（オプション）
+runjump.fwd  = 4,-8.1      ;前に走りながらのジャンプ速度（オプション）
+airjump.neu  = 0,-8.1      ;空中垂直ジャンプ速度（オプション）
+airjump.back = -2.5        ;空中後ジャンプ速度（オプション）
+airjump.fwd  = 2.55        ;空中前ジャンプ速度（オプション）
+
+;---------------------------------------------------------------------------
+;動作設定
+[Movement]
+airjump.num     = 1      ;空中ジャンプが出来る回数（オプション）
+airjump.height  = 35     ;空中ジャンプするために必要な最低限の高さ（オプション）
+yaccel          = .44    ;重力（垂直下降加速度）
+stand.friction  = .85    ;立ち状態の摩擦係数
+crouch.friction = .82    ;しゃがみ状態の摩擦係数
+
+
+;---------------------------------------------------------------------------
+; Varの使用状況
+; ここに自分が使ったvarをメモしておくといろいろと好都合です。
+; var(1)  - コマンドファイルのコンボ用
+; var(2)  - 投げに使った(800)
+; var(3)  - ハイジャンプ
+; var(4)  - 空中ダッシュ
+; var(5)  - 板投げ
+; var(20) - CPUアルゴリズム用
+; var(21) - Random var用
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+; 基本行動のステート
+;---------------------------------------------------------------------------
+; タイムオーバー時
+; CNS レベル: 基本
+
+[Statedef 170]
+type = S
+ctrl = 0     ;ここでCtrlSetを簡略化できます。　1=自由に動かせる
+anim = 0
+velset = 0,0 ;ここでVelSetを簡略化できます。　x方向,y方向 の順
+
+[State 170, 無敵]
+type = NotHitBy
+trigger1 = 1 ;1にするといかなる条件でも有効で、0にするといかなる条件でも無効
+value = SCA  ;※
+time = 1
+
+
+
+;---------------------------------------------------------------------------
+; 勝利ポーズ分岐
+[Statedef 180]
+type = S
+
+[State 180, 勝利ポーズ1]
+type = ChangeState
+trigger1 = Time = 0
+value = 181
+
+;---------------------------------------------------------------------------
+; 勝利ポーズ
+[Statedef 181]
+type = S
+ctrl = 0
+anim = 181
+velset = 0,0
+
+[State 181, 無敵]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 181, カンフーボイス]
+type = PlaySnd
+triggerall = Time = 1
+trigger1 = Alive
+value = s4,2
+channel = 0
+
+
+;---------------------------------------------------------------------------
+; イントロ分岐
+;イントロ選択
+[Statedef 190]
+type = S
+ctrl = 0
+anim = 0
+velset = 0,0
+
+
+
+
+
+[State 190]
+type = VarSet
+trigger1 = time = 0
+v = 20
+value = 0
+[State 190]
+type = VarSet
+trigger1 = (enemynear,name="Tomoe_Mami")||(enemynear,name="Mami Tomoe")
+v = 20
+value = 1
+[State 190]
+type = VarSet
+trigger1 = (enemynear,name = "Madoka Kaname") || (enemynear,name = "Madoka3")
+v = 20
+value = 2
+[State 190]
+type = VarSet
+trigger1 = (enemynear,name = "Akemi-Homura")
+v = 20
+value = 3
+
+
+[State 190]
+type = ChangeState
+trigger1 = var(20) = 3
+value = 194
+[State 190]
+type = ChangeState
+trigger1 = var(20) = 2
+value = 193
+[State 190]
+type = ChangeState
+trigger1 = var(20) = 1
+value = 192
+[State 190]
+type = ChangeState
+trigger1 = Time = 1
+value = 191
+
+;---------------------------------------------------------------------------
+; イントロ(普通)
+[Statedef 191]
+type = S
+ctrl = 0
+anim = 9999
+velset = 0,0
+
+
+
+
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 0
+anim = 191
+ID = 191
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 250
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 250
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 50
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 300
+anim = 191
+ID = 191
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 200
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 500
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 70
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 570
+anim = 191
+ID = 191
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 50
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 620
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 50
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 670
+anim = 191
+ID = 191
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 60
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 730
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 250
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+
+
+
+[State 191]
+type = Explod
+trigger1 = time = 800
+anim = 20000
+ID = 20000
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 800
+anim = 20001
+ID = 20001
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 800
+anim = 20002
+ID = 20002
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 800
+anim = 20003
+ID = 20003
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 800
+anim = 20005
+ID = 20005
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 3, 3
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+
+
+[State 191, 特殊効果] ;「ROUND1, FIGHT!」のアナウンスが始まるまでは、このコントローラを使ってください
+type = AssertSpecial
+trigger1 = 1
+flag = Intro ;イントロの状態になります
+
+[State 191]
+type = PlaySnd
+triggerall = Time = 1
+trigger1 = Alive
+value = s4,0
+channel = 0
+
+[State 191]
+type = PlaySnd
+triggerall = Time = 300
+trigger1 = Alive
+value = s4,1
+channel = 0
+
+
+[State 191]
+type = PlaySnd
+triggerall = Time = 750
+trigger1 = Alive
+value = s3,7
+channel = -1
+[State 191]
+type = PlaySnd
+triggerall = Time = 800
+trigger1 = Alive
+value = s3,9
+channel = -1
+[State 191]
+type = PlaySnd
+triggerall = Time = 800
+trigger1 = Alive
+value = s3,158
+channel = 4
+[State 191]
+type = PlaySnd
+triggerall = Time = 900
+trigger1 = Alive
+value = s4,2
+channel = -1
+
+[State 191]
+type = Explod
+trigger1 = time = 720
+anim = 10009
+ID = 10009
+pos = -2, -30
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1.5, 1
+sprpriority = 5
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 720
+anim = 10005
+ID = 10005
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 5
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 755
+anim = 10010
+ID = 10010
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 5
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+
+
+[State 191]
+type = EnvShake
+trigger1 = time = 750
+time = 400
+freq = 60
+ampl = -4
+phase = 0
+
+
+[State 191]
+type = ChangeAnim
+trigger1 = time = 1000
+value = 0
+
+[State 191]
+type = StopSnd
+trigger1 = time = 1200
+channel = 4
+
+
+[State 191, ステート変更]
+type = ChangeState
+trigger1 = Time >= 1200
+value = 0 ;common1.cns参照
+
+;---------------------------------------------------------------------------
+; イントロ(マミさん)
+[Statedef 192]
+type = S
+ctrl = 0
+anim = 9999
+velset = 0,0
+
+
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 0
+anim = 191
+ID = 191
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 100
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 100
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 70
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 170
+anim = 191
+ID = 191
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 120
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 290
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 70
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+
+[State 191]
+type = Explod
+trigger1 = time = 380
+anim = 20000
+ID = 20000
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 380
+anim = 20001
+ID = 20001
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 380
+anim = 20002
+ID = 20002
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 380
+anim = 20003
+ID = 20003
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 380
+anim = 20005
+ID = 20005
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 3, 3
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+
+
+[State 191, 特殊効果] ;「ROUND1, FIGHT!」のアナウンスが始まるまでは、このコントローラを使ってください
+type = AssertSpecial
+trigger1 = 1
+flag = Intro ;イントロの状態になります
+
+[State 191]
+type = PlaySnd
+triggerall = Time = 1
+trigger1 = Alive
+value = s4,4
+channel = 0
+
+
+
+[State 191]
+type = PlaySnd
+triggerall = Time = 300
+trigger1 = Alive
+value = s3,7
+channel = -1
+[State 191]
+type = PlaySnd
+triggerall = Time = 350
+trigger1 = Alive
+value = s3,9
+channel = -1
+[State 191]
+type = PlaySnd
+triggerall = Time = 350
+trigger1 = Alive
+value = s3,158
+channel = 4
+[State 191]
+type = PlaySnd
+triggerall = Time = 400
+trigger1 = Alive
+value = s4,2
+channel = -1
+
+[State 191]
+type = Explod
+trigger1 = time = 300
+anim = 10009
+ID = 10009
+pos = -2, -30
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1.5, 1
+sprpriority = 5
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 300
+anim = 10005
+ID = 10005
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 5
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 335
+anim = 10010
+ID = 10010
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 5
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+
+
+[State 191]
+type = EnvShake
+trigger1 = time = 330
+time = 400
+freq = 60
+ampl = -4
+phase = 0
+
+
+[State 191]
+type = ChangeAnim
+trigger1 = time = 580
+value = 0
+
+[State 191]
+type = StopSnd
+trigger1 = time = 780
+channel = 4
+
+
+[State 191, ステート変更]
+type = ChangeState
+trigger1 = Time >= 800
+value = 0 ;common1.cns参照
+
+
+
+;---------------------------------------------------------------------------
+; イントロ(まどか)
+[Statedef 193]
+type = S
+ctrl = 0
+anim = 9999
+velset = 0,0
+
+
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 0
+anim = 191
+ID = 191
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 120
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 120
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 40
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 160
+anim = 191
+ID = 191
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 150
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 310
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 30
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 340
+anim = 191
+ID = 191
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 20
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 360
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 50
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 410
+anim = 191
+ID = 191
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 50
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 460
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 350
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+
+
+[State 191]
+type = Explod
+trigger1 = time = 550
+anim = 20000
+ID = 20000
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 550
+anim = 20001
+ID = 20001
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 550
+anim = 20002
+ID = 20002
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 550
+anim = 20003
+ID = 20003
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 550
+anim = 20005
+ID = 20005
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 3, 3
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+
+
+[State 191, 特殊効果] ;「ROUND1, FIGHT!」のアナウンスが始まるまでは、このコントローラを使ってください
+type = AssertSpecial
+trigger1 = 1
+flag = Intro ;イントロの状態になります
+
+[State 191]
+type = PlaySnd
+triggerall = Time = 1
+trigger1 = Alive
+value = s4,5
+channel = 0
+
+
+
+[State 191]
+type = PlaySnd
+triggerall = Time = 470
+trigger1 = Alive
+value = s3,7
+channel = -1
+[State 191]
+type = PlaySnd
+triggerall = Time = 520
+trigger1 = Alive
+value = s3,9
+channel = -1
+[State 191]
+type = PlaySnd
+triggerall = Time = 520
+trigger1 = Alive
+value = s3,158
+channel = 4
+[State 191]
+type = PlaySnd
+triggerall = Time = 670
+trigger1 = Alive
+value = s4,2
+channel = -1
+
+[State 191]
+type = Explod
+trigger1 = time = 470
+anim = 10009
+ID = 10009
+pos = -2, -30
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1.5, 1
+sprpriority = 5
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 470
+anim = 10005
+ID = 10005
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 5
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 485
+anim = 10010
+ID = 10010
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 5
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+
+
+[State 191]
+type = EnvShake
+trigger1 = time = 530
+time = 400
+freq = 60
+ampl = -4
+phase = 0
+
+
+[State 191]
+type = ChangeAnim
+trigger1 = time = 880
+value = 0
+
+[State 191]
+type = StopSnd
+trigger1 = time = 1000
+channel = 4
+
+
+[State 191, ステート変更]
+type = ChangeState
+trigger1 = Time >= 1000
+value = 0 ;common1.cns参照
+
+
+
+
+;---------------------------------------------------------------------------
+; イントロ(ほむら1)
+[Statedef 194]
+type = S
+ctrl = 0
+anim = 9999
+velset = 0,0
+
+[State 191, 特殊効果]
+type = Explod
+trigger1 = 1
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+
+
+
+[State 191, ステート変更]
+type = ChangeState
+trigger1 = enemynear,stateno = 0
+trigger2 = time > 450
+value = 195
+ctrl = 0
+
+;---------------------------------------------------------------------------
+; イントロ(ほむら2)
+[Statedef 195]
+type = S
+ctrl = 0
+anim = 9999
+velset = 0,0
+
+
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 0
+anim = 191
+ID = 191
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 90
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 90
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 20
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 110
+anim = 191
+ID = 191
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 150
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 260
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 50
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 310
+anim = 191
+ID = 191
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 110
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 420
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 60
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 480
+anim = 191
+ID = 191
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 50
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 530
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 70
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 600
+anim = 191
+ID = 191
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 240
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+[State 191, 特殊効果]
+type = Explod
+trigger1 = time = 840
+anim = 190
+ID = 190
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = 200
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 3
+ontop = 0
+shadow = -1
+ownpal = 0
+removeongethit = 1
+
+
+
+
+[State 191]
+type = Explod
+trigger1 = time = 950
+anim = 20000
+ID = 20000
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 950
+anim = 20001
+ID = 20001
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 950
+anim = 20002
+ID = 20002
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 950
+anim = 20003
+ID = 20003
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 950
+anim = 20005
+ID = 20005
+pos = 160, 120
+postype = left
+facing = facing
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 3, 3
+sprpriority = 7
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+
+
+[State 191, 特殊効果] ;「ROUND1, FIGHT!」のアナウンスが始まるまでは、このコントローラを使ってください
+type = AssertSpecial
+trigger1 = 1
+flag = Intro ;イントロの状態になります
+
+[State 191]
+type = PlaySnd
+triggerall = Time = 1
+trigger1 = Alive
+value = s4,6
+channel = 0
+
+
+
+[State 191]
+type = PlaySnd
+triggerall = Time = 870
+trigger1 = Alive
+value = s3,7
+channel = -1
+[State 191]
+type = PlaySnd
+triggerall = Time = 920
+trigger1 = Alive
+value = s3,9
+channel = -1
+[State 191]
+type = PlaySnd
+triggerall = Time = 920
+trigger1 = Alive
+value = s3,158
+channel = 4
+[State 191]
+type = PlaySnd
+triggerall = Time = 970
+trigger1 = Alive
+value = s4,2
+channel = -1
+
+[State 191]
+type = Explod
+trigger1 = time = 870
+anim = 10009
+ID = 10009
+pos = -2, -30
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1.5, 1
+sprpriority = 5
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 870
+anim = 10005
+ID = 10005
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 5
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+[State 191]
+type = Explod
+trigger1 = time = 905
+anim = 10010
+ID = 10010
+pos = 0, 0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0, 0
+accel = 0, 0
+random = 0, 0
+removetime = -2
+supermovetime = 0
+pausemovetime = 0
+scale = 1, 1
+sprpriority = 5
+ontop = 0
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 1
+
+
+[State 191]
+type = EnvShake
+trigger1 = time = 900
+time = 400
+freq = 60
+ampl = -4
+phase = 0
+
+
+[State 191]
+type = ChangeAnim
+trigger1 = time = 1150
+value = 0
+
+[State 191]
+type = StopSnd
+trigger1 = time = 1350
+channel = 4
+
+
+[State 191, ステート変更]
+type = ChangeState
+trigger1 = Time >= 1370
+value = 0 ;common1.cns参照
+
+;---------------------------------------------------------------------------
+
+
+;--------------------------------------------------------------------------------
+[Statedef 4000]
+type	= S
+movetype= I
+physics	= N
+
+
+
+[State 4000, NotHitBy]
+type	= NotHitBy
+trigger1= time = 0
+value	= SCA
+[State 4000, NotHitBy]
+type	= NotHitBy
+trigger1= time <= 3
+trigger1= root,var(55) = 2
+value	= SCA
+time	= 2
+ignorehitpause = 1
+[State 4000, NotHitBy]
+type	= NotHitBy
+trigger1= time <= 8
+trigger1= root,var(55) = 3
+value	= SCA
+time	= 2
+ignorehitpause = 1
+
+
+
+[State 4000, NotHitBy]
+type	= NotHitBy
+trigger1= time >= 1
+trigger1= root,var(55) <= 1
+value	= ,AT
+time	= 2
+ignorehitpause = 1
+[State 4000, NotHitBy]
+type	= NotHitBy
+trigger1= time >= 4
+trigger1= root,var(55) = 2
+value	= ,AT
+time	= 2
+ignorehitpause = 1
+[State 4000, NotHitBy]
+type	= NotHitBy
+trigger1= time >= 9
+trigger1= root,var(55) = 3
+value	= ,AT
+time	= 2
+ignorehitpause = 1
+
+[State 4000, PlayerPush]
+type	= PlayerPush
+trigger1= IsHelper(4000)
+value	= 0
+ignorehitpause = 1
+
+[State 4000, AssertSpecial]
+type = AssertSpecial
+trigger1= IsHelper(4000)
+flag = invisible
+flag2 = noShadow
+ignorehitpause = 1
+
+
+[State 4000, BindtoRoot]
+type	= BindtoRoot
+trigger1= IsHelper(4000)
+ignorehitpause = 1
+
+
+[State 4000, Turn]
+type	= Turn
+trigger1= IsHelper(4000)
+trigger1= Facing != Root,Facing
+ignorehitpause = 1
+
+
+
+[State 4000, HitOverRide]
+type = HitOverRide
+trigger1= IsHelper(4000)
+time = -1
+attr = SCA,AA,AP
+slot = 0
+stateno	= 4000
+ignorehitpause = 1
+
+
+[State 4000, ChangeAnim]
+type = ChangeAnim
+trigger1= IsHelper(4000)
+trigger1= Anim != Root,Anim
+value = Root,Anim
+ignorehitpause = 1
+
+
+
+
+[State 4000, DestroySelf_Safety]
+type = DestroySelf
+triggerAll = IsHelper
+trigger1 = !Root,Alive
+trigger2 = RoundState > 2
+
+
+
+
+
+;この下、一行以上空ける事！
+
+

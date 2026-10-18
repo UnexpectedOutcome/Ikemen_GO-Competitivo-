@@ -1,0 +1,311 @@
+;---------------------------------------------------------------------------
+
+[Statedef -3];←この行は絶対に消さないでね
+
+;===========================================================================
+
+;---------------------------------------------------------------------------
+;コンボ数上限
+;---------------------------------------------------------------------------
+[State -1, setting]
+type = varset
+trigger1 = 1
+trigger1 = roundstate=0
+var(12) = 10 ;コンボ回数
+
+;---------------------------------------------------------------------------
+;エロ要素の有無
+;---------------------------------------------------------------------------
+[State -1, setting]
+type = varset
+trigger1 = 1
+trigger1 = roundstate=0
+var(25) = 1 ;0=off 1=on
+
+;---------------------------------------------------------------------------
+;汎用孕ませKO ON/OFF
+;---------------------------------------------------------------------------
+[State -1, setting]
+type = varset
+trigger1 = 1
+trigger1 = roundstate=0
+var(24) = 0 ;0=off 1=on
+
+
+
+;---------------------------------------------------------------------------
+;ここから下は弄らないように！
+;---------------------------------------------------------------------------
+
+[State -3, Get Hit Sound]
+type = PlaySnd
+triggerAll = Alive && Time = 1
+triggerAll = StateNo = 5000 || StateNo = 5010
+trigger1 = GetHitVar(AnimType) >= 2 && Random < 500
+trigger2 = GetHitVar(AnimType) = 1 && Random < 375
+trigger3 = GetHitVar(AnimType) = 0 && Random < 250
+value = 5000,10*(Random%2)
+channel = 0
+ignoreHitPause = 1
+
+[State -3, Get Hit Sound]
+type = PlaySnd
+triggerAll = Alive && Time = 1
+trigger1 = (StateNo = 5000 || StateNo = 5010) && NumEnemy
+trigger1 = GetHitVar(fall) || (EnemyNear, HitDefAttr = SCA,SA,HA)
+trigger2 = (StateNo = 5020 || StateNo = 5070 || StateNo = 5080)
+trigger3 = (StateNo = 5050 || StateNo = 5100) && (PrevStateNo != [5000,5199])
+value = 5000,10+(10*(Random%2))
+channel = 0
+ignoreHitPause = 1
+
+[State 52, エフェクト]
+type = Explod
+triggerall = Time = 1
+trigger1 = stateno = 40
+anim = 3202
+postype = p1
+pos = -20,15
+bindtime = 1
+removetime = -2
+scale = 1,1
+sprpriority = -20
+ownpal = 1
+ID = 3202
+
+[State -3, Jumping Sound]
+type = PlaySnd
+triggerall = Time = 1
+trigger1 = stateno = 40
+value = 6, 4
+
+;---------------------------------------------------------------------------
+; HA用ヘルパー管理
+;---------------------------------------------------------------------------
+[State -3, HA用ヘルパー管理] ; HAヘルパーを作成
+type = Helper
+trigger1 = NumHelper(8800) < 1
+helpertype = normal
+name = "HA Helper"
+ID = 8800
+pos = 0, 0
+postype = p1
+stateno = 8800
+keyctrl = 0
+ownpal = 1
+
+[State -3, HAモーションに打撃無敵付加]
+type = NotHitBy
+;************************************************
+; ※ 以下にHA処理を行いたいステートの条件を羅列する
+;     例ではステート全体、ステートの途中から最後まで、ステートの中央部の各箇所へ
+;     HA処理を適用する場合の記述方法を示しています。
+;************************************************
+trigger1 = StateNo = 1100
+trigger1 = AnimElemTime(1) >= 0
+trigger1 = AnimElemTime(5) < 0  ; ステート1100の1コマ～4コマの間をHA化
+;************************************************
+value = , AA, AP
+ignorehitpause = 1
+
+; HAの最終フレームに打撃がHITした場合は、どうしてもヘルパー、本体の順番にダメージを2重に食らってしまう。
+; その為、最終フレーム 且つ 打撃を受けていない(Var(41) = 0)の場合は
+; HAの最終フレームの後に1Fだけ打撃無敵を付加する。
+; こうすることでHAの最終フレームに打撃がHITした場合でも、2重に食らうことが無くなる。
+; 但し、HA中に攻撃を何も食らわなかった時でも、最終フレーム後の1F打撃無敵は出てしまうので要注意。
+[State -3, HAモーション最終フレームから1F打撃無敵付加]
+type = NotHitBy
+triggerall = Helper(8800), Var(41) = 0
+;************************************************
+; ※ 以下にHA処理の終了フレーム条件を羅列します。
+;     上記「HAモーションに打撃無敵付加」の処理で指定した範囲の最終フレームをここで指定します。
+;     例では上記3パターンに対応する終了フレームの記述方法を示しています。
+;************************************************
+trigger1 = StateNo = 1100
+trigger1 = AnimElemTime(5) = 0 ; ステート1100の1コマ～4コマの間をHA化
+;************************************************
+value = , AA, AP
+time = 1
+ignorehitpause = 1
+
+[State -3, HA用ヘルパー被弾時]
+type = LifeAdd
+trigger1 = Helper(8800), Var(40) != 0
+value = -Helper(8800), Var(40)
+ignorehitpause = 1
+
+[State -3, HA被弾時,HitPause時間は打撃無敵付加]
+type = NotHitBy
+trigger1 = Helper(8800), Var(41) != 0
+value = , AA, AP
+time = Helper(8800), Var(41)
+ignorehitpause = 1
+
+[State -3, HA用ヘルパー削除処理(何らかの理由でHA用ヘルパーがHAステート以外になった時は削除)]
+type = DestroySelf
+trigger1 = NumHelper(8800)
+trigger1 = Helper(8800), StateNo != 8800
+ignorehitpause = 1
+
+
+
+
+;---------------------------------------------------------------------------
+[Statedef -2]
+
+;空中ガード不可
+[State -2,AssertSpecial]
+type = AssertSpecial
+trigger1 = 1
+flag = NoAirGuard
+
+;コンボカウントリセット
+[State -2,varset10]
+type = varset
+trigger1 = P2StateType = S
+trigger2 = P2StateType = C
+var(10) = 0
+
+;距離保存
+[State -2, 距離保存]
+type = VarSet
+trigger1 = P2Dist X != 0
+trigger1 = Win = 1
+v = 9
+value = Ceil(P2Dist X)
+ignorehitpause = 1
+
+;飛び道具消しヘルパー 消去
+[state -2]
+type = DestroySelf
+trigger1 = ishelper(203)
+trigger1 = stateNo != 203
+trigger2 = ishelper(204)
+trigger2 = stateNo != 204
+trigger3 = ishelper(206)
+trigger3 = stateNo != 206
+trigger4 = ishelper(1001)
+trigger4 = stateNo != 1001
+trigger5 = ishelper(601)
+trigger5 = stateNo != 601
+ignorehitpause = 1
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(802) > 0
+trigger1 = stateno != 801
+ID = 802
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1015) > 0
+trigger1 = stateno != 1011
+ID = 1015
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1016) > 0
+trigger1 = stateno != 1012
+ID = 1016
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1017) > 0
+trigger1 = (stateno != 1013) && (stateno != 1014)
+ID = 1017
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(130) > 0
+trigger1 = stateno != 700
+ID = 130
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1105) > 0
+trigger1 = stateno != 1105
+ID = 1105
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1107) > 0
+trigger1 = stateno != 1105
+trigger1 = stateno != 1110
+trigger1 = stateno != 1112
+trigger1 = stateno != 1114
+trigger1 = stateno != [1130,1138]
+ID = 1107
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1110) > 0
+trigger1 = stateno != 1110
+ID = 1110
+
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1112) > 0
+trigger1 = stateno != 1112
+ID = 1112
+
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1114) > 0
+trigger1 = stateno != 1114
+ID = 1114
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1120) > 0
+trigger1 = stateno != 1120
+ID = 1120
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1122) > 0
+trigger1 = stateno != 1122
+ID = 1122
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1125) > 0
+trigger1 = stateno != 1125
+ID = 1125
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1127) > 0
+trigger1 = stateno != 1127
+ID = 1127
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1130) > 0
+trigger1 = stateno != 1130
+ID = 1130
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1132) > 0
+trigger1 = stateno != 1132
+ID = 1132
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1134) > 0
+trigger1 = stateno != 1134
+ID = 1134
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1136) > 0
+trigger1 = stateno != 1136
+ID = 1136
+
+[State -2,RemoveExplod]
+type = RemoveExplod
+triggerall = NumExplod(1138) > 0
+trigger1 = stateno != 1138
+ID = 1138

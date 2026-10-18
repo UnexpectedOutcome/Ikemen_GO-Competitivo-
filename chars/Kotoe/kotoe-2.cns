@@ -1,0 +1,153 @@
+
+[statedef -2]
+;---------------------------------------------------------------------------
+;先行入力認識用ヘルパー暴走防止
+;---------------------------------------------------------------------------
+[state -3, ステートリセット]
+type = changestate
+trigger1 = ishelper(99999)
+value = 99999
+ignorehitpause = 1
+
+[State 1100, 残像リセット]
+type = AfterImagetime
+trigger1 = (stateno!=[1100,1150])&&(stateno!=2100)&&(stateno!=[3000,3100])&&(stateno!=950)
+time = 0
+
+[State -2,]
+type = DisplayToClipboard
+trigger1 = 1
+text = "Dist X=%d,Y=%d,Air=%d,Test=%d,combo=%d"
+params = var(59),floor(P2BodyDist Y),floor(P2BodyDist X-playerID(var(50)),vel X),var(43),var(59)
+
+;-------------------------------------------------------------------------------
+;ヴァリアブルカウンター攻撃力所得
+[State -2,所得]
+type = varset
+trigger1 = stateno=[120,159]
+trigger1 = gethitvar(damage)!=0
+var(9) = gethitvar(damage)
+
+[State -2,リセット]
+type = varset
+trigger1 = (stateno!=[120,159])&&(stateno!=950)
+trigger1 = gethitvar(damage)!=0
+var(9) = 0
+
+;-------------------------------------------------------------------------------
+;浮き補正リセット
+[State -2,リセット]
+type = varset
+triggerall = var(20)
+trigger1 = P2movetype!=H
+trigger2 = P2statetype = L 
+var(20) = 0
+
+;-------------------------------------------------------------------------------
+;For AI ヒットカウントリセット
+[State -2,リセット]
+type = varset
+triggerall = var(41)
+trigger1 = stateno!=2200 
+var(41) = 0
+
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+;補正セット・リセット
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+;fvar(0) = 補正総合値
+;fVar(1) = 技数補正
+;fvar(2) = 逆根性値
+;fvar(3) = カウンターヒット補正
+;fvar(4) = コマ投げ補正
+
+;-------------------------------------------------[ヒット数補正]
+[State -2, カウント解除]
+type     = Varset
+trigger1 = !numtarget
+trigger1 = P2MoveType != H || p2stateno = [120,155]
+var(5) = 0
+IgnoreHitPause = 1
+
+[State -2, VarSet];初期値は100％（リセット）
+Type     = VarSet
+trigger1 = !numtarget
+trigger1 = P2MoveType != H || p2stateno = [120,155]
+trigger2 = var(5) <= 1
+fvar(1)  = 1.0
+IgnoreHitPause = 1
+
+[State -2, Varset];3Hit～
+Type     = VarSet
+;triggerall = movetype != A || time = 1 || movetype = A && !movehit && hitcount = 0
+trigger1 = var(5) > 1
+fvar(1) = 0.7
+ignorehitpause = 1
+
+[State -2, Varset];6Hit～
+Type     = VarSet
+;triggerall = movetype != A || time = 1 || movetype = A && !movehit && hitcount = 0
+trigger1 = var(5) > 4
+fvar(1) = 0.6
+ignorehitpause = 1
+
+[State -2, Varset];8Hit～
+Type     = VarSet
+;triggerall = movetype != A || time = 1 || movetype = A && !movehit && hitcount = 0
+triggerall = stateno !=[2000,4000]
+trigger1 = var(5) > 6
+fvar(1) = 0.5
+ignorehitpause = 1
+
+[State -2, Varset];10Hit～
+Type     = VarSet
+;triggerall = movetype != A || time = 1 || movetype = A && !movehit && hitcount = 0
+triggerall = stateno !=[2000,4000]
+trigger1 = var(5) > 8
+fvar(1) = 0.3
+ignorehitpause = 1
+
+;-------------------------------------------------[テンション補正]
+
+[state -2, ノーマル]
+type = varset
+trigger1 = 1
+fvar(2) = 1
+ignorehitpause = 1
+
+;-------------------------------------------------[カウンターヒット補正]
+
+[State -2, カウンターヒット補正リセット]
+type = varset
+trigger1 = 1
+fvar(3) = 1.0
+ignorehitpause = 1
+
+[State -2, カウンターヒット補正セット]
+type = varset
+trigger1 = var(8)
+fvar(3) = 1.25
+ignorehitpause = 1
+
+;-------------------------------------------------[補正総合]
+
+[State -2, 変数]
+Type     = VarSet
+Trigger1 = 1
+fvar(0)  = fvar(1)*fvar(2)*fvar(3)
+ignorehitpause = 1
+
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+; カウンターヒット判定
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[state -2, 変数] ;カウンター判定
+type       = VarSet
+trigger1   = 1
+var(8)     = 0
+
+[state -2, 変数] ;カウンター判定
+type       = VarSet
+TriggerAll = NumEnemy >= 1
+trigger1   = Enemynear,Movetype  = A
+var(8)     = 1

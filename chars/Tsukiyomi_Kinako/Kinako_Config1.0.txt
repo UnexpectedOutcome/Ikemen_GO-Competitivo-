@@ -1,0 +1,220 @@
+;---------------------------------------------------------------------------
+; Initialize (at the start of the round)
+[Statedef 5900]
+type = S
+
+[State 5900, 1] ;Clear all int variables
+type = VarRangeSet
+trigger1 = RoundsExisted = 0
+value = 0
+
+[State 5900, 2] ;Clear all float variables
+type = VarRangeSet
+trigger1 = RoundsExisted = 0
+fvalue = 0
+
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+;				演出表示関連
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[state a, Size Adjustment]
+type = Null
+trigger1 = time = 0
+trigger1 = fvar(23) := GameWidth
+trigger1 = fvar(21) := GameHeight
+trigger1 = fvar(22) := const240p(6)/7.5
+;--------------------------------------------------------------------------
+;<<OPTION-A1: ゲージ表示>>
+[state a, Gauge Display]
+type = VarSet
+trigger1 = RoundsExisted = 0
+trigger1 = time = 0
+trigger1 = var(58)%10 = 0
+var(58) = var(58)+(1) ; 1:表示(Display), 0:非表示(Non)
+
+[state a, Gauge Position]
+type = VarAdd
+trigger1 = RoundsExisted = 0
+trigger1 = time = 0
+trigger1 = var(58)/10%1000 = 0
+trigger1 = 1||var(0) := (0)	;括弧内の数字を変えると位置調整ができます(-:up,+:down,range:-999~999)
+;>>>>>>>>>>>>>>>>>>>>>>>^^^>>>>Changing the number in the parentheses means changing the position.
+var(58) = 10*abs(var(0))+5*(var(0)<0)
+
+;--------------------------------------------------------------------------
+;<<OPTION-A2: ダメージカウンター表示>>
+[state a, Damage Counter Display]
+type = VarSet
+trigger1 = RoundsExisted = 0
+trigger1 = time = 0
+trigger1 = var(58)/10000%10 = 0
+var(58) = var(58)+10000*(1) ; 1:表示(Display), 0:非表示(Non)
+
+[state a, Damage Counter Position]
+type = VarAdd
+trigger1 = RoundsExisted = 0
+trigger1 = time = 0
+trigger1 = var(58)/100000%1000 = 0
+trigger1 = 1||var(0) := (0)	;括弧内の数字を変えると位置調整ができます(-:up,+:down,range:-999~999)
+;>>>>>>>>>>>>>>>>>>>>>>>^^^>>>>Changing the number in the parentheses means changing the position.
+var(58) = 10000*(10*abs(var(0))+5*(var(0)<0))
+
+;--------------------------------------------------------------------------
+;<<OPTION-A3: 補正値表示>>
+[state a, Proration Display]
+type = VarSet
+trigger1 = time = 0
+trigger1 = var(57)/100%10 = 0
+var(57) = var(57)+100*(1) ; 1:表示(Display), 0:非表示(Non)
+
+;--------------------------------------------------------------------------
+;<<OPTION-A4: エフェクト制限>>
+[state a, Limit Effects]
+type = VarSet
+trigger1 = time = 0
+trigger1 = var(57)/1000%10 = 0
+var(57) = var(57)+1000*(0) ;(0-light->3, Default:0)
+ignorehitpause = 1
+
+;0: 無制限、1: 数を監視して制限、2: 常に制限、3: 最大制限
+;0: no limit, 1: count the number of Explod and player, 2: always, 3: full limit
+
+;--------------------------------------------------------------------------
+;<<OPTION-A5: Bストーン表示>>
+[state a, B Stone]
+type = VarSet
+trigger1 = time = 0
+trigger1 = var(57)/10000%10 = 0
+var(57) = var(57)+10000*(2) ;(0~2, Default:2)
+ignorehitpause = 1
+
+;0: 非表示、1: 取得エフェクト有、2: 表示
+;0: no display, 1: Getting Effect Only, 2: display
+
+;--------------------------------------------------------------------------
+;<<OPTION-A6: Bストーン対応>>
+[state a, Enemy's B Stone]
+type = VarSet
+var(36) = 10
+triggerall = numenemy
+trigger1 = enemy,authorname = "Songfu"
+trigger2 = enemy,name = ""		;対応させたいキャラ名(def内にあるdisplaynameではない方)
+trigger2 = enemy,authorname = ""	;そのキャラの作者名(より確実にしたい場合)
+
+;--------------------------------------------------------------------------
+;<<OPTION-A7: VSイントロ＆勝利演出>>
+[state a, VS Intro and Win Direction]
+type = Null
+trigger1 = RoundState = 0
+trigger1 = var(57)/10%10 = 0
+trigger1 = 1||var(57) := var(57)+10*(1) ;VSイントロ (1:ON, 0:OFF, Default:1)
+trigger1 = 1||var(57) := var(57)+50*(1) ;勝利演出　 (1:ON, 0:OFF, Default:1)
+
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+;				性能関連
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+;--------------------------------------------------------------------------
+;<<OPTION-A8: コマンド入力受付時間>>
+[State -2, Command buffer time]
+type = VarSet
+trigger1 = time = 0
+var(21) = 1000000+1000000*(3) ;(0~99, Default:3)
+
+;--------------------------------------------------------------------------
+;<<OPTION-A9: A+B及びB+Cコマンドの無効化>>
+[State -2, Invalidate commands "A+B" and "B+C"]
+type = VarAdd
+trigger1 = time = 0
+trigger1 = var(21)/100000%10 = 0
+var(21) = 100000*(0) ;(0or1, Default:0[don't invalidate])
+
+;--------------------------------------------------------------------------
+;<<OPTION-A10: オバケストックに関する調整>>
+[state a, Change the variation of Ghost Stock]
+type = Null
+trigger1 = time = 0
+trigger1 = RoundsExisted = 0
+trigger1 = var(57) := var(57)+100000*(0) ;(0~3, Default:0)
+
+; 0:原作性能, 1:オバケ獲得+1, 2:加えてオバケ消費-1, 3:常に最大
+; 0:original game type, 1:increase the amount of getting ghosts, 2:and reduce the amount of using ghosts, 3:usually max
+
+;--------------------------------------------------------------------------
+;<<OPTION-A11: ご光臨性能調整>>
+[state a, Change the Performance of Descent]
+type = Null
+trigger1 = time = 0
+trigger1 = RoundsExisted = 0
+trigger1 = var(57) := var(57)+1000000*(1) ;(0or1, Default:1)
+
+; 0:原作性能, 1:落下時もヒット
+; 0:original game type, 1:able to hit falling enemy
+
+;--------------------------------------------------------------------------
+;===========================================================================
+;===========================================================================
+[State 5900, Intro]
+type = Helper
+triggerall = numenemy
+triggerall = RoundNo = 1
+triggerall = teammode = single
+triggerall = !numhelper(8600)
+triggerall = !enemy,numhelper(8600)
+triggerall = var(57)/10%10%5 = 1
+trigger1 = teamside = 1
+trigger2 = teamside = 2
+trigger2 = enemy,numhelper(28990)
+ID = 8600
+name = "BBBRVSIntroHost"
+pos = 0,0
+postype = right
+stateno = 8600
+ownpal = 1
+supermovetime = 2147483647
+pausemovetime = 2147483647
+ignorehitpause = 1
+
+[State 5900, Intro]
+type = Helper
+triggerall = numenemy
+triggerall = enemy,authorname = "Songfu"
+triggerall = RoundNo = 1
+triggerall = teammode = single
+triggerall = !numhelper(28990)
+triggerall = !numhelper(8600)
+triggerall = var(57)/10%10%5 = 1
+trigger1 = teamside = 1
+trigger2 = teamside = 2
+trigger2 = enemy,numhelper(8600)
+ID = 28990
+name = "BBBRVSIntroGuest"
+pos = 0,0
+postype = right
+stateno = 28990
+ownpal = 1
+supermovetime = 2147483647
+pausemovetime = 2147483647
+ignorehitpause = 1
+
+[state a]
+type = PowerSet
+trigger1 = time = 0
+trigger1 = var(54)%10 = 6
+value = 0
+
+[state a]
+type = Null
+trigger1 = time = 0
+trigger1 = 1||var(52) := 0
+trigger1 = 1||var(52) := var(52)+100*(5)
+trigger1 = 1||var(54) := 10*floor(var(54)/10)
+trigger1 = 1||var(12) := 9
+
+[state a]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 5900, 3] ;Intro
+type = ChangeState
+trigger1 = RoundsExisted = 0
+value = 190

@@ -1,0 +1,1161 @@
+;コモンステート上書き用
+;主にこのキャラ独自の記述とＡＩ仕様化
+
+;-------------------------------------------------------------------------------
+[Statedef 0]; Stand 立ち（ニュートラル）
+;-------------------------------------------------------------------------------
+type = S
+physics = S
+sprpriority = 0
+
+[State 0, 0]; 戦闘中じゃない時は無敵
+type = NotHitBy
+trigger1 = RoundState != 2
+value = SCA
+time = 2
+
+[State 0, 0/Snd]; ダッシュ音停止
+type = StopSnd
+trigger1 = Time = 0
+channel = 1
+
+[State 0, 1]; アニメ変更
+type = ChangeAnim
+trigger1 = Anim != 0 && Anim != 5
+trigger2 = Anim = 5 && AnimTime = 0 ;Turn anim over 振り返り動作終了時
+value = 0
+
+[State 0, 2]; 速度停止１（Ｙ座標）
+type = VelSet
+trigger1 = Time = 0
+y = 0
+
+[State 0, 3]; 速度停止２（Ｘ座標）
+type = VelSet
+trigger1 = abs(vel x) < 2
+trigger2 = Time = 4
+x = 0
+
+[State 0, 4]; 空中立ちなどの不具合自己修正
+type = PosSet
+trigger1 = Pos Y != 0
+Y = 0
+
+[State 0, CH]; 生死判定
+type = ChangeState
+trigger1 = !alive
+value = 5050
+
+[State 0, Ds]; ヘルパー分身バグの自己消去
+type = DestroySelf
+trigger1 = IsHelper
+
+;-------------------------------------------------------------------------------
+[Statedef 10]; Stand to Crouch 立ち→屈みの切り替え
+;-------------------------------------------------------------------------------
+type = C
+physics = C
+anim = 10
+
+[State 10, AI]; ＡＩ制御用（＋追加）
+type = ChangeState
+trigger1 = var(59) > 0 && Time = 0
+value = 0
+ctrl = 1
+
+[State 10, 1]; 減速
+type = VelMul
+trigger1 = Time = 0
+x = .75
+
+[State 10, CH]; 屈みステートへ
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 11
+
+;-------------------------------------------------------------------------------
+[Statedef 11]; Crouching 屈み
+;-------------------------------------------------------------------------------
+type = C
+physics = C
+anim = 11
+sprpriority = 0
+
+[State 11, AI]; ＡＩ制御用（＋追加）
+type = ChangeState
+trigger1 = var(59) > 0 && Time = 0
+value = 0
+ctrl = 1
+
+[State 11, 1]; Change from turning animation アニメ変更
+type = ChangeAnim
+trigger1 = Anim = 6 && AnimTime = 0
+value = 11
+
+;-------------------------------------------------------------------------------
+[Statedef 12]; Crouch to Stand 屈み→立ちの切り替え
+;-------------------------------------------------------------------------------
+type = S
+physics = S
+anim = 12
+
+[State 12, AI]; ＡＩ制御用（＋追加）
+type = ChangeState
+trigger1 = var(59) > 0 && Time = 0
+value = 0
+ctrl = 1
+
+[State 12, CH]; 立ちステートへ
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+
+;-------------------------------------------------------------------------------
+[Statedef 20]; Walk 前進／後退
+;-------------------------------------------------------------------------------
+type = S
+physics = S
+sprpriority = 0
+
+[State 20, AI]; ＡＩ制御用（＋追加）
+type = ChangeState
+trigger1 = var(59) > 0 && Time = 0
+value = 0
+ctrl = 1
+
+[State 20, 0]; 振り返り動作抑制
+type = AssertSpecial
+trigger1 = 1
+flag = NoAutoTurn
+
+[State 20, 0]; 前進速度
+type = VelSet
+trigger1 = var(59) <= 0 && Command = "holdfwd"
+x = const(velocity.walk.fwd.x)
+
+[State 20, 0]; 後退速度
+type = VelSet
+trigger1 = var(59) <= 0 && Command = "holdback"
+x = const(velocity.walk.back.x)
+
+[State 20, 0]; アニメ変更／前進
+type = ChangeAnim
+triggerall = vel x > 0
+trigger1 = Anim != 20 && Anim != 5
+trigger2 = Anim = 5 && AnimTime = 0
+value = 20
+
+[State 20, 0]; アニメ変更／後退
+type = ChangeAnim
+triggerall = vel x < 0
+trigger1 = Anim != 21 && Anim != 5
+trigger2 = Anim = 5 && AnimTime = 0
+value = 21
+
+[State 20, SE]; 足音
+type = PlaySnd
+trigger1 = Time%30 = 1
+value = s12,2
+
+;-------------------------------------------------------------------------------
+[Statedef 40]; Jump Start ジャンプ開始
+;-------------------------------------------------------------------------------
+type = S
+physics = S
+anim = 40
+ctrl = 0
+sprpriority = 1
+
+[State 40, AI]; ＡＩ制御用（＋追加）
+type = ChangeState
+trigger1 = var(59) >= 2 && Time = 0
+Value = 0
+Ctrl = 1
+
+[State 40, 0]; Ｘ速度設定１
+type = VarSet
+trigger1 = Time = 0
+sysvar(1) = 0
+
+[State 40, 0]; Ｘ速度設定２
+type = VarSet
+trigger1 = Time = 1 && var(59) <= 0 && Command = "holdfwd"
+sysvar(1) = 1
+
+[State 40, 0]; Ｘ速度設定３
+type = VarSet
+trigger1 = Time = 1 && var(59) <= 0 && Command = "holdback"
+sysvar(1) = -1
+
+[State 40, 1]; ジャンプ速度
+type = VelSet
+trigger1 = AnimTime = -1
+x = Const(velocity.jump.neu.x)*(sysvar(1)=0)+Const(velocity.jump.fwd.x)*(sysvar(1)=1)+Const(velocity.jump.back.x)*(sysvar(1)=-1)
+y = Const(velocity.jump.y)
+
+[State 40, 1]; ダッシュジャンプ速度
+type = VelSet
+trigger1 = AnimTime = -1 && PrevStateNo = 100
+x = Const(velocity.runjump.fwd.x)*(sysvar(1)=1)+Const(velocity.runjump.back.x)*(sysvar(1)=-1)
+
+[State 40, CV]; ボイス
+type = PlaySnd
+trigger1 = AnimTime = -1
+value = s12,0
+
+[State 40, CH]; ジャンプステートへ
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 50
+ctrl = 1
+
+;-------------------------------------------------------------------------------
+[Statedef 55]; Stay Air 滞空
+;-------------------------------------------------------------------------------
+type = A
+physics = N
+anim = 55
+ctrl = 0
+sprpriority = 1
+
+[State 55, AI]; ＡＩ制御用（＋追加）
+type = ChangeState
+trigger1 = var(59) >= 2 && Time = 0
+Value = 0
+Ctrl = 1
+
+[State 55, -1]; 落下速度
+type = VelSet
+trigger1 = 1
+Y = 0.5
+
+[State 55, F]; 動作終了
+type = ChangeState
+trigger1 = Pos Y > -30
+trigger2 = var(59) <= 0 && command != "holdup"
+value = 50
+ctrl = 1
+
+;-------------------------------------------------------------------------------
+[Statedef 100]; RUN_FWD 前方ダッシュ
+;-------------------------------------------------------------------------------
+type = S
+physics = S
+anim = 100
+sprpriority = 1
+
+[State 100, 0]; ぶつかり判定消去
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 100, 0]; ダッシュ速度
+type = VelSet
+trigger1 = 1
+x = const(velocity.run.fwd.x)
+
+[State 100, 0]; Prevent run from canceling into walk 歩き動作・振り返り動作抑制
+type = AssertSpecial
+trigger1 = 1
+flag = NoWalk
+flag2 = NoAutoTurn
+
+[State 100, SE]; ダッシュ足音（変更）
+type = PlaySnd
+trigger1 = Time%30 = 1
+value = s12,3
+channel = 1
+
+[State 100, F]; 動作終了
+type = ChangeState
+trigger1 = var(59) <= 0 && Command != "holdfwd"
+value = 0
+
+;-------------------------------------------------------------------------------
+[Statedef 105]; RUN_BACK 後方ダッシュ
+;-------------------------------------------------------------------------------
+type = S
+physics = S
+anim = 105
+sprpriority = 1
+
+[State 105, 0]; ぶつかり判定消去
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 105, 1]; ダッシュ速度
+type = VelSet
+trigger1 = 1
+x = const(velocity.run.back.x)
+
+[State 105, 1]; Prevent run from canceling into walk 歩き動作・振り返り動作抑制
+type = AssertSpecial
+trigger1 = 1
+flag = NoWalk
+flag2 = NoAutoTurn
+
+[State 105, SE]; ダッシュ音（変更）
+type = PlaySnd
+trigger1 = Time%30 = 1
+value = s12,3
+channel = 1
+
+[State 105, F]; 動作終了
+type = ChangeState
+trigger1 = var(59) <= 0 && Command != "holdback"
+value = 0
+
+;-------------------------------------------------------------------------------
+[Statedef 106]; BACK_STEP バックステップ
+;-------------------------------------------------------------------------------
+type = A
+physics = A
+ctrl = 0
+anim = 106
+sprpriority = 1
+
+[State 106, 0]; ぶつかり判定消去
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 106, 0]; キャンセル使用時のフラッシュ（＋追加）
+type = PalFX
+triggerall = Time = 0
+trigger1 = PrevStateNo = [200,220]
+time = 5
+add = 256,256,256
+
+[State 106, 0]; 飛び退く速度
+type = VelSet
+trigger1 = Time = 0
+x = Const(velocity.run.back.x)
+y = Const(velocity.jump.y)/3
+
+[State 106, 1]; 暴発防止
+type = CtrlSet
+trigger1 = Time = 2
+value = 1
+
+[State 106, CV]; ボイス
+type = PlaySnd
+trigger1 = Time = 1
+value = s12,1
+channel = 0
+
+[State 106, CH]; 着地動作へ
+type = ChangeState
+trigger1 = Vel Y > 0
+trigger1 = Pos Y >= -2
+value = 107
+
+;-------------------------------------------------------------------------------
+[Statedef 110]; 前方空中ダッシュ
+;-------------------------------------------------------------------------------
+type = A
+movetype = I
+physics = N
+velset = 9,0
+anim = 110
+ctrl = 1
+
+[State 110, 0]; ぶつかり判定消去
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 110, 1]; 使用回数＋１
+type = VarAdd
+trigger1 = Time = 1
+var(15) = 1
+
+[State 110, CV]; ボイス
+type = PlaySnd
+trigger1 = Time = 1
+value = s20,130
+
+[State 110, EX1]; 煙のエフェクト
+type = Explod
+trigger1 = Time = 1
+anim = 7290
+ID = 7290
+postype = p1
+pos = 0,-44
+sprpriority = 3
+ownpal = 1
+removeongethit = 1
+;removetime = 18
+bindtime = 99
+
+[State 110, F]; 動作終了
+type = ChangeState
+trigger1 = var(59) <= 0 && Command != "holdfwd"
+trigger2 = Time > 60
+value = 50
+ctrl = 1
+
+;-------------------------------------------------------------------------------
+[Statedef 115]; 後方空中ダッシュ
+;-------------------------------------------------------------------------------
+type = A
+movetype = I
+physics = N
+velset = -9,0
+anim = 115
+ctrl = 1
+
+[State 115, 0]; ぶつかり判定消去
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 115, 1]; 使用回数＋１
+type = VarAdd
+trigger1 = Time = 1
+var(15) = 1
+
+[State 115, CV]; ボイス
+type = PlaySnd
+trigger1 = Time = 1
+value = s20,130
+
+[State 115, EX1]; 煙のエフェクト
+type = Explod
+trigger1 = Time = 1
+anim = 7290
+ID = 7290
+facing = -1
+postype = p1
+pos = 0,-44
+sprpriority = 3
+ownpal = 1
+removeongethit = 1
+;removetime = 18
+bindtime = 99
+
+[State 115, F]; 動作終了
+type = ChangeState
+trigger1 = var(59) <= 0 && Command != "holdback"
+trigger2 = Time > 60
+value = 50
+ctrl = 1
+
+;-------------------------------------------------------------------------------
+[Statedef 120]; GUARD(start) ガード開始
+;-------------------------------------------------------------------------------
+type = U    ;Leave state type unchanged
+physics = U ;Leave physics unchanged
+
+[State 120, 0]; アニメ変更
+type = ChangeAnim
+trigger1 = Time = 0
+value = 120 + (statetype = C) + (statetype = A) * 2
+
+[State 120, 0]; 物理状態指定１
+type = StateTypeSet
+trigger1 = Time = 0 && statetype = S
+physics = S
+
+[State 120, 0]; 物理状態指定２
+type = StateTypeSet
+trigger1 = Time = 0 && statetype = C
+physics = C
+
+[State 120, 0]; 物理状態指定３
+type = StateTypeSet
+trigger1 = Time = 0 && statetype = A
+physics = A
+
+[State 120, Hi to Lo]; ガード方向の切り替え（上→下）
+type = StateTypeSet
+triggerall = Statetype = S
+trigger1 = var(59) <= 0 && Command = "holddown"
+trigger2 = var(59) >= 2
+trigger2 = Enemy,StateType = C || fvar(30) != 0
+trigger2 = Random <= var(59)*80 || var(59) >= 3
+statetype = C
+physics = C
+
+[State 120, Lo to Hi]; ガード方向の切り替え（下→上）
+type = StateTypeSet
+triggerall = Statetype = C
+trigger1 = var(59) <= 0 && Command != "holddown"
+trigger2 = var(59) >= 2
+trigger2 = Enemy,StateType != C && fvar(30) = 0
+trigger2 = Random <= var(59)*80 || var(59) >= 3
+statetype = S
+physics = S
+
+[State 120, CH]; 各種ガードステートへ
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 130 + (statetype = C) + (statetype = A) * 2
+
+[State 120, Stop Guarding]; ガード終了動作へ
+type = ChangeState
+trigger1 = var(59) <= 0 && Command != "holdback"
+trigger2 = var(59) <= 2
+trigger2 = !InGuardDist
+trigger3 = var(59) >= 3
+trigger3 = !InGuardDist && !Helper(10010),InGuardDist && !Helper(10020),InGuardDist
+value = 140
+
+;-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+[Statedef 130]; STAND GUARD (guarding) 立ちガード（受付）
+type = S
+physics = S
+
+[State 130, 0]; アニメ変更
+type = ChangeAnim
+trigger1 = Anim != 130
+value = 130
+
+[State 130, Hi to Lo]; ガード方向の切り替え（上→下）
+type = ChangeState
+trigger1 = var(59) <= 0 && Command = "holddown"
+trigger2 = var(59) >= 2
+trigger2 = Enemy,StateType = C || fvar(30) != 0
+trigger2 = Random <= var(59)*80 || var(59) >= 3
+value = 131
+
+[State 130, Stop Guarding]; ガード終了ステートへ
+type = ChangeState
+trigger1 = var(59) <= 0 && Command != "holdback"
+trigger2 = var(59) <= 2
+trigger2 = !InGuardDist
+trigger3 = var(59) >= 3
+trigger3 = !InGuardDist && !Helper(10010),InGuardDist && !Helper(10020),InGuardDist
+value = 140
+
+;-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+[Statedef 131]; CROUCH GUARD (guarding) 屈みガード（受付）
+type = C
+physics = C
+
+[State 131, 0]; アニメ変更
+type = ChangeAnim
+trigger1 = Anim != 131
+value = 131
+
+[State 131, Lo to Hi]; ガード方向の切り替え（下→上）
+type = ChangeState
+trigger1 = var(59) <= 0 && Command != "holddown"
+trigger2 = var(59) >= 2
+trigger2 = Enemy,StateType != C && fvar(30) = 0
+trigger2 = Random <= var(59)*80 || var(59) >= 3
+value = 130
+
+[State 131, Stop Guarding]; ガード終了ステートへ
+type = ChangeState
+trigger1 = var(59) <= 0 && Command != "holdback"
+trigger2 = var(59) <= 2
+trigger2 = !InGuardDist
+trigger3 = var(59) >= 3
+trigger3 = !InGuardDist && !Helper(10010),InGuardDist && !Helper(10020),InGuardDist
+value = 140
+
+;-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+[Statedef 132]; AIR GUARD (guarding) 空中ガード（受付）
+type = A
+physics = N
+
+[State 132, 0]; アニメ変更
+type = ChangeAnim
+trigger1 = Anim != 132
+value = 132
+
+[State 132, 0]; 重力
+type = VelAdd
+trigger1 = 1
+y = Const(movement.yaccel)
+
+[State 132, 0]; システム変数
+type = VarSet
+trigger1 = 1
+sysvar(0) = (pos y >= 0) && (vel y > 0)
+
+[State 132, 0]; 落下速度初期化
+type = VelSet
+trigger1 = sysvar(0)
+y = 0
+
+[State 132, 0]; 座標指定初期化
+type = PosSet
+trigger1 = sysvar(0)
+y = 0
+
+[State 132, CH1]; 立ちガードへ移行
+type = ChangeState
+triggerall = sysvar(0)
+trigger1 = var(59) <= 0 && Command = "holdback"
+trigger1 = InGuardDist
+trigger2 = var(59) <= 2
+trigger2 = InGuardDist
+trigger3 = var(59) >= 3
+trigger3 = InGuardDist || Helper(10010),InGuardDist || Helper(10020),InGuardDist
+value = 130
+
+[State 132, CH2]; 着地ステートへ以降
+type = ChangeState
+trigger1 = sysvar(0)
+value = 52
+
+[State 132, Stop Guarding]; ガード終了ステートへ
+type = ChangeState
+trigger1 = var(59) = 0 && Command != "holdback"
+trigger2 = var(59) <= 2
+trigger2 = !InGuardDist
+trigger3 = var(59) >= 3
+trigger3 = !InGuardDist && !Helper(10010),InGuardDist && !Helper(10020),InGuardDist
+value = 140
+
+;-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+[Statedef 140]; GUARD (end) ガード終了ステート
+type = U    ;Leave state type unchanged
+physics = U ;Leave physics unchanged
+ctrl = 1
+
+[State 140, 0]; アニメ変更
+type = ChangeAnim
+trigger1 = Time = 0
+value = 140 + (statetype = C) + (statetype = A) * 2
+
+[State 140, 0]; 物理状態指定１
+type = StateTypeSet
+trigger1 = Time = 0 && statetype = S
+physics = S
+
+[State 140, 0]; 物理状態指定２
+type = StateTypeSet
+trigger1 = Time = 0 && statetype = C
+physics = C
+
+[State 140, 0]; 物理状態指定３
+type = StateTypeSet
+trigger1 = Time = 0 && statetype = A
+physics = A
+
+[State 140, Hi to Lo]; 物理状態指定４
+type = StateTypeSet
+trigger1 = statetype = S && var(59) <= 0 && Command = "holddown"
+statetype = C
+physics = C
+
+[State 140, Lo to Hi]; 物理状態指定５
+type = StateTypeSet
+trigger1 = statetype = C && var(59) <= 0 && Command != "holddown"
+statetype = S
+physics = S
+
+;-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+[Statedef 150]; SGUARDHIT (shaking) 立ちガード接触（ヒットシェイク）
+type = S
+movetype= H
+physics = N
+velset = 0,0
+
+[State 150, 0]; アニメ変更
+type = ChangeAnim
+trigger1 = 1
+value = 150
+
+[State 150, 0]; ゲームパッドを振動させる
+type = ForceFeedback
+trigger1 = time = 0
+waveform = square
+time = 3
+
+[State 150, CH]; 反動ステートへ
+type = ChangeState
+trigger1 = HitShakeOver
+value = 151 + 2 * ifelse(var(59)<=0,(command = "holddown"),0)
+
+[State 150, Hi to Lo]; ガード方向の切り替え（上→下）
+type = StateTypeSet
+triggerall = Statetype = S
+trigger1 = var(59) <= 0 && Command = "holddown"
+trigger2 = var(59) >= 2
+trigger2 = Enemy,StateType = C || fvar(30) != 0
+trigger2 = Random <= var(59)*80 || var(59) >= 3
+statetype = C
+physics = C
+
+[State 150, Lo to Hi]; ガード方向の切り替え（下→上）
+type = StateTypeSet
+triggerall = Statetype = C
+trigger1 = var(59) <= 0 && Command != "holddown"
+trigger2 = var(59) >= 2
+trigger2 = Enemy,StateType != C && fvar(30) = 0
+trigger2 = Random <= var(59)*80 || var(59) >= 3
+statetype = S
+physics = S
+
+;-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+[Statedef 151]; SGUARDHIT2 (knocked back) 立ちガード接触（反動）
+type = S
+movetype= H
+physics = S
+anim = 150
+
+[State 151, 0]; ノックバック速度の指定？
+type = HitVelSet
+trigger1 = Time = 0
+x = 1
+
+[State 151, 1]; ノックバック速度をクリア
+type = VelSet
+trigger1 = Time = GetHitVar(slidetime)
+trigger2 = HitOver
+x = 0
+
+[State 151, 1]; コントロール
+type = CtrlSet
+trigger1 = Time = GetHitVar(ctrltime)
+value = 1
+
+[State 151, Hi to Lo]; ガード方向の切り替え（上→下）
+type = StateTypeSet
+triggerall = Statetype = S
+trigger1 = var(59) <= 0 && Command = "holddown"
+trigger2 = var(59) >= 2
+trigger2 = Enemy,StateType = C || fvar(30) != 0
+trigger2 = Random <= var(59)*80 || var(59) >= 3
+statetype = C
+physics = C
+
+[State 151, Lo to Hi]; ガード方向の切り替え（下→上）
+type = StateTypeSet
+triggerall = Statetype = C
+trigger1 = var(59) <= 0 && Command != "holddown"
+trigger2 = var(59) >= 2
+trigger2 = Enemy,StateType != C && fvar(30) = 0
+trigger2 = Random <= var(59)*80 || var(59) >= 3
+statetype = S
+physics = S
+
+[State 151, CH]; 立ちガード受付へ
+type = ChangeState
+trigger1 = HitOver
+value = 130
+ctrl = 1
+
+;-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+[Statedef 152]; CGUARDHIT (shaking) 屈みガード接触（ヒットシェイク）
+type = C
+movetype= H
+physics = N
+velset = 0,0
+
+[State 152, 0]; アニメ変更
+type = ChangeAnim
+trigger1 = 1
+value = 151
+
+[State 152, 0]; ゲームパッドを振動させる
+type = ForceFeedback
+trigger1 = time = 0
+waveform = square
+time = 4
+
+[State 152, CH]; 反動ステートへ
+type = ChangeState
+trigger1 = HitShakeOver
+value = 151 + 2 * ifelse(var(59)<=0,(command = "holddown"),1)
+
+[State 152, Hi to Lo]; ガード方向の切り替え（上→下）
+type = StateTypeSet
+triggerall = Statetype = S
+trigger1 = var(59) <= 0 && Command = "holddown"
+trigger2 = var(59) >= 2
+trigger2 = Enemy,StateType = C || fvar(30) != 0
+trigger2 = Random <= var(59)*80 || var(59) >= 3
+statetype = C
+physics = C
+
+[State 152, Lo to Hi]; ガード方向の切り替え（下→上）
+type = StateTypeSet
+triggerall = Statetype = C
+trigger1 = var(59) <= 0 && Command != "holddown"
+trigger2 = var(59) >= 2
+trigger2 = Enemy,StateType != C && fvar(30) = 0
+trigger2 = Random <= var(59)*80 || var(59) >= 3
+statetype = S
+physics = S
+
+;-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+[Statedef 153]; CGUARDHIT2 (knocked back) 屈みガード接触（反動）
+type = C
+movetype= H
+physics = C
+anim = 151
+
+[State 153, 0]; ノックバック速度の指定？
+type = HitVelSet
+trigger1 = Time = 0
+x = 1
+
+[State 153, 1]; ノックバック速度のクリア
+type = VelSet
+trigger1 = Time = GetHitVar(slidetime)
+trigger2 = HitOver
+x = 0
+
+[State 153, 1]; コントロール
+type = CtrlSet
+trigger1 = Time = GetHitVar(ctrltime)
+value = 1
+
+[State 153, Hi to Lo]; ガード方向の切り替え（上→下）
+type = StateTypeSet
+triggerall = Statetype = S
+trigger1 = var(59) <= 0 && Command = "holddown"
+trigger2 = var(59) >= 2
+trigger2 = Enemy,StateType = C || fvar(30) != 0
+trigger2 = Random <= var(59)*80 || var(59) >= 3
+statetype = C
+physics = C
+
+[State 153, Lo to Hi]; ガード方向の切り替え（下→上）
+type = StateTypeSet
+triggerall = Statetype = C
+trigger1 = var(59) <= 0 && Command != "holddown"
+trigger2 = var(59) >= 2
+trigger2 = Enemy,StateType != C && fvar(30) = 0
+trigger2 = Random <= var(59)*80 || var(59) >= 3
+statetype = S
+physics = S
+
+[State 153, CH]; 屈みガード受付へ
+type = ChangeState
+trigger1 = HitOver
+value = 131
+ctrl = 1
+
+;-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+[Statedef 154]; AGUARDHIT (shaking) 空中ガード接触（ヒットシェイク）
+type = A
+movetype= H
+physics = N
+velset = 0,0
+
+[State 154, 0]; アニメ変更
+type = ChangeAnim
+trigger1 = 1
+value = 152
+
+[State 154, 0]; ゲームパッドを振動させる
+type = ForceFeedback
+trigger1 = time = 0
+waveform = square
+time = 4
+
+[State 154, CH]; 反動ステートへ
+type = ChangeState
+trigger1 = HitShakeOver
+value = 155 ;AGUARDHIT2
+
+;-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+[Statedef 155]; AGUARDHIT2 (knocked away) 空中ガード接触（反動）
+type = A
+movetype= H
+physics = N
+anim = 152
+
+[State 155, 0]; ノックバック速度の指定？
+type = HitVelSet
+trigger1 = Time = 0
+x = 1
+y = 1
+
+[State 155, 0]; Ｙ速度の変更
+type = VelAdd
+trigger1 = 1
+y = Const(movement.yaccel)
+
+[State 155, 1]; コントロール
+type = CtrlSet
+trigger1 = Time = GetHitVar(ctrltime)
+value = 1
+
+[State 155, 2]; システム変数
+type = VarSet
+trigger1 = 1
+sysvar(0) = (pos y >= 0) && (vel y > 0)
+
+[State 155, 2]; Ｙ速度の指定／着地処理
+type = VelSet
+trigger1 = sysvar(0)
+y = 0
+
+[State 155, 2]; 座標指定／着地処理
+type = PosSet
+trigger1 = sysvar(0)
+y = 0
+
+[State 155, CH]; 立ちガード受付へ
+type = ChangeState
+triggerall = sysvar(0)
+trigger1 = var(59) <= 0 && Command = "holdback"
+trigger1 = Inguarddist
+trigger2 = var(59) <= 2
+trigger2 = InGuardDist
+trigger3 = var(59) >= 3
+trigger3 = InGuardDist || Helper(10010),InGuardDist || Helper(10020),InGuardDist
+value = 130
+
+[State 155, F1]; 動作終了
+type = ChangeState
+trigger1 = !sysvar(0)
+trigger1 = Ctrl
+value = 50
+
+[State 155, F2]; 着地
+type = ChangeState
+trigger1 = sysvar(0)
+value = 52
+
+;-------------------------------------------------------------------------------
+[Statedef 181]; 勝利ポーズ１
+;-------------------------------------------------------------------------------
+type = S
+ctrl = 0
+anim = 181
+velset = 0,0
+
+[State 181, 0]; 無敵判定
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;-------------------------------------------------------------------------------
+[Statedef 191]; 通常イントロ
+;-------------------------------------------------------------------------------
+type = S
+ctrl = 0
+anim = 191
+velset = 0,0
+
+[State 191, 0]; 特殊効果
+type = AssertSpecial
+trigger1 = 1
+flag = Intro
+
+[State 191, 0]; 特殊効果２
+type = AssertSpecial
+trigger1 = RoundNo = 1
+flag = NoMusic
+
+[State 191, CV]; ボイス
+type = PlaySnd
+trigger1 = AnimElem = 2,0
+value = s11,30
+channel = 0
+
+[State 191, SE]; 煙の音
+type = PlaySnd
+trigger1 = AnimElem = 4,0
+value = s21,120
+
+[State 191, EX1]; 煙のエフェクト
+type = Explod
+trigger1 = AnimElem = 4,0
+anim = 7200
+ID = 7200
+postype = p1
+pos = 0,0
+sprpriority = 3
+ownpal = 1
+removeongethit = 0
+removetime = 18
+bindtime = 18
+
+[State 191, F]; 動作終了
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 0
+
+;-------------------------------------------------------------------------------
+[Statedef 195]; 挑発
+;-------------------------------------------------------------------------------
+type = S
+movetype = I
+physics = S
+ctrl = 0
+anim = 195
+velset = 0,0
+
+[State 195, CV]; ボイス
+type = PlaySnd
+trigger1 = AnimElem = 3,0
+value = s11,20
+channel = 0
+
+[State 195, F]; 動作終了
+type = ChangeState
+trigger1 = AnimTime = 0
+trigger2 = Time = 0 && !SelfAnimExist(195) ;未作成だったら立ち動作へ
+value = 0
+ctrl = 1
+
+;-------------------------------------------------------------------------------
+[Statedef 5125]; クイックスタンディング
+;-------------------------------------------------------------------------------
+type = C
+movetype = I
+physics = C
+ctrl = 0
+anim = 5125
+
+[State 5125, 0]; 無敵時間
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 5
+
+[State 5125, 1]; 持続中の点滅
+type = PalFx
+trigger1= Time%6 = 1
+time = 3
+add = 30,30,30
+
+[State 5125, F]; 動作終了
+type = ChangeState
+trigger1 = Time >= 30 && var(59) <= 0 && Command != "holdc"
+trigger2 = Time >= 180
+value = 0
+ctrl = 1
+
+;-------------------------------------------------------------------------------
+[Statedef 5210]; HIT_AIRFALLRECOVER 空中受身
+;-------------------------------------------------------------------------------
+type    = A
+movetype= I
+physics = N
+anim = 5210
+ctrl = 0
+
+[State 5210, 1] ;Blink white
+type = PalFX
+trigger1 = Time = 0
+time = 3
+add = 128,128,128 ;256,256,256
+
+[State 5210, 1]
+type = PosFreeze
+trigger1 = Time = 0
+value = 4
+
+[State 5210, 2] ;Turn if not facing opponent
+type = Turn
+trigger1 = Time = 0
+trigger1 = p2dist X < -20
+
+[State 5210, 1] 
+type = VelMul
+trigger1 = Time = 4
+x = .8
+y = .8
+
+[State 5210, 1]
+type = VelAdd
+trigger1 = Time = 4
+y = -4.5
+
+[State 5210, 1] 
+type = VelMul
+trigger1 = Time = 4
+trigger1 = Vel Y > 0
+y = .5
+
+[State 5210, 1]
+type = VelAdd
+trigger1 = Time = 4
+trigger1 = Vel Y > -3
+y = -2
+
+[State 5210, 1]
+type = VelAdd
+trigger1 = Time = 4
+trigger1 = Vel Y > -2
+y = -1
+
+[State 5210, 2] ;Go up
+type = VelAdd
+triggerall = Time = 4
+trigger1 = var(59) <= 0 && Command = "holdup"
+y = -4
+
+[State 5210, 2] ;Go down
+type = VelAdd
+triggerall = Time = 4
+trigger1 = var(59) <= 0 && Command = "holddown"
+trigger2 = var(59) >= 2 && P2BodyDist Y > -40
+y = 5.5
+
+[State 5210, 2] ;Go fwd
+type = VelSet ;VelMul
+triggerall = Time = 4
+trigger1 = var(59) <= 0 && Command = "holdfwd"
+trigger2 = var(59) >= 2 && P2BodyDist X < 0
+x = 5.5
+
+[State 5210, 2] ;Go back
+type = VelSet
+triggerall = Time = 4
+trigger1 = var(59) <= 0 && Command = "holdback"
+trigger2 = var(59) >= 2 && P2BodyDist X > 0
+x = -5.5
+
+[State 5210, 3]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 2
+
+[State 5210, 4]
+type = CtrlSet
+trigger1 = Time = 30
+value = 1
+
+[State 5210, 5]
+type = VelAdd ;Gravity
+trigger1 = Time >= 4
+y = .35
+
+[State 5210, CV]; 追加
+type = PlaySnd
+trigger1 = Time = 1
+value = s12,3
+channel = 0
+
+[State 5210, 5] ;Land on ground
+type = ChangeState
+trigger1 = Vel Y > 0
+trigger1 = Pos Y >= 0
+value = 52 ;JUMP_LAND
+ctrl = 1
+
+[State 5210, CH]; 立ちガードへ移行(追加)
+type = ChangeState
+triggerall = Pos Y >= 5
+trigger1 = var(59) <= 0 && Command = "holdback"
+trigger1 = InGuardDist
+trigger2 = var(59) <= 2
+trigger2 = InGuardDist
+trigger3 = var(59) >= 3
+trigger3 = InGuardDist || Helper(10010),InGuardDist || Helper(10020),InGuardDist
+value = 130
+
+;[State 5210, F] ;Go AirFall （削除）
+;type = ChangeState
+;trigger1 = StateType = A
+;trigger1 = Time = 30
+;value = 50
+
+
+;
+
+;

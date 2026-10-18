@@ -1,0 +1,331 @@
+﻿;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;補助ヘルパー(先行入力等)
+
+[Statedef 10000]
+type = A
+movetype = I
+velset = 0,0       ;速度
+physics = N       ;摩擦、重力を無視
+anim = 10000
+
+[State 10000 透明化]
+type = assertspecial
+trigger1 = 1
+flag = invisible
+flag2 = noshadow
+
+[State 10000 無敵化]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;先行入力用ステート
+;コマンドが入力されたら、ヘルパー内の変数に一時保存。
+;もう一つの変数で、一時保存した条件が保持される時間を設定。先行入力解除時間でリセット。
+;本体cmdの各々の技の発動条件に、「二つの変数でコマンドが一時保存されてる間」を加えておく。
+
+;---------------------------------------------------------------------------
+;Var(0)にコマンドを一時保存。
+
+[State 10000,Cmd];ジョーカーディメイション
+type = VarSet
+trigger1 = !Var(0)
+trigger1 = Root,Command = "s_beam"
+var(0) = 3000
+
+[State 10000,Cmd];スケアクロウ
+type = VarSet
+trigger1 = !Var(0)
+trigger1 = Root,Command = "taiku_y"
+var(0) = 1060
+
+[State 10000,Cmd];スケアクロウ
+type = VarSet
+trigger1 = !Var(0)
+trigger1 = Root,Command = "taiku_x"
+var(0) = 1050
+
+[State 10000,Cmd];テニメントファンスター
+type = VarSet
+trigger1 = !Var(0)
+trigger1 = Root,Command = "keri_y"
+var(0) = 1110
+
+[State 10000,Cmd];テニメントファンスター
+type = VarSet
+trigger1 = !Var(0)
+trigger1 = Root,Command = "keri_x"
+var(0) = 1100
+
+[State 10000,Cmd];バタフライファントム
+type = VarSet
+trigger1 = !Var(0)
+trigger1 = Root,Command = "tama_y"
+var(0) = 1005
+
+[State 10000,Cmd];バタフライファントム
+type = VarSet
+trigger1 = !Var(0)
+trigger1 = Root,Command = "tama_x"
+var(0) = 1000
+
+;---------------------------------------------------------------------------
+;var(1)先行入力解除時間。
+
+[State 10000,必殺技入力受付]
+type = VarSet
+triggerall = !Var(1)
+trigger1 = Root,Command = "s_beam"
+trigger2 = Root,Command = "taiku_y"
+trigger3 = Root,Command = "taiku_x"
+trigger4 = Root,Command = "keri_y"
+trigger5 = Root,Command = "keri_x"
+trigger6 = Root,Command = "tama_y"
+trigger7 = Root,Command = "tama_x"
+var(1) = 10 ;先行入力解除時間
+
+;---------------------------------------------------------------------------
+;変数の処理。キャラごとの設定は不要。
+
+[State 10000,入力受付時間減算];セットされた受付時間を減算する
+type = VarAdd
+trigger1 = var(1) > 0
+var(1) = -1
+
+[State 10000,入力受付時間リセット];負数にならないようにリセット
+type = Varset
+trigger1 = var(1) < 0
+var(1) = 0
+
+[State 10000,入力受付リセット];受付時間リセットと同時に入力受付リセット
+type = Varset
+trigger1 = var(1) = 0
+var(0) = 0
+
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;AIめくりガード用ステート
+;ヘルパーのステート内で、本体から前後にずらした座標でInGuardDistに反応した場合にvarに代入。
+;後ろのは単純に、マイナス距離から判定。
+;前のは、相手から見て自分が後ろにいる時。振り向いた自分は、前側のヘルパーからガード反応を取得できる。
+
+[State 10000, Turn];振り向き
+Type = turn
+Trigger1 = Facing != root,Facing ;本体と異なる向きなら
+[State 10000, Posset in Root];座標Xを本体にあわせる
+Type = Posset
+Trigger1 = 1
+X = Root,Pos X
+
+[State 10000, Posadd 100];座標+100（本体から+100へずらす）
+Type = Posadd
+Trigger1 = 1
+X = 100
+[State 10000, Front GuardDist varset];前側のInGuardDistを代入
+Type = Varset
+var(40) = InGuardDist
+Trigger1 = 1
+
+[State 10000, Posadd -200];座標-200（本体から-100へずらす）
+Type = Posadd
+Trigger1 = 1
+X = -200
+[State 10000, Back GuardDist varset];後ろ側のInGuardDistを代入
+Type = Varset
+var(41) = InGuardDist
+Trigger1 = 1
+
+[State 10000, Posadd 100];座標+100（本体と同座標にもどす）
+Type = Posadd
+Trigger1 = 1
+X = 100
+;---------------------------------------------------------------------------
+
+
+
+
+;---------------------------------------------------------------------------
+; Override common states (use same number to override) :
+;---------------------------------------------------------------------------
+
+;[Statedef -1]
+;KeyCtrl=1状態で自身のステート内常時。
+
+;---------------------------------------------------------------------------
+; States that are always executed (use statedef -2)常時監視ステート。
+; コンボ補正等を入れる場合はここに記入すると思われる。
+;---------------------------------------------------------------------------
+[Statedef -2]
+;---------------------------------------------------------------------------
+
+[State -2, 空中ガードスイッチ]
+Type = AssertSpecial ;宣言した物を無限に持続させる
+Trigger1 = Alive && var(59) > 0 ;暴発しないようにAIのみ無効
+Flag = NoAirGuard ;空中ガードをTrigger1で示したAIの操作から除外する(AIは更にAI用のトリガーでも指定)
+
+;---------------------------------------------------------------------------
+
+[State -2, コンボ補正];ヒットの重みを取得
+type = VarSet
+trigger1 = p2movetype != H   ;変数をリセット
+var(3) = 0
+
+[State -2, コンボ補正]
+type = Varadd
+trigger1 = movehit
+trigger1 = enemynear(0),stateno = [5000,5099]
+var(3) = 1
+
+    [State -2,コンボ補正];計算式
+    Type = AttackMulSet     ;攻撃力設定
+    Trigger1 = var(3) < 49
+    Value = 1.00*(64-(var(3)))/64
+
+    [State -2,コンボ補正]
+    Type = AttackMulSet     ;攻撃力設定
+    Trigger1 = var(3) > 48
+    Value = 0.25
+
+[State -2, コンボ補正];飛び道具に渡す用
+type = VarSet
+trigger1 = p2movetype != H   ;変数をリセット
+var(4) = 0
+
+[State -2, コンボ補正];飛び道具に渡す用
+type = VarSet
+Trigger1 = var(3) < 49
+var(4) := (var(3))
+
+[State -2, コンボ補正]
+type = VarSet
+Trigger1 = var(3) > 48
+var(4) = 48
+
+;---------------------------------------------------------------------------
+
+[State -2, 技が触れた(スカらせ、削り補正用)]
+type = VarSet
+trigger1 = movetype != A   ;変数をリセット
+trigger2 = stateno = 0
+var(2) = 0
+
+[State -2, 技が触れた(スカらせ、削り補正用)]
+type = VarSet
+triggerall = movecontact
+trigger1 = stateno =1051 && AnimElemTime(1) >= 1 && AnimElemTime(3) < 1
+trigger2 = stateno =1061 && AnimElemTime(1) >= 1 && AnimElemTime(3) < 1
+trigger3 = stateno =1101 && AnimElemTime(3) >= 1 && AnimElemTime(4) < 1
+trigger4 = stateno =1111 && AnimElemTime(3) >= 1 && AnimElemTime(4) < 1
+var(2) = 1
+
+;---------------------------------------------------------------------------
+
+[State -2, 飛び道具のけぞり速度]
+type = VarSet
+trigger1 = 1
+fvar(1) = -12* (800-(P2BodyDist X)) /800
+
+[State -2, 飛び道具のけぞり速度]
+type = VarSet
+trigger1 = fvar(1) >-2
+fvar(1) = -2
+
+;---------------------------------------------------------------------------
+
+[State -2, フレーム毎加算(時間で威力を変更)]
+type = VarSet
+trigger1 = movetype != A   ;変数をリセット
+trigger2 = stateno = 0
+var(10) = 0
+
+[State -2, フレーム毎加算(時間で威力を変更)]
+type = Varadd
+triggerall = var(10) < 11
+trigger1 = stateno =1051 && AnimElemTime(1) >= 0 && AnimElemTime(3) < 0
+trigger2 = stateno =1061 && AnimElemTime(1) >= 0 && AnimElemTime(3) < 0
+var(10) = 1
+
+;---------------------------------------------------------------------------
+
+[State -2, テニメントファンスター制限] ;変数をリセット
+type = VarSet
+trigger1 = stateno = [140,155]
+trigger1 = time > 10
+trigger2 = stateno != [1000,2999]
+var(11) = 0
+
+[State -2, テニメントファンスター制限]
+type = VarSet
+trigger1 = stateno =1100 && Pos Y < -1
+trigger2 = stateno =1110 && Pos Y < -1
+trigger3 = var(13) > 0
+var(11) = 1
+
+;---------------------------------------------------------------------------
+[State -2, 自分くらい時(ヘルパー消滅用)]
+type = VarSet
+trigger1 = movetype != H   ;変数をリセット
+trigger2 = stateno = 0
+var(12) = 0
+
+[State -2, 自分くらい時(ヘルパー消滅用)]
+type = VarSet
+trigger1 = movetype = H
+var(12) = 1
+
+;---------------------------------------------------------------------------
+
+[State -2, ガーキャン必殺技用] ;変数をリセット
+type = VarSet
+trigger1 = stateno = [140,155]
+trigger1 = time > 10
+trigger2 = stateno != [1000,2999]
+trigger3 = movetype = I
+var(13) = 0
+
+[State -2, ガーキャン必殺技用]
+type = VarSet
+trigger1 = stateno = [140,155]
+trigger1 = time < 11
+var(13) = 1
+
+
+
+;---------------------------------------------------------------------------
+
+[State -2, 補助ヘルパー発射]
+type = Helper       ;Helperをめくりガード判定用として使う
+TriggerAll = !NumHelper(10000) ;ヘルパーの有無を確認
+trigger1 = !Ishelper;自分がヘルパーではない時
+trigger1 = Alive;自分が生きている時
+trigger1 = RoundState < 3;イントロ～戦闘中
+helpertype = normal
+name = "mekuri"       ;任意の名前
+ID = 10000
+stateno = 10000       ;飛び道具のステートナンバー
+pos = 0,0       ;出現座標
+postype = p1       ;出現座標の基準(プレイヤー1)
+facing = 1        ;相手の方を向く
+keyctrl=0
+pausemovetime=2147483647
+supermovetime=2147483647
+ignorehitpause = 1
+
+;念のため関係無いステートに行かないように↓も付けておく
+[State -2, helper]
+type = changestate
+trigger1 = Ishelper(10000)
+trigger1 = !(stateno = 10000)
+value = 10000
+ignorehitpause = 1
+
+;---------------------------------------------------------------------------
+
+
+;[Statedef -3]は別ファイルでAIなどに使用。
+

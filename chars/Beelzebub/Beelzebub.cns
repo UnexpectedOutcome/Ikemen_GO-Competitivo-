@@ -1,0 +1,274 @@
+; これはカンフーマンのＣＮＳファイルです。
+; コメントを参考にしてＣＮＳを理解してください
+
+; これはKFMの定数と状態のファイルです。
+; 絶対記入し、削除はしないでください。
+[Data]
+  ;体力ゲージの初期値
+life = 1200
+power = 9000
+  ;攻撃力（これ以上に設定すると強くなる）
+attack = 110
+  ;防御力（これ以上に設定すると強くなる）
+defence = 110
+  ;コンボをくらっている時にあがる防御力
+fall.defence_up = 50
+  ;倒れてから起上がるまでのフレーム数
+liedown.time = 60
+  ;空中でどれだけコンボが繋がるか（高くすると無限コンボになるので注意）
+airjuggle = 6001
+  ;hitdefで設定していない時の基本ヒットスパークナンバー
+sparkno = 6002
+  ;設定してない時のガードナンバー
+guard.sparkno = 40
+  ;KOした時に声にエコーをかけるか（１でＯＮ）
+KO.echo = 0
+ volume = 0
+  IntPersistIndex = 60
+FloatPersistIndex = 40
+
+[Size]
+xscale = 0.5           ;水平方向の縮尺（通常１）
+yscale = 0.5           ;垂直方向の縮尺（通常１）
+ground.back = 60     ;キャラの幅(後方,地上)
+ground.front = 46    ;キャラの幅(前方,地上)
+air.back = 12        ;キャラの幅(後方,空中)
+air.front = 12       ;キャラの幅(前方,空中)
+height = 60          ;キャラの高さ
+attack.dist = 160    ;攻撃をした時相手がガード体制に入る最低距離
+proj.attack.dist = 90;攻撃をした時相手がガード体制に入る最低距離（飛び道具）
+proj.doscale = 1     ;上で設定した縮尺を飛び道具にも適用するか（１でＯＮ）   
+head.pos = -5, -90   ;頭の大体の座標
+mid.pos = -5, -60    ;体の中心の大体の座標
+shadowoffset = 0     ;影の垂直方向のオフセット
+draw.offset = 0,1     ;キャラ描画表示位置（Ｘ軸,Ｙ軸）
+
+[Velocity]
+walk.fwd  = 2.4      ;前進の速度
+walk.back = -2.2     ;後退の速度
+run.fwd  = 4.6, 0    ;前ダッシュの速度（ホップする時はyを-にする）
+run.back = -4.5,-3.8 ;後ダッシュの速度（ホップする時はyを-にする）
+jump.neu = 0,-8.8    ;垂直ジャンプの速度
+jump.back = -2.55    ;後ジャンプの速度
+jump.fwd = 2.5       ;前ジャンプの速度
+runjump.back = -2.55,-8.1 ;後ダッシュしながらのジャンプ速度(オプション)
+runjump.fwd = 4,-9.1      ;前ダッシュしながらのジャンプ速度(オプション)
+airjump.neu = 0,-9.1      ;２段ジャンプ以降の垂直ジャンプの速度(オプション)
+airjump.back = -2.55      ;２段ジャンプ以降の後ジャンプの速度(オプション)
+airjump.fwd = 2.5         ;２段ジャンプ以降の前ジャンプの速度
+
+[Movement]
+airjump.num = 1      ;空中でジャンプする回数
+airjump.height = 35  ;空中でジャンプする最低限の高さ
+yaccel = .44         ;重力
+stand.friction = .85  ;立ち状態の摩擦係数
+crouch.friction = .82 ;屈み状態の摩擦係数
+
+;---------------------------------------------------------------------------
+; ステイトの解説
+; [Statedef STATENO]
+; type = ?      S/C/A/L  Ｓ：立ち/Ｃ：屈み/Ａ：空中/Ｌ：ダウン
+; movetype = ?  I/A/H    Ｉ：通常状態/Ａ：攻撃状態/Ｈ：ダメージをくらってる状態
+; physics = ?   S/C/A/N  Ｓ：立ち/Ｃ：屈み/Ａ：空中/Ｎ：無し
+; juggle = ?             その攻撃に使うジャグル数
+;
+
+
+
+
+;var
+;20 AI用
+;21 イントロをランダム決定
+;22 イントロ跳ね飛ばしをランダム決定
+;23 イントロ跳ね飛ばし管理
+;24 イントロユリ
+;25
+
+;30 馬上系判別
+;50 AI用
+;---------------------------------------------------------------------------
+; タイムオーバーで負けた時
+[Statedef 170]
+type = S
+ctrl = 0
+anim = 170
+velset = 0,0
+
+
+[State 170]
+type = PlaySnd
+trigger1 = Time = 3
+value = 11, 0
+
+
+[State 170, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;---------------------------------------------------------------------------
+; 勝った動作
+[Statedef 180]
+type = S
+
+[State 180, 1]
+type = ChangeState
+trigger1 = Time = 0
+trigger1 = MatchOver = 0
+value = 181
+
+[State 180, 1]
+type = ChangeState
+trigger1 = Time = 0
+trigger1 = MatchOver = 1
+value = 182
+
+[State 191, 2] ;Assert this until you want "round 1, fight" to begin
+type = AssertSpecial
+trigger1 = Time = [0,240]
+flag = roundnotover
+
+;---------------------------------------------------------------------------
+; 勝った動作1
+[Statedef 181]
+type = S
+ctrl = 0
+anim = 181
+velset = 0,0
+
+[State 181]
+type = PlaySnd
+trigger1 = Time = 3
+value = 3, 5
+
+[State 181, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 191, 2] ;Assert this until you want "round 1, fight" to begin
+type = AssertSpecial
+trigger1 = Time = [0,240]
+flag = roundnotover
+
+;---------------------------------------------------------------------------
+; 勝った動作２
+[Statedef 182]
+type = S
+ctrl = 0
+anim = 181
+
+[State 181, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 191, 透明化]
+type = AssertSpecial
+trigger1 = Time = [3,3000]
+flag = Invisible
+
+
+
+
+[State 191, 2] 
+type = AssertSpecial
+trigger1 = Time = [0,240]
+flag = roundnotover
+
+[State 191];----------------------------走り出す
+type = Explod
+trigger1 = time = 3
+anim = 182
+ID = 0
+facing = 1       
+vfacing = 1   
+removetime = 999
+bindtime = 1  
+pos = 0,0
+postype = p1
+;random = 3,5      
+scale = 0.5,0.5    
+sprpriority = 0    
+vel = 0,-1          
+accel = 0.1,0       
+removeongethit = 1 
+ownpal = 0  
+ignorehitpause = 1
+persistent = 0 
+
+;---------------------------------------------------------------------------
+; Introduction
+
+;イントロ選択
+[Statedef 190]
+type = S
+ctrl = 0
+anim = 0
+velset = 0,0
+
+
+
+[State 190, ]
+type = ChangeState
+trigger1 = Time = 0
+;trigger1 = Var(24) = 0
+;trigger1 = var(21) = [0,2]
+value = 191
+
+
+;---------------------------------------------------------------------------
+[Statedef 191];危険な街
+type = S
+ctrl = 0
+anim = 191
+velset = 0,0
+
+[State 192, イントロ用フラグ]
+type = AssertSpecial
+trigger1 = 1
+flag = Intro
+
+;[State 192, 透明化]
+[State 191]
+type = PlaySnd
+trigger1 = Time = 50
+value = 0, 3
+
+[State 191, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+
+
+;---------------------------------------------------------------------------
+; 挑発の動作
+[Statedef 195]
+type = S
+ctrl = 0
+anim = 195
+velset = 0,0
+poweradd= 300
+movetype = I
+physics = S
+sprpriority = 2
+
+[State 195]
+type = PlaySnd
+trigger1 = Time = 0
+value = 40, 7
+
+[State 191]
+type = PlaySnd
+trigger1 = Time = 42
+value = 0, 3
+
+[State 195, 2]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+

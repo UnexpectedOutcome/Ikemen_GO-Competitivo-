@@ -1,0 +1,2407 @@
+
+; VARIABLES USED:
+; var(0) : used in figuring out closest devilmouse
+; var(1) : used in figuring out closest devilmouse
+; var(2) : devilmouse - random decision
+; var(3) : devilmouse - life
+; var(4) : devilmouse - how many fireballs should i throw
+; var(5) : devilmouse - how many fireballs have i thrown
+; var(6) : devilmouse - how long should i do this action
+; var(9) : number for the next devilmouse
+; var(10): calculation of how many seconds round has gone on for
+; var(22): root - total devil mice out at the moment
+; var(23): root - maximum devil mice that can be out at once
+; var(24): root - am i spawning a devilmouse
+; var(30): root - How long before should spit out another mouse
+; var(47): root - 100s digit
+; var(48): root -  10s digit
+; var(49): root -   1s digit
+; var(52): root - update explods?
+; var(53): root - what mode is the minigame in
+; var(55): root - Is enemy a Nazrin
+; var(32): root - how many must be killed (set at beginning)
+; var(57): root - how many devilmice left / how many you've killed
+; var(58): root - what mode is the minigame in
+
+; fvar(32): root: copy of var(32)
+; fvar(33): root: copy of var(57)
+
+; Constants and state file.
+; There are comments scattered through this file, so you may like to
+; take a look if would like to learn more about the cns.
+
+[Data]
+life = 1000			;Amount of life to start with
+attack = 100		;attack power (more is stronger)
+defence = 100		;defensive power (more is stronger)
+fall.defence_up = 50	;Percentage to increase defense everytime player is knocked down
+liedown.time = 60		;Time which player lies down for, before getting up
+airjuggle = 15		;Number of points for juggling
+sparkno = 2			;Default hit spark number for HitDefs
+guard.sparkno = 40	;Default guard spark number
+KO.echo = 0			;1 to enable echo on KO
+volume = 0			;Volume offset (negative for softer)
+IntPersistIndex = 58
+FloatPersistIndex = 40
+
+[Size]
+xscale = 0.5         ;Horizontal scaling factor.
+yscale = 0.5          ;Vertical scaling factor.
+ground.back = 15     ;Player width (back, ground)
+ground.front = 16    ;Player width (front, ground)
+air.back = 12        ;Player width (back, air)
+air.front = 12       ;Player width (front, air)
+height = 60          ;Height of player (for opponent to jump over)
+attack.dist = 160    ;Default attack distance
+proj.attack.dist = 90 ;Default attack distance for projectiles
+proj.doscale = 0     ;Set to 1 to scale projectiles too
+head.pos = -5, -90   ;Approximate position of head
+mid.pos = -5, -60    ;Approximate position of midsection
+shadowoffset = 0     ;Number of pixels to vertically offset the shadow
+draw.offset = 0,0    ;Player drawing offset in pixels (x, y)
+
+[Velocity]
+walk.fwd  = 2.4		;Walk forward
+walk.back = -2.2		;Walk backward
+run.fwd  = 4.6, 0		;Run forward (x, y)
+run.back = -4.5,-3.8	;Hop backward (x, y)
+jump.neu = 0,-8.4		;Neutral jumping velocity (x, y)
+jump.back = -2.55		;Jump back Speed (x, y)
+jump.fwd = 2.5		;Jump forward Speed (x, y)
+runjump.back = -2.55,-8.1;Running jump speeds (opt)
+runjump.fwd = 4,-8.1	;.
+airjump.neu = 0,-8.1	;.
+airjump.back = -2.55	;Air jump speeds (opt)
+airjump.fwd = 2.5		;.
+
+[Movement]
+airjump.num = 1		;Number of air jumps allowed (opt)
+airjump.height = 35	;Minimum distance from ground before you can air jump (opt)
+yaccel = .44		;Vertical acceleration
+stand.friction = .85	;Friction coefficient when standing
+crouch.friction = .82	;Friction coefficient when crouching
+
+;---------------------------------------------------------------------------
+; Format:
+; [Statedef STATENO]
+; type = ?      S/C/A/L  stand/crouch/air/liedown
+; movetype = ?  I/A/H    idle/attack/gethit
+; physics = ?   S/C/A/N  stand/crouch/air/none
+; juggle = ?             air juggle points move requires
+;
+; [State STATENO, ?]     ? - any number you choose
+; type = ?
+; ...
+
+
+;=========================
+;Base State
+[Statedef 0]
+type=S
+anim=0
+
+[State 0,d] ; if you're a helper turn into a devilmouse
+type=ChangeState
+trigger1=ishelper
+value=6205
+ctrl=0
+
+[State 170, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State -2]
+type = posset
+trigger1 = RoundState > 2
+x= ifelse(teamside = 1, -99999, 99999)
+
+[State 0,d]
+type=ChangeState
+trigger1=Roundstate=2
+value=1
+ctrl=0
+[state 0]
+type = changestate
+trigger1=!alive
+value=5050
+
+;=========================
+;Control State
+[Statedef 1]
+type=S
+anim=0
+
+;[State -2]
+;type = posset
+;trigger1 = var(53) != 0 && RoundState >= 2
+;x= ifelse(teamside = 1, -99999, 99999)
+
+
+
+
+[state 0, test]
+type = null
+triggerall = var(0) := 0 || 1
+triggerall = var(1) := 0 || 1
+trigger1 = var(1) := ifelse( helper(6200+var(1)), p2dist x > helper(6200+var(0)), p2dist x, var(0), var(1))
+trigger1 = (var(0) := var(0) + 1) && 0
+trigger2 = var(1) := ifelse( helper(6200+var(1)), p2dist x > helper(6200+var(0)), p2dist x, var(0), var(1))
+trigger2 = (var(0) := var(0) + 1) && 0
+trigger3 = var(1) := ifelse( helper(6200+var(1)), p2dist x > helper(6200+var(0)), p2dist x, var(0), var(1))
+trigger3 = (var(0) := var(0) + 1) && 0
+trigger4 = var(1) := ifelse( helper(6200+var(1)), p2dist x > helper(6200+var(0)), p2dist x, var(0), var(1))
+trigger4 = (var(0) := var(0) + 1) && 0
+;var(1) is the id of the nearest helper
+
+[State 1, PosSet] ; latch on to nearest devilmouse
+type = PosSet
+trigger1 = var(22) > 0 ; if there are any devilmice out
+x = (Helper(6200+var(1)), pos X)
+
+[State 1, PosSet] ; no devilmice, latch onto spawner
+type = PosSet
+trigger1 = var(22) = 0 ; if there are no devilmice out
+x = (Helper(6000), pos X)
+
+[State 1, varset] ; reset spawning var
+type = VarSet
+trigger1 = time = 0
+v = 24
+value = 0
+
+[State 170, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 1, VarSet]
+type = VarSet
+trigger1 = time = 0
+v = 30
+value = (random%60 + 30) ; 0.5-1.5 sec spawn rate
+
+[State 190]
+type = Helper
+trigger1=!Time&&!Numhelper(6000)
+ID=6000
+name="Devil Machine"
+stateno=6000
+pos=100,0
+postype = left
+helpertype = normal
+;ownpal = 1
+
+[State 0]
+type=Changestate
+trigger1 = time >= var(30)
+trigger1 = var(22) < var(23)
+value = 2
+
+[State 0]
+type=Changestate
+trigger1=Time>5&&Roundstate!=2
+value=0
+ctrl=1
+
+;=========================
+;Control State Spawn Mouse
+[Statedef 2]
+type=S
+anim=0
+
+[State 1, varset]
+type = VarSet
+trigger1 = time = 0
+v = 24
+value = 1
+
+[state 0, test]
+type = null
+triggerall = var(0) := 0 || 1
+triggerall = var(1) := 0 || 1
+trigger1 = var(1) := ifelse( helper(6200+var(1)), p2dist x > helper(6200+var(0)), p2dist x, var(0), var(1))
+trigger1 = (var(0) := var(0) + 1) && 0
+trigger2 = var(1) := ifelse( helper(6200+var(1)), p2dist x > helper(6200+var(0)), p2dist x, var(0), var(1))
+trigger2 = (var(0) := var(0) + 1) && 0
+trigger3 = var(1) := ifelse( helper(6200+var(1)), p2dist x > helper(6200+var(0)), p2dist x, var(0), var(1))
+trigger3 = (var(0) := var(0) + 1) && 0
+trigger4 = var(1) := ifelse( helper(6200+var(1)), p2dist x > helper(6200+var(0)), p2dist x, var(0), var(1))
+trigger4 = (var(0) := var(0) + 1) && 0
+;var(1) is the id of the nearest helper
+
+[State 1, PosSet] ; latch onto spawner
+type = PosSet
+trigger1 = 1
+x = (Helper(6000), pos X)
+y = (Helper(6000), pos Y)
+
+[State 190]
+type = Helper
+trigger1 = time = 30
+ID=6200+var(9)
+name="DevilMouse"
+stateno=6200
+pos=90,-40
+postype = p1
+helpertype = player
+keyctrl = 0
+facing = 1
+;ownpal = 1
+
+[State 170, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 0]
+type=Changestate
+trigger1=time = 60
+value = 1
+
+;---------------------------------------------------------------------------
+; Lose by Time Over
+; CNS difficulty: basic
+[Statedef 170]
+type = S
+ctrl = 0
+anim = 170
+velset = 0,0
+
+[State 170, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State -2] ; the life set
+type = lifeset
+trigger1 = roundstate > 2 && enemy,alive
+value = 0
+
+;---------------------------------------------------------------------------
+; Win state decider
+; CNS difficulty: basic
+[Statedef 180]
+type = S
+
+[State 180, 1]
+type = ChangeState
+trigger1 = Time = 0
+value = 181
+
+;---------------------------------------------------------------------------
+; Win pose 1
+; CNS difficulty: basic
+[Statedef 181]
+type = S
+ctrl = 0
+anim = 180
+velset = 0,0
+
+[State 181, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;=========================
+;Intro
+[Statedef 190]
+type=S
+anim=0
+
+[State 190, 1] 
+type = varrandom
+trigger1 = time = 1
+trigger1 = var(53) = 1
+v= 57
+range = 10,20
+;range = 1,2
+
+[State 190, 1] 
+type = varset
+trigger1 = time = 1
+trigger1 = var(53) = 1
+v= 32
+value = var(57)
+
+[State -2];百
+type = varset
+trigger1 = time = 1
+v= 47
+value = floor(var(57)*0.01)
+
+[State -2];十
+type = varset
+trigger1 = time = 1
+v= 48
+value = floor((var(57)-((100*var(47))+var(49)))*0.1)
+
+[State -2];一
+type = varset
+trigger1 = time = 1
+v= 49
+value = var(57)-(10*floor(var(57)*0.1))
+
+[State 190]
+type = Helper
+trigger1=!Time&&!Numhelper(6000)
+ID=6000
+name="Devil Machine"
+stateno=6000
+pos=0,0
+helpertype = normal
+;ownpal = 1
+
+[State 1000, 0] ;sfx
+type = PlaySnd
+trigger1 = time = 0
+value = 41, 0
+abspan = 0
+
+[State 190]
+type=AssertSpecial
+trigger1=1
+flag=Intro
+
+[State 190]
+type=ChangeState
+trigger1=time>50
+value=0
+ctrl=1
+
+;-------------------------
+; HITA_UP (initial going up)
+[Statedef 5030]
+type    = S
+velset=0,0
+
+[State 0]
+type=Changestate
+trigger1=Time
+value=5050
+
+;-------------------------
+; HITA_FALL (knocked up, falling)
+[Statedef 5050];derrotado
+type    = S
+
+[State 5050]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;---------------------------------------------------------------------------
+; HIT_LIEDEAD
+[Statedef 5150]
+type    = L
+movetype= H
+physics = N
+sprpriority = -3
+
+[State 5050]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 0,d] ; if you're a helper go away
+type=DestroySelf
+trigger1=ishelper
+
+[State 0,d] ; if you're still alive and somehow ended up here, go back to 0
+type=ChangeState
+trigger1=life > 0
+value=0
+ctrl=1
+
+[State 5150, AssertSpecial] ; if truely dead, be invisible and noshadow
+type = AssertSpecial
+trigger1 = life = 0
+flag = Invisible
+flag2 = noshadow
+
+;------------------------
+[Statedef 5500];Continue?
+type = S
+ctrl = 0
+velset = 0,0
+
+[State 5050]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;-------------------------
+;Initialize
+[Statedef 5900]
+type = S
+
+[State 5900, 1];intvar
+type = VarRangeSet
+trigger1 = roundno = 1
+value = 0
+
+[State 5900, 2];floatvar
+type = VarRangeSet
+trigger1 = roundno = 1
+fvalue = 0
+
+[State 5900, 3];Intro
+type = ChangeState
+trigger1 = roundno>= 1
+value = 190
+
+;=========================
+;Devil Machine idle
+[Statedef 6000]
+type=S
+physics=N
+anim=6000
+sprpriority = -1
+
+[State 682,1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 190]
+type = Helper
+trigger1=!Time&&!Numhelper(6100)
+ID=6100
+name="SpaceMouse"
+stateno=6100
+pos=5,-54
+;ownpal = 1
+helpertype = normal
+
+[State 6000, ChangeState] ; spawning
+type = ChangeState
+trigger1 = root, var(24) = 1
+value = 6001
+
+[State 6000, ChangeState] ; break
+type = ChangeState
+trigger1 = root, life = 0
+value = 6002
+
+;=========================
+;Devil Machine spawn
+[Statedef 6001]
+type=S
+physics=N
+anim=6001
+sprpriority = -1
+
+;[State 1000, 0] ;sfx
+;type = PlaySnd
+;trigger1 = time = 0
+;value = 42, 0
+;abspan = 0
+
+;[State 6001, varadd]
+;type = VarAdd
+;trigger1 = time = 0
+;v = 9
+;value = 1
+
+[State 682,1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 6000, ChangeState] ; back to idle
+type = ChangeState
+trigger1 = root, var(24) = 0
+value = 6000
+
+[State 6000, ChangeState] ; break
+type = ChangeState
+trigger1 = root, life = 0
+value = 6002
+
+;=========================
+;Devil Machine break
+[Statedef 6002]
+type=S
+physics=N
+anim=6002
+sprpriority = -1
+
+[State 682,1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+;=========================
+;SpaceMouse idle
+[Statedef 6100]
+type=S
+physics=N
+anim=6100
+sprpriority = 0
+
+[State 682,1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 6100, ChangeAnim]
+type = ChangeAnim
+trigger1 = anim = 6100
+trigger1 = random < 10
+value = 6101
+
+[State 6100, ChangeAnim]
+type = ChangeAnim
+trigger1 = anim = 6101
+trigger1 = animtime = 0
+value = 6100
+
+[State 6100, ChangeState] ; cry
+type = ChangeState
+trigger1 = roundstate > 2
+trigger1 = root, life > 0
+value = 6102
+
+[State 6100, ChangeState] ; spawning
+type = ChangeState
+trigger1 = root, var(24) = 1
+value = 6101
+
+[State 6000, ChangeState] ; Freedom
+type = ChangeState
+trigger1 = root, life = 0
+value = 6105
+
+;=========================
+;SpaceMouse shock
+[Statedef 6101]
+type=S
+physics=N
+anim=6103
+sprpriority = 0
+
+[State 682,1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+;[State 6101, palfx]
+;type = PalFx
+;trigger1 = time = 0
+;time = 60
+;add = 100,100,180 
+;sinadd = -80,-80,-80,10
+;color = 0 
+;invertall = 1
+
+[State 6100, ChangeState] ; back to idle
+type = ChangeState
+trigger1 = root, var(24) = 0
+value = 6100
+
+[State 6000, ChangeState] ; Freedom
+type = ChangeState
+trigger1 = root, life = 0
+value = 6105
+
+;=========================
+;SpaceMouse cry
+[Statedef 6102]
+type=S
+physics=N
+anim=6102
+sprpriority = 0
+
+[State 682,1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 6000, ChangeState] ; Freedom
+type = ChangeState
+trigger1 = root, life = 0
+value = 6105
+
+[State 1000, 0] ;sfx
+type = PlaySnd
+trigger1 = time = 0
+value = 41, 1
+abspan = 0
+
+;=========================
+;SpaceMouse Freedom
+[Statedef 6105]
+type=S
+physics=N
+anim=6100
+sprpriority = 1
+
+[State 6100, ChangeAnim]
+type = ChangeAnim
+trigger1 = time = 120
+value = 6104
+
+[State 6100, Velset]
+type = VelSet
+trigger1 = time = 120
+x = 2
+y = -3
+
+[State 0, VelAdd]
+type = VelAdd
+trigger1 = Pos Y < 0
+trigger1 = time > 120
+y = 0.3
+
+[State 682: VelSet]
+type = VelSet
+trigger1 = Pos Y >= 0
+y = 0
+x = 0
+
+[State 1000, 0] ;sfx
+type = PlaySnd
+trigger1 = time = 120
+value = 42, 2
+abspan = 0
+
+[State 1000, 0] ;sfx
+type = PlaySnd
+trigger1 = time = 240
+value = 41, 2
+abspan = 0
+
+[State 6100, ChangeAnim]
+type = ChangeAnim
+trigger1 = Pos Y >= 0
+trigger1 = anim = 6104
+value = 6105
+
+[State 6105, Explod]
+type = Explod
+trigger1 = anim = 6105
+trigger1 = time%30 = 0
+anim = 6106
+id = 6106
+pos = 0, 5
+postype = p1
+facing = 1
+bindtime = 1
+removetime = 90
+ownpal = 1
+vel = -1.0+(random%20 * 0.1),-1
+scale = 0.5,0.5
+
+;=========================
+;DevilMouse spawn
+[Statedef 6200]
+type=S
+physics=N
+anim=6200
+sprpriority = 3
+velset = -2.0+(random%50 * 0.1),-4-random%3
+
+[State 1300, varset]
+type = parentvarset
+trigger1 = time = 0 && roundstate <= 2
+v= 52
+value = 1
+
+[State 1300, varset]
+type = parentvarset
+trigger1 = time = 1
+v= 52
+value = 0
+
+[State 1106, 0]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[State 1106, LifeSet(warrior)]
+type = varset
+trigger1 = time = 0
+v= 3
+value = (random%50 + 125)
+
+[State 682,1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 0, VelAdd]
+type = VelAdd
+trigger1 = Pos Y < 0
+y = 0.3
+
+[State 682: VelSet]
+type = ChangeState
+trigger1 = Pos Y >= 0
+value = 6201
+
+[State 200, AngleDraw]
+type = AngleDraw
+trigger1 = 1
+value = (((time)%18)*20)
+
+[State 1110, 0]
+type = Varrandom
+trigger1 = time = 0
+v = 4
+range = 3,6
+
+;=========================
+;DevilMouse spawn 2
+[Statedef 6201]
+type=S
+physics=N
+anim=6201
+sprpriority = 3
+velset = 0,0
+
+[State 1106, 0]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[State 6201, PosSet]
+type = PosSet
+trigger1 = time = 0
+y = 0
+
+[State 682,1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 682: VelSet]
+type = ChangeState
+trigger1 = time >= 60
+value = 6202
+
+;=========================
+;DevilMouse spawn 3
+[Statedef 6202]
+type=S
+physics=N
+anim=6202
+sprpriority = 3
+velset = 0,0
+
+[State 1000, 0] ;sfx
+type = PlaySnd
+trigger1 = time = 0
+value = 40, 10
+abspan = 0
+
+[State 1106, 0]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[State 682,1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 682: VelSet]
+type = ChangeState
+trigger1 = animtime = 0
+value = 6205
+
+;=========================
+;DevilMouse idle
+[Statedef 6205]
+type=S
+physics=N
+anim=6205
+sprpriority = 2
+velset = 0,0
+
+[State 1000, 0] ;sfx
+type = PlaySnd
+trigger1 = time%60 = 0
+value = 40, random%10
+abspan = 0
+
+[State 1106, 1]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6240
+
+[State 1106, 0]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[State 1110, 0]
+type = Varrandom
+trigger1 = time >= 0
+v = 2
+persistent = 20
+
+[State 1111, 16]
+type = changestate
+trigger1 = var(2) >= 300
+trigger1 = P2BodyDist X < -30
+value = 6206
+ctrl = 0
+
+[State 1111, 16] ; forward
+type = changestate
+trigger1 = var(2) < 300
+trigger1 = var(2) >= 100
+value = 6207
+ctrl = 0
+
+;[State 1111, 16] ; backward
+;type = changestate
+;trigger1 = var(2) < 200
+;trigger1 = var(2) >= 100
+;value = 6208
+;ctrl = 0
+
+[State 1111, 16] ; throw fireballs
+type = changestate
+trigger1 = var(2) < 40
+value = 6210
+ctrl = 0
+
+[State 1111, 16] ; die
+type = changestate
+trigger1 = root, life = 0
+value = 6300
+ctrl = 0
+
+;=========================
+;DevilMouse turn
+[Statedef 6206]
+type=S
+physics=N
+anim=6205
+sprpriority = 2
+velset = 0,0
+
+[State 1106, 0]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[State 1112, 0]
+type = turn
+trigger1 = time = 0
+
+[state 1112, 1]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6240
+
+[State 1112, 2]
+type = changestate
+trigger1 = root,life = 0
+value = 6300
+ctrl = 0
+
+[State 1112, 2]
+type = changestate
+trigger1 = time = 1
+value = 6205
+
+;=========================
+;DevilMouse Move Forward
+[Statedef 6207]
+type=S
+physics=N
+anim = 6207
+sprpriority = 2
+velset = 1,0
+
+[State 1000, 0] ;sfx
+type = PlaySnd
+trigger1 = time%60 = 0
+value = 40, random%10
+abspan = 0
+
+[State 1106, 0]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[State 1110, 0]
+type = Varrandom
+trigger1 = time = 0
+v = 6
+range = 30,60
+
+[state 1112, 1]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6240
+
+[State 1112, 2]
+type = changestate
+trigger1 = root,life = 0
+value = 6300
+ctrl = 0
+
+[State 1112, 2] ; back to idle
+type = changestate
+trigger1 = time = var(6)
+value = 6205
+
+;=========================
+;DevilMouse Move Back
+[Statedef 6208]
+type=S
+physics=N
+anim = 6208
+sprpriority = 2
+velset = -1,0
+
+[State 1000, 0] ;sfx
+type = PlaySnd
+trigger1 = time%60 = 0
+value = 40, random%10
+abspan = 0
+
+[State 1106, 0]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[State 1110, 0]
+type = Varrandom
+trigger1 = time = 0
+v = 6
+range = 30,60
+
+[state 1112, 1]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6240
+
+[State 1112, 2]
+type = changestate
+trigger1 = root,life = 0
+value = 6300
+ctrl = 0
+
+[State 1112, 2] ; back to idle
+type = changestate
+trigger1 = time = var(6)
+value = 6205
+
+;=========================
+;DevilMouse throw fireball
+[Statedef 6210]
+type=S
+movetype = A
+physics=N
+anim = 6210
+sprpriority = 2
+velset = 0,0
+
+[State 1106, 0]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[state 1112, 1]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6240
+
+[State 1112, 2]
+type = changestate
+trigger1 = root,life = 0
+value = 6300
+ctrl = 0
+
+[State 6210, varadd]
+type = VarAdd
+trigger1 = time = 0
+v = 5
+value = 1
+
+[State 1000, 0] ;sfx
+type = PlaySnd
+trigger1 = time%30 = 0
+value = 40, random%10
+abspan = 0
+
+[State 1000, 5-1]
+Type = Projectile
+IgnoreHitPause = 1
+Trigger1 = time = 31
+ProjAnim = 6212
+ProjHitAnim = -1
+ProjPriority = 1
+ProjShadow = -1
+ProjHits = 1
+ProjID = 6212
+OffSet = 20,-31
+projscale = 0.5,0.5
+Velocity = 1+random%4, 0
+Attr = S, SP
+Damage = 10+random%40, 5
+AnimType = Heavy
+GuardFlag = MA
+HitFlag = MAF
+PauseTime = 3,6
+Ground.Type = High
+Ground.SlideTime = 15
+Ground.HitTime  = 25
+Ground.Velocity = -5
+AirGuard.Velocity = -1     
+Air.Type = High
+Air.Velocity = -4,-2
+Air.HitTime = 25
+palfx.time = 40
+Palfx.add = 100,100,100 
+Palfx.sinadd = -80,-80,-80,10
+Palfx.color = 0 
+Palfx.invertall = 1
+
+[State 1112, 2] ; when done, wait
+type = changestate
+trigger1 = animtime = 0
+value = 6211
+
+;=========================
+;DevilMouse throw fireball think
+[Statedef 6211]
+type=S
+movetype = I
+physics=N
+anim = 6211
+sprpriority = 2
+velset = 0,0
+
+[State 1112, 0]
+type = turn
+trigger1 = time = 0
+trigger1 = P2BodyDist X < -30
+
+[State 1106, 0]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[state 1112, 1]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6240
+
+[State 1112, 2]
+type = changestate
+trigger1 = root,life = 0
+value = 6300
+ctrl = 0
+
+[State 1112, 2] ; keep throwing fireballs
+type = changestate
+trigger1 = animtime = 0
+trigger1 = var(5) < var(4)
+value = 6210
+
+[State 1112, 2] ; begin charge
+type = changestate
+trigger1 = animtime = 0
+value = 6215
+
+;=========================
+;DevilMouse start charge
+[Statedef 6215]
+type=S
+movetype = I
+physics=N
+anim = 6215
+sprpriority = 2
+velset = 0,0
+
+[State 1000, 0] ;sfx
+type = PlaySnd
+trigger1 = time%60 = 0
+value = 40, random%10
+abspan = 0
+
+[State 1112, 0]
+type = turn
+trigger1 = time%10 = 0
+trigger1 = P2BodyDist X < -30
+
+[State 1106, 0]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[state 1112, 1]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6240
+
+[State 1112, 2]
+type = changestate
+trigger1 = root,life = 0
+value = 6300
+ctrl = 0
+
+[State 1112, 2] ; charge
+type = changestate
+trigger1 = animtime = 0
+value = 6216
+
+
+;=========================
+;DevilMouse charge
+[Statedef 6216]
+type=S
+movetype = A
+physics=N
+anim = 6216
+sprpriority = 2
+velset = 3,0
+
+[State 1000, 0] ;sfx
+type = PlaySnd
+trigger1 = time%60 = 0
+value = 40, random%10
+abspan = 0
+
+[State 1110, 0]
+type = Varrandom
+trigger1 = time = 0
+v = 6
+range = 30,90
+
+[State 1106, 0]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[state 1112, 1] ; if hit in this state, successful kill
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6219
+
+[State 1112, 2]
+type = changestate
+trigger1 = root,life = 0
+value = 6218
+ctrl = 0
+
+[State 1112, 2] ; run out of fuel, missed
+type = changestate
+trigger1 = time = var(6)
+value = 6218
+
+[State 1020, 6]
+type = HitDef
+trigger1 = 1
+attr = S, SA
+animtype  = Hard
+damage    = 0, 0
+getpower  = 0
+priority  = 5
+hitflag = MA 
+guardflag = MA
+pausetime = 0,16
+sparkxy = -10,-60
+guardsound = 6,0
+ground.type = Low
+ground.slidetime = 20
+ground.hittime  = 20
+ground.velocity = 3.3,-15
+guard.velocity = -4
+air.velocity = 3.3,-15
+airguard.velocity = -4, -4
+fall = 1
+p1stateno = 6220
+p2stateno = 6225
+
+;=========================
+;DevilMouse charge failure
+[Statedef 6218]
+type=S
+movetype = H
+physics=N
+anim = 6219
+sprpriority = 2
+velset = 1,0
+
+[State 1106, 0]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[State 6218, VelSet]
+type = VelSet
+trigger1 = animelem = 2
+x = 0
+
+[State 2000, BOM]
+type = Explod
+trigger1 = animtime = 0
+ID = 6218
+anim = 6218
+pos = 0, 0
+postype = p1
+facing = facing
+vfacing = 1
+ownpal = 1
+scale = 0.5,0.5
+vel = 0,0
+sprpriority = 4
+pausemovetime = 0
+supermovetime = 0
+bindtime = -1
+removetime = 40
+ignorehitpause = 1
+
+[State 6218, DestroySelf]
+type = DestroySelf
+trigger1 = animtime = 0
+
+;=========================
+;DevilMouse charge failure kill
+[Statedef 6219]
+type=S
+movetype = H
+physics=N
+anim = 6219
+sprpriority = 2
+velset = 1,0
+
+[State 1310, varadd]
+type = parentvaradd
+trigger1 = time = 0
+v= 57
+value = ifelse(root,var(53)=1, -1, ifelse(root,var(53)=2 && RoundState>2, 0, 1))
+
+[State 1106, 0]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[State 6218, VelSet]
+type = VelSet
+trigger1 = animelem = 2
+x = 0
+
+[State 2000, BOM]
+type = Explod
+trigger1 = animtime = 0
+ID = 6218
+anim = 6218
+pos = 0, 0
+postype = p1
+facing = facing
+vfacing = 1
+ownpal = 1
+scale = 0.5,0.5
+vel = 0,0
+sprpriority = 4
+pausemovetime = 0
+supermovetime = 0
+bindtime = -1
+removetime = 40
+ignorehitpause = 1
+
+[State 6218, DestroySelf]
+type = DestroySelf
+trigger1 = animtime = 0
+
+;=========================
+;DevilMouse charge success
+[Statedef 6220]
+type=S
+movetype = A
+physics=N
+anim = 6220
+sprpriority = 3
+velset = 0,0
+
+[State 1000, 0] ;sfx
+type = PlaySnd
+trigger1 = time%30 = 0
+value = 40, random%10
+abspan = 0
+
+[State 810, Bind 1]
+type = TargetBind
+trigger1 = 1
+pos = 20, 20
+
+[State 6220, velset]
+type = VelSet
+trigger1 = time = 20
+y = -1
+
+[State 6220, velset]
+type = VelAdd
+trigger1 = time > 20
+y = -0.1
+
+[State 1026, Fall]
+type = DestroySelf
+trigger1 = (Pos y < -400)
+
+;=========================
+;DevilMouse charge grabbed
+[Statedef 6225]
+type    = A
+movetype= H
+physics = N
+velset = 0,0
+
+[State 0, ScreenBound]
+type = ScreenBound
+trigger1 =1
+value = 0
+
+[State 1000, ]
+type = Posset
+trigger1 = time = 0
+y = 0
+
+[State 1025, Anim] ;2P??????????????????
+type = ChangeAnim2
+trigger1 = 1
+value = 6225
+
+[State 1026, Ow]
+type = LifeAdd
+trigger1 = time = 60
+value = -100
+
+[State 1026, Fall]
+type = SelfState
+trigger1 = (Pos y < -400)
+value = 5050
+
+;------------------------------------------------
+;DevilMouse shake
+[Statedef 6240]
+type = A
+movetype = H
+physics = N
+velset = 0,0
+sprpriority = 2
+
+[State 1220, 1]
+type = varadd
+trigger1 = time = 0
+v = 3
+value = -(GetHitVar(damage))
+
+[State 1220, 2]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6240
+
+[State 1220, 3]
+type = changeanim
+trigger1 = Time = 0
+trigger1 = prevstateno != [1220,1272]
+value = 6240
+
+[State 1220, 4]
+type = ChangeState
+trigger1 = HitShakeOver
+value = 6245
+
+;---------------------------------------------------------------------------
+;DevilMouse HITA_UP (initial going up)
+[Statedef 6245]
+type    = A
+movetype= H
+physics = N
+ctrl = 0
+sprpriority = 2
+
+[State 1220, 2]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6240
+
+[State 1230, 1]
+type = VelAdd;Gravity
+trigger1 = 1
+y = GetHitVar(yaccel)
+
+[State 1230, 2]
+type = HitVelSet
+trigger1 = Time = 0
+x = 1
+y = 1
+
+[State 1230, 3]
+type = ChangeState
+trigger1 = HitOver
+trigger2 = Vel Y > 0    ;Hit ground
+trigger2 = Pos Y >= 10  ;.
+value = 6250 ;HITA_FALL
+
+[State 1230, 4]
+type = changestate
+trigger1 = var(3) <= 0
+trigger2 = root,life = 0
+trigger3 = lose
+value = 6310
+
+;----------------------------------------------------------
+;DevilMouse HITA_FALL (knocked up, falling)
+[Statedef 6250]
+type    = A
+movetype= H
+physics = N
+sprpriority = 2
+
+[State 1250, 1] ;Change anim when done with transition
+type = VelAdd
+trigger1 = 1
+y = GetHitVar(yaccel)
+
+[State 1220, 2]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6245
+
+[State 1250, 3]
+type = changeanim
+trigger1 = Time = 0
+value = 6250
+
+[State 1250, 6]
+type = ChangeState
+trigger1 = Vel Y > 0
+trigger1 = Pos Y >= 0
+value = 6260 ;HIT_BOUNCE
+
+[State 1260, 4]
+type = PosSet
+trigger1 = pos Y > 0
+y = 0
+
+;-------------------------------------------------------
+;DevilMouse HIT_BOUNCE (hit ground)
+[Statedef 6260]
+type    = L
+movetype= H
+physics = N
+sprpriority = 2
+
+[State 1260, 0]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6271
+
+[State 1260, 1]
+type = VelSet
+trigger1 = Time = 0
+trigger1 = GetHitVar(fall.yvel) = 0
+trigger1 = vel x > 1
+x = 1
+
+[State 1260, EnvShake]
+type = FallEnvShake
+trigger1 = Time = 0
+
+[State 1260, Var] ;Save fall velocity
+type = VarSet
+trigger1 = Time = 0
+sysvar(1) = floor(vel y)
+
+[State 1260, 2] ;Hit ground anim (normal)
+type = ChangeAnim
+trigger1 = time = 0
+value = 6260
+
+[State 1260, 4]
+type = PosSet
+trigger1 = Time = 0
+y = 0
+
+[State 1260, 5]
+type = VelSet
+trigger1 = Time = 0
+y = 0
+
+[State 1260, 6] ;Reduce speed
+type = VelMul
+trigger1 = Time = 0
+x = 0.75
+
+[State 1260, 7]
+type = ChangeState
+trigger1 = Time = 0
+trigger1 = GetHitVar(fall.yvel) = 0
+value = 6270 ;HIT_LIEDOWN
+
+
+[State 1260, 11]
+type = PosFreeze
+trigger1 = 1
+
+[State 1260, 12]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 6261
+
+;---------------------------------------------------------------
+;DevilMouse HIT_BOUNCE (bounce into air)
+[Statedef 6261]
+type    = L
+movetype= H
+physics = N
+sprpriority = 2
+
+[State 1261, 0]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6271
+
+[State 1261, 1] ;Coming hit ground anim (normal)
+type = ChangeAnim
+trigger1 = time = 0
+value = 6261
+
+[State 1261, 2] ;Coming hit ground anim (for hit up)
+type = HitFallVel
+trigger1 = Time = 0
+
+[State 1261, 4]
+type = PosSet
+trigger1 = Time = 0
+y = 20
+
+[State 1261, 5] ;Acceleration
+type = VelAdd
+trigger1 = 1
+y = .4
+
+[State 1261, 6] ;Hit ground
+trigger1 = Vel Y > 0
+trigger1 = Pos Y >= 12
+type = ChangeState
+value = 6270
+
+;---------------------------------------------------------
+;DevilMouse HIT_LIEDOWN
+[Statedef 6270]
+type    = L
+movetype= H
+physics = N
+sprpriority = 2
+
+[State 1270, 0]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6271
+
+[State 1270, EnvShake]
+type = FallEnvShake
+trigger1 = Time = 0
+
+[State 1270, 1]
+type = ChangeAnim
+trigger1 = time = 0
+value = 6260
+
+[State 1270, 3]
+type = HitFallDamage
+trigger1 = Time = 0
+
+[State 1270, 5]
+type = PosSet
+trigger1 = Time = 0
+y = 0
+
+[State 1270, Var] ;Get fall velocity
+type = VarSet
+trigger1 = Time = 0
+trigger1 = GetHitVar(fall.yvel) != 0
+sysvar(1) = floor(vel y)
+
+[State 1270, 7]
+type = VelSet
+trigger1 = Time = 0
+y = 0
+
+[State 1270, 9]
+type = ChangeAnim
+persistent = 0
+triggerall = Anim != 6270
+trigger1 = AnimTime = 0
+value = 6270
+
+[State 1270, 11]
+type = VarSet
+trigger1 = SysVar(0)
+trigger1 = Time = 0
+sysvar(0) = 0
+
+[State 1270, 12] ;Friction
+type = VelMul
+trigger1 = 1
+x = 0.85
+
+[State 1270, 13]
+type = ChangeState
+trigger1 = Anim = 6270 && Time >= 60
+value = 6280
+
+;---------------------------------------------------------
+;DevilMouse HITL_SHAKE
+[Statedef 6271]
+type    = L
+movetype= H
+physics = N
+velset = 0,0
+sprpriority = 2
+
+[State 1272, 1]
+type = varadd
+trigger1 = time = 0
+v = 3
+value = -(GetHitVar(damage))
+
+[State 1271, 2]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6271
+
+[State 1271, 3] ;Set default anim
+type = ChangeAnim
+trigger1 = 1
+value = ifelse(GetHitVar(yvel) = 0, 6271, 6250)
+
+[State 1271, 4]
+type = ChangeState
+trigger1 = HitShakeOver
+trigger1 = GetHitVar(yvel) = 0
+value = 6272 ;HITL_SLIDE
+
+[State 1271, 5]
+type = ChangeState
+trigger1 = HitShakeOver
+trigger1 = GetHitVar(yvel) != 0
+value = 6245 ;HITA_UP
+
+;--------------------------------------------------------
+;DevilMouse HITL_SLIDE
+[Statedef 6272]
+type    = L
+movetype= H
+physics = C
+sprpriority = 2
+
+[State 1272, 1]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6271
+
+[State 1272, 2]
+type = HitVelSet
+trigger1 = Time = 0
+x = 1
+
+[State 1272, 3]
+type = VelSet
+trigger1 = HitOver
+x = 0
+
+[State 1272, 4] ;Don't show hit ground frame
+type = VarSet
+trigger1 = Time = 0
+sysvar(0) = 1
+
+[State 1272, 5]
+type = changestate
+trigger1 = var(3) <= 0
+value = 6310
+
+[State 1272, 6]
+type = ChangeState
+trigger1 = HitOver
+value = 6270 ;HIT_LIEDOWN
+
+;-----------------------------------------------------
+;DevilMouse get up
+[Statedef 6280]
+type    = L
+movetype= I
+physics = N
+anim = 6280
+sprpriority = 2
+
+[State 1280, 2]
+type = VelSet
+trigger1 = Time = 0
+x = 0
+
+[State 1280, 3]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 1280, 4]
+type = HitFallSet
+trigger1 = AnimTime = 0
+value = 1
+
+[State 1280, 5]
+type = HitOverRide
+trigger1 = Time = 0
+time = -1
+attr = SCA, NA, NP, NT, SA, ST, SP, HA, HT, HP
+slot = 0
+stateno = 6271
+
+[State 1280, 6]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 6205
+
+;------------------------------------------------
+;DevilMouse death states
+[Statedef 6300]
+type = S
+movetype = H
+physics = N
+velset = 0,0
+anim = 6370
+sprpriority = 2
+
+[State 1300, varset]
+type = parentvarset
+trigger1 = time = 0 && roundstate <= 2
+v= 52
+value = 1
+
+[State 1300, varadd]
+type = parentvaradd
+trigger1 = time = 0
+v= 57
+value = ifelse(root,var(53)=1, -1, ifelse(root,var(53)=2 && RoundState>2, 0, 1))
+
+[State 1300, screenbound]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[State 1300, 1]
+type = helper
+trigger1 = time = 0
+id = 6300
+name = "DevilMouse"
+sprpriority = 4
+pos = 0,0
+postype = p1
+stateno = 6301
+helpertype = normal
+keyctrl = 0
+ownpal = 1
+persistent = 0
+
+[State 1300, 2]
+type = destroyself
+trigger1 = time = 3
+
+;------------------------------------------------
+;DevilMouse death states
+[Statedef 6301]
+type = S
+movetype = H
+physics = N
+velset = 0,0
+anim = 6370
+sprpriority = 2
+
+[State 1301, 2]
+type = posadd
+trigger1 = time = [10,30]
+x= -3
+
+[State 1301, 3]
+type = destroyself
+trigger1 = time = 210
+
+;-----------------------------------------------------------------
+;DevilMouse death states
+[Statedef 6310]
+type = A
+movetype = H
+physics = N
+anim = 6370
+ctrl = 0
+
+[State 1310, nothit]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 1310, varadd]
+type = parentvaradd
+trigger1 = time = 0
+v= 57
+value = ifelse(root,var(53)=1, -1, ifelse(root,var(53)=2 && RoundState>2, 0, 1))
+
+[State 1310, screenbound]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[State 1310, 2]
+type = changestate
+trigger1 = time = 3
+value = 6311
+
+;------------------------------------------------
+;DevilMouse death states
+[Statedef 6311]
+type    = A
+movetype= H
+physics = N
+ctrl = 0
+
+[State 1311, nothit]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 1310, 1]
+type = VelAdd
+trigger1 = 1
+y = GetHitVar(yaccel)
+
+[State 1310, 2]
+type = HitVelSet
+trigger1 = Time = 0
+x = 1
+y = 1
+
+[State 1311, 3]
+type = ChangeState
+trigger1 = Vel Y > 0
+trigger1 = Pos Y >= 0
+value = 6320
+
+;-----------------------------------------------------
+;DevilMouse death states
+[Statedef 6320]
+type    = A
+movetype= H
+physics = N
+ctrl = 0
+
+[State 1320, screenbound]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[State 1320, 1]
+type = posset
+trigger1 = time = 0
+y= 0
+
+[State 1320, 2]
+type = velset
+trigger1 = time = 0
+y= 0
+
+[State 1320, 3]
+type = velset
+trigger1 = AnimElem = 2
+y= -4
+
+[State 1320, 4]
+type = gravity
+trigger1 = AnimElemTime(2) >= 2
+
+[State 1320, 5]
+type = ChangeState
+trigger1 = AnimElemTime(2) >= 2
+trigger1 = Vel Y > 0
+trigger1 = Pos Y >= 0
+value = 6340
+
+;--------------------------------------------------
+;DevilMouse death states
+[Statedef 6340]
+type    = L
+movetype= H
+physics = N
+velset = 0,0
+ctrl = 0
+
+[State 1340, screenbound]
+type = ScreenBound
+trigger1 = Time >= 0
+value = 0
+
+[State 1340, 1]
+type = posset
+trigger1 = time = 0
+y= 0
+
+[State 1340, 2]
+type = DestroySelf
+trigger1 = animTime = 0
+
+;==================================================================================
+;==================================================================================
+;==================================================================================
+
+;---------------------------------------------------------------------------
+; Override common states (use same number to override) :
+;---------------------------------------------------------------------------
+
+;---------------------------------------------------------------------------
+; States that are always executed (use statedef -2)
+;---------------------------------------------------------------------------
+[StateDef -2]
+
+[State 1000, 0]           ; copy vars
+type = VarSet
+trigger1 = 1
+fv = 33
+value = var(57)
+
+[State 1000, 0]           ; copy vars
+type = VarSet
+trigger1 = 1
+fv = 32
+value = var(32)
+
+[State -2] ; set life based on remaining devil mice
+type = LifeSet
+trigger1 = var(53) = 1
+trigger1 = roundstate = 2
+trigger1 = var(57) > 0
+trigger1 = var(32) > 0
+value = (fvar(33) / fvar(32)) * 1000.0
+
+[State 1000, 0]           ; count of how many devilmice out
+type = VarSet
+trigger1 = 1
+v = 22
+value = NumHelper(6200)+NumHelper(6201)+NumHelper(6202)+NumHelper(6203)
+
+[State 1000, 0]           ; maximum devilmice
+type = VarSet
+trigger1 = 1
+v = 23
+value = 5
+
+[State 1000, 0]           ; add to seconds elapsed
+type = VarAdd
+trigger1 = roundstate = 2
+trigger1 = gametime%60 = 0
+v = 10
+value = 1
+
+
+; this is some code i stole from alien queen
+[State -2];百
+type = varset
+trigger1 = var(53) != 0
+v= 54
+value = floor(var(57)*0.01)
+
+[State -2];一
+type = varset
+trigger1 = var(53) != 0
+v= 56
+value = var(57)-(10*floor(var(57)*0.1))
+
+[State -2];十
+type = varset
+trigger1 = var(53) != 0
+v= 55
+value = floor((var(57)-((100*var(54))+var(56)))*0.1)
+
+[State -2]
+type = varset
+trigger1 = var(53) != 0
+trigger1 = var(57) <= 0
+v= 57
+value = 0
+
+
+[State -2];数字・百の位
+type = Explod
+triggerall = var(53) != 0
+triggerall = !lose
+trigger1 = numexplod(8902) = 0
+anim = 8900+var(54)
+id = 8902
+pos = 134,ifelse(teamside=1, 40, 60)
+postype = left
+;sprpriority = 9999
+ontop = 1
+facing = 1
+bindtime = -1
+removetime = ifelse(roundstate>=2 || var(53)=2, -1, 1) 
+ownpal = 1
+pausetime = 999
+superpausetime = 999
+
+[State -2];数字・十の位
+type = Explod
+triggerall = var(53) != 0
+triggerall = !lose
+trigger1 = numexplod(8901) = 0
+anim = 8900+var(55)
+id = 8901
+pos = 150,ifelse(teamside=1, 40, 60)
+postype = left
+;sprpriority = 9999
+ontop = 1
+facing = 1
+bindtime = -1
+removetime = ifelse(roundstate>=2 || var(53)=2, -1, 1) 
+ownpal = 1
+pausetime = 999
+superpausetime = 999
+
+[State -2];数字・一の位
+type = Explod
+triggerall = var(53) != 0
+triggerall = !lose
+trigger1 = numexplod(8900) = 0
+anim = 8900+var(56)
+id = 8900
+pos = 166,ifelse(teamside=1, 40, 60)
+postype = left
+;sprpriority = 9999
+ontop = 1
+facing = 1
+bindtime = -1
+removetime = ifelse(roundstate>=2 || var(53)=2, -1, 1) 
+ownpal = 1
+pausetime = 999
+superpausetime = 999
+
+[State -2]
+type = ModifyExplod
+triggerall = !IsHelper
+trigger1 = var(52) = 1
+trigger1 = roundstate = 2
+removetime = 1
+
+[State -2]
+type = RemoveExplod
+trigger1 = var(53) = 1
+trigger1 = var(57) <= 0
+trigger2 = var(53) = 2
+trigger2 = roundstate > 2 && enemy,alive
+ID = 8900
+
+[State -2]
+type = RemoveExplod
+trigger1 = var(53) = 1
+trigger1 = var(57) <= 0
+trigger2 = var(53) = 2
+trigger2 = roundstate > 2 && enemy,alive
+ID = 8901
+
+[State -2]
+type = RemoveExplod
+trigger1 = var(53) = 1
+trigger1 = var(57) <= 0
+trigger2 = var(53) = 2
+trigger2 = roundstate > 2 && enemy,alive
+ID = 8902
+
+[State -2];死亡
+type = lifeset
+trigger1 = roundstate = 2
+trigger1 = var(53) = 1
+trigger1 = var(57) <= 0
+trigger2 = roundstate > 2 && enemy,alive
+trigger2 = var(53) = 2
+value = 0
+
+[State -2];congratulations!
+type = Explod
+triggerall = numexplod(8912) = 0
+trigger1 = var(53) = 1
+trigger1 = var(57) = 0 && roundstate >= 2
+trigger2 = var(53) = 2
+trigger2 = life = 0
+anim = 8912
+id = 8912
+pos = 100,80
+postype = left
+;sprpriority = 9999
+ontop = 1
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+pausetime = 999
+superpausetime = 999
+
+[State -2];has destroyed
+type = Explod
+triggerall = numexplod(8910) = 0
+trigger1 = var(53) = 1
+trigger1 = var(57) = 0 && roundstate >= 2
+trigger2 = var(53) = 2
+trigger2 = life = 0
+anim = 8910
+id = 8910
+pos = 69,100
+postype = left
+;sprpriority = 9999
+ontop = 1
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+pausetime = 999
+superpausetime = 999
+
+[State -2];enemy
+type = Explod
+triggerall = numexplod(8911) = 0
+trigger1 = var(53) = 1
+trigger1 = var(57) = 0 && roundstate >= 2
+trigger2 = var(53) = 2
+trigger2 = life = 0
+anim = 8911
+id = 8911
+pos = 226,100
+postype = left
+;sprpriority = 9999
+ontop = 1
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+pausetime = 999
+superpausetime = 999
+
+[State -2];clear
+type = Explod
+triggerall = numexplod(8913) = 0
+trigger1 = var(53) = 1
+trigger1 = var(57) = 0 && roundstate >= 2
+trigger2 = var(53) = 2
+trigger2 = life = 0
+anim = 8913
+id = 8913
+pos = 140,120
+postype = left
+;sprpriority = 9999
+ontop = 1
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+pausetime = 999
+superpausetime = 999
+
+[State -2];N-modeFinish数字・百の位
+type = Explod
+triggerall = numexplod(8906) = 0
+trigger1 = var(53) = 1
+trigger1 = var(57) = 0 && roundstate >= 2
+anim = 8900+var(47)
+id = 8906
+pos = 176,100
+postype = left
+;sprpriority = 9999
+ontop = 1
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+pausetime = 999
+superpausetime = 999
+
+[State -2];N-modeFinish数字・十の位
+type = Explod
+triggerall = numexplod(8905) = 0
+trigger1 = var(53) = 1
+trigger1 = var(57) = 0 && roundstate >= 2
+anim = 8900+var(48)
+id = 8905
+pos = 192,100
+postype = left
+;sprpriority = 9999
+ontop = 1
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+pausetime = 999
+superpausetime = 999
+
+[State -2];N-modeFinish数字・一の位
+type = Explod
+triggerall = numexplod(8904) = 0
+trigger1 = var(53) = 1
+trigger1 = var(57) = 0 && roundstate >= 2
+anim = 8900+var(49)
+id = 8904
+pos = 208,100
+postype = left
+;sprpriority = 9999
+ontop = 1
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+pausetime = 999
+superpausetime = 999
+
+[State -2];S-modeFinish数字・百の位
+type = Explod
+triggerall = numexplod(8909) = 0
+trigger1 = var(53) = 2
+trigger1 = life = 0
+anim = 8900+var(54)
+id = 8909
+pos = 176,100
+postype = left
+;sprpriority = 9999
+ontop = 1
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+pausetime = 999
+superpausetime = 999
+
+[State -2];S-modeFinish数字・十の位
+type = Explod
+triggerall = numexplod(8908) = 0
+trigger1 = var(53) = 2
+trigger1 = life = 0
+anim = 8900+var(55)
+id = 8908
+pos = 192,100
+postype = left
+;sprpriority = 9999
+ontop = 1
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+pausetime = 999
+superpausetime = 999
+
+[State -2];S-modeFinish数字・一の位
+type = Explod
+triggerall = numexplod(8907) = 0
+trigger1 = var(53) = 2
+trigger1 = life = 0
+anim = 8900+var(56)
+id = 8907
+pos = 208,100
+postype = left
+;sprpriority = 9999
+ontop = 1
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+pausetime = 999
+superpausetime = 999
+
+[State -2]
+type = varset
+triggerall = !IsHelper
+trigger1 = 1
+v= 53
+value = ifelse((palno=[7,12]), 2, 1) ; pal 7-12 are increment up, 1-6 are increment down
+
+[State -2] ; the life set
+type = lifeset
+trigger1 = roundstate = 2
+trigger1 = var(53) = 1
+trigger1 = var(57) <= 0
+trigger2 = roundstate > 2 && enemy,alive
+trigger2 = var(53) = 2
+value = 0
+
+[State -2: Debugging Shit]
+type = DisplayToClipboard
+trigger1 = 1
+text = "Mode: %d Naz: %d DevilMice: %d fv33: %f fv32: %f"
+params = var(53), var(55), var(57), fvar(33), fvar(32)
+
+;---------------------------------------------------------------------------
+; States that are executed when in self's state file (use statedef -3)
+;---------------------------------------------------------------------------
+
+[Statedef -3]
+
+
+;This controller plays a sound everytime the player lands from a jump, or
+;from a back-dash.
+[State -3, Landing Sound]
+type = PlaySnd
+triggerall = Time = 1
+trigger1 = stateno = 52 ;Jump land
+trigger2 = stateno = 106 ;Run-back land
+value = 40, 0

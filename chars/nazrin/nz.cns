@@ -1,0 +1,2613 @@
+;nazrin
+
+  [Data]
+Life              = 900
+Power             = 5000
+Attack            = 100
+Defence           = 100
+Fall.Defence_Up   = 50
+LieDown.Time      = 50
+AirJuggle         = 15
+SparkNo           = 2
+Guard.SparkNo     = 40
+KO.Echo           = 0
+Volume            = 128
+IntPersistIndex   = 0
+FloatPersistIndex = 0
+
+;**************************************************
+
+[Size]
+XScale            = 1
+YScale            = 1
+Ground.Back       = 15
+Ground.Front      = 15
+Air.Back          = 15
+Air.Front         = 15
+Height            = 80
+Attack.Dist       = 160
+Proj.Attack.Dist  = 90
+Proj.DoScale      = 0
+Head.Pos          = 0,-85
+Mid.Pos           = 0,-47
+ShadowOffset      = 0
+Draw.Offset       = 0,0
+
+   [Velocity]
+walk.fwd     = 2.5
+walk.back    = -2.4
+run.fwd      = 40,0
+run.back     = -7,-5
+jump.neu     = 0,-10
+jump.back    = -3,5
+jump.fwd     = 3
+runjump.back = -5,-12
+runjump.fwd  = 6,-12
+airjump.neu  = 0,-8.1
+airjump.back = -2.5
+airjump.fwd  = 2.5
+
+ ;**************************************************
+[MoveMent]
+AirJump.Num       = 0
+AirJump.Height    = 48
+YAccel            = .7
+Stand.Friction    = .56
+Crouch.Friction   = .67
+
+
+
+;---------------------------------------------------------------------------
+; Lose by Time Over
+; CNS difficulty: basic
+; CNS レベル: 基本
+[Statedef 170]
+type = S
+ctrl = 0
+anim = 170
+velset = 0,0
+
+[State 170, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;---------------------------------------------------------------------------
+; Win state decider
+; CNS difficulty: basic
+; CNS レベル: 基本
+[Statedef 180]
+type = S
+
+[State 180, 1]
+type = ChangeState
+trigger1 = Time = 0
+value = 181
+
+;---------------------------------------------------------------------------
+; Win pose 1 - Bow
+; CNS difficulty: basic
+; CNS レベル: 基本
+[Statedef 181]
+type = S
+ctrl = 0
+anim = 181
+velset = 0,0
+
+[State 181, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;---------------------------------------------------------------------------
+; Introduction
+; CNS difficulty: basic
+; CNS レベル: 基本
+[Statedef 191]
+type = S
+ctrl = 0
+anim = 190
+velset = 0,0
+
+[State 191, 1] 
+type = ChangeAnim
+trigger1 = time = 0
+value = 190
+
+[State 191, 2] ;Assert this until you want "round 1, fight" to begin
+type = AssertSpecial
+trigger1 = 1
+flag = Intro
+
+[State 191, 3] ;Change to stand state when done
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+
+;---------------------------------------------------------------------------
+; Taunt
+; CNS difficulty: easy
+[Statedef 195]
+type = S
+ctrl = 0
+anim = 195
+velset = 0,0
+movetype = I
+physics = S
+sprpriority = 2
+
+[State 195, 1]
+type = CtrlSet
+trigger1 = Time = 40
+value = 1
+
+[State 195, 2]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+
+;---------------------------------------------------------------------------
+; Stand Light Punch
+; CNS difficulty: easy
+[Statedef 200]
+type    = S                      ;State-type: S-stand, C-crouch, A-air, L-liedown
+movetype= A                      ;Move-type: A-attack, I-idle, H-gethit
+physics = S                      ;Physics: S-stand, C-crouch, A-air
+velset = 0,0                     ;Set velocity (x,y) (Def: no change)
+ctrl = 0                         ;Set ctrl (Def: no change)
+anim = 200                       ;Change animation (Def: no change)
+poweradd = 20                    ;Power to add (Def: 0)
+sprpriority = 2                  ;Set p1's sprite layering priority to 2 (in front)
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.98
+
+
+
+[State 200, 1]
+type = HitDef
+trigger1 = AnimElem = 3
+attr = S, NA                     ;Attribute: Standing, Normal Attack
+damage = 25*fvar(10), 0                   ;Damage that move inflicts, guard damage
+animtype = Light                 ;Animation type: Light, Medium, Heavy, Back (def: Light)
+guardflag = MA                   ;Flags on how move is to be guarded against
+hitflag = MAF                    ;Flags of conditions that move can hit
+priority = 3, Hit                ;Attack priority: 0 (least) to 7 (most), 4 default
+;Hit/Miss/Dodge type (Def: Hit)
+pausetime = 7, 8                 ;Time attacker pauses, time opponent shakes
+sparkno = -1                      ;Spark anim no (Def: set above)
+sparkxy = -10, -76               ;X-offset for the "hit spark" rel. to p2,
+;Y-offset for the spark rel. to p1
+hitsound = S1, 0                  ;Sound to play on hit
+guardsound = S3, 0                ;Sound to play on guard
+ground.type = High               ;Type: High, Low, Trip (def: Normal)
+ground.slidetime = 5             ;Time that the opponent slides back
+ground.hittime  = 10             ;Time opponent is in hit state
+ground.velocity = -4             ;Velocity at which opponent is pushed
+airguard.velocity = -1.9,-.8     ;Guard velocity in air (def: (air.xvel*1.5, air.yvel/2))
+air.type = High                  ;Type: High, Low, Trip (def: same as ground.type)
+air.velocity = -1.4,-3           ;X-velocity at which opponent is pushed,
+;Y-velocity at which opponent is pushed
+air.hittime = 12                 ;Time before opponent regains control in air
+fall.recovertime = 15
+
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit
+Anim        = 6006
+ID          = 6006
+Postype     = P2
+Pos         = 0, -35
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit
+Name     = "HIT"
+Stateno  = 6030
+ID       = 6030
+Pos      = 0,-35
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State -3]
+type = PlaySnd
+Trigger1 = MoveHit && var(5) = 1
+value = S0, 9
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 200, 1]
+type = PlaySnd
+trigger1 = Time = 1
+value = S0, 0
+
+[State 200, 7]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+[Statedef 201]
+type    = S                      ;State-type: S-stand, C-crouch, A-air, L-liedown
+movetype= A                      ;Move-type: A-attack, I-idle, H-gethit
+physics = S                      ;Physics: S-stand, C-crouch, A-air
+velset = 0,0                     ;Set velocity (x,y) (Def: no change)
+ctrl = 0                         ;Set ctrl (Def: no change)
+anim = 201                       ;Change animation (Def: no change)
+poweradd = 20                    ;Power to add (Def: 0)
+sprpriority = 2                  ;Set p1's sprite layering priority to 2 (in front)
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = Movecontact && var(40)>0 &&enemynear,backedgebodydist < 20
+Value = 7040
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -3]
+type = PlaySnd
+Trigger1 = MoveHit && var(5) = 1
+value = S0, 9
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.98
+
+[State -1]
+type = PlaySnd
+trigger1 = Time = 1
+value = S0, 0
+
+[State 201, 1]
+type = HitDef
+trigger1 = AnimElem = 3
+attr = S, NA                     ;Attribute: Standing, Normal Attack
+damage = 30*fvar(10), 0                   ;Damage that move inflicts, guard damage
+animtype = Light                 ;Animation type: Light, Medium, Heavy, Back (def: Light)
+guardflag = MA                   ;Flags on how move is to be guarded against
+hitflag = MAF                    ;Flags of conditions that move can hit
+priority = 3, Hit                ;Attack priority: 0 (least) to 7 (most), 4 default
+;Hit/Miss/Dodge type (Def: Hit)
+pausetime = 7, 8                 ;Time attacker pauses, time opponent shakes
+sparkno = -1                      ;Spark anim no (Def: set above)
+sparkxy = -10, -76               ;X-offset for the "hit spark" rel. to p2,
+;Y-offset for the spark rel. to p1
+hitsound = S1, 0                  ;Sound to play on hit
+guardsound = S3, 0                ;Sound to play on guard
+ground.type = High               ;Type: High, Low, Trip (def: Normal)
+ground.slidetime = 5             ;Time that the opponent slides back
+ground.hittime  = 10             ;Time opponent is in hit state
+ground.velocity = -4,-1             ;Velocity at which opponent is pushed
+airguard.velocity = -1.9,-.8     ;Guard velocity in air (def: (air.xvel*1.5, air.yvel/2))
+air.type = High                  ;Type: High, Low, Trip (def: same as ground.type)
+air.velocity = -1.4,-3           ;X-velocity at which opponent is pushed,
+;Y-velocity at which opponent is pushed
+air.hittime = 12                 ;Time before opponent regains control in air
+fall.recovertime = 15
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = Movecontact && var(40)>0 &&enemynear,backedgebodydist < 20
+Value = 7040
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 200]
+Type        = Explod
+Trigger1    = MoveHit
+Anim        = 6006
+ID          = 6006
+Postype     = P2
+Pos         = 0, -35
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit
+Name     = "HIT"
+Stateno  = 6030
+ID       = 6030
+Pos      = 0,-35
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State 200, 7]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+[Statedef 205]
+type    = S
+movetype= A
+physics = S
+poweradd= 30
+ctrl = 0
+velset = 0,0
+anim = 205
+sprpriority = -1
+
+[State 205, 1]
+type = PlaySnd
+trigger1 = Time = 2
+value = 0, 1
+
+[State -3]
+type = PlaySnd
+Trigger1 = MoveHit && var(5) = 1
+value = S0, 9
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.95
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit && var(5)=1
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.8
+
+[State -1, VarSet];LIMIT
+Type = VarAdd
+Trigger1 = MoveHit && var(5)=1
+Persistent = 0
+IgnoreHitPause = 1
+FV = 11
+Value = 40
+
+[State 205, 1]
+type = velset
+trigger1 = Animelem = 3
+X = 20
+
+[State 205, 2]
+type = HitDef
+trigger1 = AnimElem = 3
+attr = S, NA
+animtype  = Medium
+damage    = 60*fvar(10)
+guardflag = MA
+pausetime = 11,ifelse(var(5)=1,2,12)
+sparkno = -1
+sparkxy = -10,-70
+hitsound   = S1,2
+guardsound = S3,0
+ground.type = High
+ground.slidetime = 12
+ground.hittime  = 13
+ground.velocity = -5.5,ifelse(var(5)=1,-4,0)
+air.velocity = -2.5,-4
+fall.recovertime = 30
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit
+Anim        = 6000
+ID          = 6000
+Postype     = P2
+Pos         = 0, -40
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State 205, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+TriggerAll = Enemynear,stateno != [5040,5049]
+Trigger1 = MoveHit && var(5)=1
+Value = 7040-10*(fvar(11)>=100)
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 205, Helper]
+Type = Helper
+TriggerAll = NumTarget > 0
+Trigger1 = MoveHit && var(5)=1
+Trigger1 = fvar(11) < 100
+Persistent = 0
+IgnoreHitPause = 1
+PosType = P2
+Pos = 0, 0
+ID = 7043
+StateNo = 7043
+PauseMoveTime = 999999
+SuperMoveTime = 999999
+Name = " "
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit
+Name     = "HIT"
+Stateno  = 6031
+ID       = 6031
+Pos      = 0,-40
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State 205, 4]
+type = SprPriority
+trigger1 = AnimElem = 5
+value = 2
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = Movecontact && var(40)>0 &&enemynear,backedgebodydist < 20
+Value = 7040
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 205, 5]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+[Statedef 210]
+type    = S
+movetype= A
+physics = S
+poweradd= 65
+ctrl = 0
+velset = 0,0
+anim = 210
+sprpriority = -1
+
+[State -3]
+type = PlaySnd
+Trigger1 = MoveHit && var(5) = 1
+value = S0, 9
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 210, 1]
+type = PlaySnd
+trigger1 = Time = 2
+value = S0, 1
+
+[State 210, 1]
+type = Posadd
+trigger1 = Time = 3
+X = 20
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.9
+
+[State 210, 2]
+type = HitDef
+trigger1 = AnimElem = 3
+attr = S, NA
+animtype  = Medium
+damage    = 50*fvar(10)
+guardflag = MA
+pausetime = 11,12
+sparkno = -1
+sparkxy = -10,-70
+hitsound   = S1,2
+guardsound = S3,0
+ground.type = High
+ground.slidetime = 12
+ground.hittime  = 13
+ground.velocity = -5.5
+air.velocity = -2.5,-4
+fall.recovertime = 30
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = Movecontact && var(40)>0 &&enemynear,backedgebodydist < 20
+Value = 7040
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit
+Anim        = 6000
+ID          = 6000
+Postype     = P2
+Pos         = 0, -40
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit
+Name     = "HIT"
+Stateno  = 6031
+ID       = 6031
+Pos      = 0,-40
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State 210, 4]
+type = SprPriority
+trigger1 = AnimElem = 5
+value = 2
+
+[State 210, 5]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+[Statedef 220]
+type    = S
+movetype= A
+physics = S
+poweradd= 22
+ctrl = 0
+velset = 0,0
+anim = 220
+sprpriority = 2
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.6
+
+[State -1, VarSet];LIMIT
+Type = VarAdd
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 11
+Value = 40
+
+[State 220, 1]
+type = PlaySnd
+trigger1 = Time = 6
+value = 0, 2
+
+[State -3]
+type = PlaySnd
+Trigger1 = MoveHit && var(5) = 1
+value = S0, 9
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 220, 1]
+type = velset
+trigger1 = animelem = 4
+x = 7
+
+[State 220, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = S, NA
+animtype  = Medium
+damage    = 70*fvar(10)
+guardflag = MA
+pausetime = 7,2
+sparkno = -1
+sparkxy = -10,-37
+hitsound   = S1,1
+guardsound = S3,0
+ground.type = Low
+ground.slidetime = 10
+ground.hittime  = 11
+ground.velocity = -5,4
+air.velocity = -2.5,5
+fall.recovertime = 40
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit
+Anim        = 6001
+ID          = 6001
+Postype     = P2
+Pos         = 5, -50
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit
+Name     = "HIT"
+Stateno  = 6031
+ID       = 6031
+Pos      = 5,-50
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State 220, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = MoveHit 
+Value = 7045 +5*(fvar(11)>=100)
+Persistent = 0
+IgnoreHitPause = 1
+
+
+[State 220, 3]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; Standing light kick
+; CNS difficulty: easy
+[Statedef 230]
+type    = S
+movetype= A
+physics = S
+juggle  = 4
+poweradd= 22
+ctrl = 0
+velset = 0,0
+anim = 230
+sprpriority = 2
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.85
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit && var(5)=1
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.7
+
+[State -1, VarSet];LIMIT
+Type = VarAdd
+Trigger1 = MoveHit && var(5)=1
+Persistent = 0
+IgnoreHitPause = 1
+FV = 11
+Value = 40
+
+[State 230, 1]
+type = PlaySnd
+trigger1 = Time = 5
+value = 0, 2
+
+[State -3]
+type = PlaySnd
+Trigger1 = MoveHit && var(5) = 1
+value = S0, 9
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 230, 1]
+type = velset
+trigger1 = animelem = 4
+x = 20
+
+[State 230, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = S, NA
+animtype  = Medium
+damage    = 80*fvar(10)
+guardflag = MA
+pausetime = 12,ifelse(var(5)=1,2,12)
+priority = 5, Hit 
+sparkno = -1
+sparkxy = -10,-37
+hitsound   = S1,3
+guardsound = S3,0
+ground.type = Low
+ground.slidetime = 10
+ground.hittime  = 11
+ground.velocity = -5,ifelse(var(5)=1,4,0)
+air.velocity = -2.5,3
+air.fall=1
+fall.recovertime = 40
+
+[State 230, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = MoveHit && var(5) = 1
+Value = 7045 +5*(fvar(11)>=100)
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit
+Anim        = 6001
+ID          = 6001
+Postype     = P2
+Pos         = 5, -50
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit
+Name     = "HIT"
+Stateno  = 6031
+ID       = 6031
+Pos      = 5,-50
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = Movecontact && var(40)>0 &&enemynear,backedgebodydist < 20
+Value = 7040
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 230, 3]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;Crouching light punch
+[Statedef 300]
+type    = C
+movetype= A
+physics = C
+juggle  = 5
+poweradd= 15
+ctrl = 0
+anim = 300
+sprpriority = 2
+
+[State -3]
+type = PlaySnd
+Trigger1 = MoveHit && var(5) = 1
+value = S0, 9
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.95
+
+[State 300, 1]
+type = PlaySnd
+trigger1 = Time = 1
+value = 0, 0
+
+[State 300, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = C, NA
+damage    = 30*fvar(10)
+priority  = 3
+animtype  = Light
+hitflag = MAF
+guardflag = L
+pausetime = 10,11
+sparkno = -1
+sparkxy = -10,-42
+hitsound   = S1,0
+guardsound = S3,0
+ground.type = Low
+ground.slidetime = 4
+ground.hittime  = 10
+ground.velocity = -4
+air.velocity = -1.5,-3
+fall.recovertime = 15
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit
+Anim        = 6006
+ID          = 6006
+Postype     = P2
+Pos         = 0, -20
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit
+Name     = "HIT"
+Stateno  = 6030
+ID       = 6030
+Pos      = 0,-20
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = Movecontact && var(40)>0 &&enemynear,backedgebodydist < 20
+Value = 7040
+Persistent = 0
+IgnoreHitPause = 1
+
+
+[State 300, 4]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 11
+ctrl=1
+
+;---------------------------------------------------------------------------
+;Crouching strong punch
+
+[Statedef 310]
+type    = C
+movetype= A
+physics = C
+juggle  = 6
+poweradd= 50
+ctrl = 0
+anim = 310
+sprpriority = 2
+
+[State -3]
+type = PlaySnd
+Trigger1 = MoveHit && var(5) = 1
+value = S0, 9
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 310, 1]
+type = PlaySnd
+trigger1 = Time = 4
+value = 0, 2
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.85
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit && var(5)=1
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.7
+
+[State -1, VarSet];LIMIT
+Type = VarAdd
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 11
+Value = 40
+
+;This is the first hit, triggered on the 3rd element of animation.
+[State 310, 2]
+type = HitDef
+trigger1 = AnimElem = 3
+attr = C, NA
+damage    = 60*fvar(10)
+animtype  = Medium
+hitflag = MAF
+guardflag = MA
+pausetime = 12,ifelse(var(5)=1,2,12)
+sparkno = -1
+sparkxy = -10,-55
+hitsound   = S1,4
+guardsound = S3,0
+ground.type = Low
+ground.slidetime = 12
+ground.hittime  = 15
+ground.velocity = ifelse(var(5)=1,-7,-4),ifelse(var(5)=1,-5,-3)
+air.velocity = ifelse(var(5)=1,-7,-4),-4
+fall = 1
+fall.recovertime = 30
+
+[State 310, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+TriggerAll = Enemynear,stateno != [5040,5049]
+Trigger1 = MoveHit && var(5)=1
+Value = 7040-10*(fvar(11)>=100)
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 310, Helper]
+Type = Helper
+TriggerAll = NumTarget > 0
+Trigger1 = MoveHit && var(5)=1
+Trigger1 = fvar(11) < 100
+Persistent = 0
+IgnoreHitPause = 1
+PosType = P2
+Pos = 0, 0
+ID = 7043
+StateNo = 7043
+PauseMoveTime = 999999
+SuperMoveTime = 999999
+Name = " "
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit
+Anim        = 6008
+ID          = 6008
+Postype     = P2
+Pos         = -10, -30
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit
+Name     = "HIT"
+Stateno  = 6031
+ID       = 6031
+Pos      = -10,-30
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = MoveHit &&fvar(11)>=100
+Value = 7050
+Persistent = 0
+IgnoreHitPause = 1
+
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = Movecontact && var(40)>0 &&enemynear,backedgebodydist < 20
+Value = 7040
+Persistent = 0
+IgnoreHitPause = 1
+
+
+[State 310, 4]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 11
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;JA
+[Statedef 400]
+type    = A
+movetype= A
+physics = A
+poweradd= 30
+ctrl = 0
+anim = 400
+sprpriority = 2
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.9
+
+[State -3]
+type = PlaySnd
+Trigger1 = MoveHit && var(5) = 1
+value = S0, 9
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 400, 1]
+type = PlaySnd
+trigger1 = Time = 7
+value = 0, 1
+
+[State 400, 1]
+type = velmul
+trigger1 = Time = [1,7]
+X = 0.3
+
+[State 400, 1]
+type = velset
+trigger1 = Time = [1,7]
+Y = 0
+
+[State 400, 1]
+type = velset
+trigger1 = AnimElem = 3
+X = -1.5
+Y = -5
+
+[State 400, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = A, NA
+damage    = 40
+animtype  = Light
+hitflag = MAF
+guardflag = MA
+pausetime = 11,12
+sparkno = -1
+sparkxy = -10,-8
+hitsound   = S1,0
+guardsound = S3,0
+ground.type = Low
+ground.slidetime = 6
+ground.hittime  = 14
+ground.velocity = 2,-3
+air.velocity = 2,-3
+air.fall = 1
+fall.recovertime = 20
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit
+Anim        = 6007
+ID          = 6007
+Postype     = P2
+Pos         = 0, -60
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit
+Name     = "HIT"
+Stateno  = 6030
+ID       = 6030
+Pos      = 0,-60
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State 400, 3]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 50
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;J8A
+[Statedef 410]
+type    = A
+movetype= A
+physics = A
+poweradd= 40
+ctrl = 0
+anim = 410
+sprpriority = 2
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.85
+
+[State -3]
+type = PlaySnd
+Trigger1 = MoveHit && var(5) = 1
+value = S0, 9
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit && var(5)=1
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.6
+
+[State -1, VarSet];LIMIT
+Type = VarAdd
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 11
+Value = 40
+
+[State 410, 1]
+type = PlaySnd
+trigger1 = Time = 7
+value = 0, 2
+
+[State 410, 1]
+type = velset
+trigger1 = AnimElem = 1
+X = 1
+Y = -6
+
+[State 410, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = A, NA
+damage    = 60*fvar(10)
+animtype  = Med
+hitflag = MAF
+guardflag = MA
+pausetime = 11,ifelse(var(5)=1,2,12)
+sparkno = -1
+sparkxy = -10,-8
+hitsound   = S1,3
+guardsound = S3,0
+ground.type = Low
+ground.slidetime = 6
+ground.hittime  = 14
+ground.velocity = -2,ifelse(var(5)=1,-10,-7)
+air.velocity = -1,ifelse(var(5)=1,-10,-7)
+fall = 1
+fall.recovertime = 40
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit
+Anim        = 6000
+ID          = 6000
+Postype     = P2
+Pos         = 0, -70
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit
+Name     = "HIT"
+Stateno  = 6031
+ID       = 6031
+Pos      = 0,-70
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+
+[State 410, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = MoveHit && fvar(11)>=100
+Value = 7050
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 410, 3]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 50
+ctrl = 1
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = Movecontact && var(40)>0 &&enemynear,backedgebodydist < 20
+Value = 7040
+Persistent = 0
+IgnoreHitPause = 1
+
+
+;---------------------------------------------------------------------------
+;J2A
+; CNS difficulty: easy
+[Statedef 420]
+type    = A
+movetype= A
+physics = A
+juggle  = 4
+poweradd= 45
+ctrl = 0
+anim = 420
+sprpriority = 2
+
+[State 420, 2]
+type = PlaySnd
+trigger1 = Time = 5
+value = 0, 1
+
+[State -3]
+type = PlaySnd
+Trigger1 = MoveHit && var(5) = 1
+value = S0, 9
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.9
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit && var(5)=1
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.7
+
+[State -1, VarSet];LIMIT
+Type = VarAdd
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 11
+Value = 40
+
+[State 400, 1]
+type = velSet
+trigger1 = Time = 0
+Y = -6
+X = 1.4
+
+[State 420, 0]
+type = Explod
+trigger1 = time = 11
+anim = 6420
+ID = 6420
+pos = 0,-5
+postype = p1 
+removetime = -2
+bindtime = -1
+sprpriority = 100
+ownpal = 1
+removeongethit = 1
+
+[State 420, 3]
+type = HitDef
+trigger1 = Time%2 = 0
+attr = A, NA
+damage = 20*fvar(10)
+hitflag = MAFD
+guardflag = HA
+priority = 4
+pausetime = 3,3
+sparkno = -1
+sparkxy = -10,-55
+hitsound   = S1,4
+guardsound = S3,0
+animtype = Med
+ground.type = High
+ground.slidetime = 6
+ground.hittime  = 10
+ground.velocity = -1,-2
+air.velocity = -2,ifelse(var(5)=1,-2,-3)
+fall = 1
+fall.recovertime = 15
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit && (HITCOUNT = 1)
+Anim        = 6006
+ID          = 6006
+Postype     = P2
+Pos         = 0, -50
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit && (HITCOUNT = 1)
+Name     = "HIT"
+Stateno  = 6031
+ID       = 6031
+Pos      = 0,-50
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit && (HITCOUNT = 2)
+Anim        = 6006
+ID          = 6006
+Postype     = P2
+Pos         = 0, -40
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit && (HITCOUNT = 2)
+Name     = "HIT"
+Stateno  = 6031
+ID       = 6031
+Pos      = 0,-40
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit && (HITCOUNT = 3)
+Anim        = 6006
+ID          = 6006
+Postype     = P2
+Pos         = 0, -30
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit && (HITCOUNT = 3)
+Name     = "HIT"
+Stateno  = 6031
+ID       = 6031
+Pos      = 0,-30
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit && (HITCOUNT = 4)
+Anim        = 6006
+ID          = 6006
+Postype     = P2
+Pos         = 0, -20
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit && (HITCOUNT = 1)
+Name     = "HIT"
+Stateno  = 6031
+ID       = 6031
+Pos      = 0,-20
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit && (HITCOUNT = 5)
+Anim        = 6006
+ID          = 6006
+Postype     = P2
+Pos         = 0, -10
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State 420, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+TriggerAll = P2stateno != [7040,7050]
+Trigger1 = MoveHit && var(5) = 1
+Value = 7045*ifelse(fvar(11)>=100,1,0)
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+TriggerAll = P2stateno != [7040,7050]
+Trigger1 = MoveHit &&fvar(11)>=100
+Value = 7050
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 420, 3]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 50
+ctrl = 1
+
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = Movecontact && var(40)>0 &&enemynear,backedgebodydist < 20
+Value = 7040
+Persistent = 0
+IgnoreHitPause = 1
+
+
+;--------------------------------------------------------------------------------------
+;J6A
+[Statedef 430]
+type    = A
+movetype= A
+physics = N
+poweradd= 40
+ctrl = 0
+anim = 430
+sprpriority = 2
+
+[State -1]
+type = Statetypeset
+trigger1 = AnimElem = 1
+statetype = A
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.85
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit && var(5)=1
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.6
+
+[State -1, VarSet];LIMIT
+Type = VarAdd
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 11
+Value = 20
+
+[State 430, 1]
+type = PlaySnd
+trigger1 = Time = 3
+value = 0, 2
+
+[State -3]
+type = PlaySnd
+Trigger1 = MoveHit && var(5) = 1
+value = S0, 9
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 430, 1]
+type = velset
+trigger1 = Time = 0
+X = 0
+Y = 0
+
+[State 430, 1]
+type = velset
+trigger1 = AnimElem = 1
+X = 7
+Y = -0.5
+
+[State 430, 1]
+type = velmul
+trigger1 = AnimElem >= 3
+X = 0.6
+
+[State 430, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = A, NA
+damage    = 50*fvar(10)
+animtype  = Light
+hitflag = MAF
+guardflag = MA
+pausetime = 11,ifelse(var(5)=1,2,12)
+sparkno = -1
+sparkxy = -10,-8
+hitsound   = S1,2
+guardsound = S3,0
+ground.type = Low
+ground.slidetime = 10
+ground.hittime  = 14
+ground.velocity = ifelse(var(5)=1,-7,-4),-5
+air.velocity = ifelse(var(5)=1,-8,-4),-3
+fall = 1
+fall.recovertime = 40
+
+[State 430, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+TriggerAll = P2stateno != [7040,7050]
+Trigger1 = MoveHit && var(5) = 1
+Value = 7040+ifelse(fvar(11)>=100,10,0)
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 430, Helper]
+Type = Helper
+TriggerAll = NumTarget > 0
+Trigger1 = MoveHit && var(5)=1
+Trigger1 = fvar(11) < 100
+Persistent = 0
+IgnoreHitPause = 1
+PosType = P2
+Pos = 0, 0
+ID = 7043
+StateNo = 7043
+PauseMoveTime = 999999
+SuperMoveTime = 999999
+Name = " "
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit && (HITCOUNT = 1)
+Anim        = 6000
+ID          = 6000
+Postype     = P2
+Pos         = 0, -50
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit && (HITCOUNT = 1)
+Name     = "HIT"
+Stateno  = 6031
+ID       = 6031
+Pos      = 0,-50
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = MoveHit && fvar(11)>=100
+Value = 7050
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 430, 3]
+type = Statetypeset
+trigger1 = AnimElem = 5
+movetype= I
+physics = A
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = Movecontact && var(40)>0 &&enemynear,backedgebodydist < 20
+Value = 7040
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 430, 3]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 50
+ctrl = 1
+;---------------------------------------------------------------------------
+;DA
+[Statedef 101]
+type    = S
+movetype= A
+physics = N
+poweradd= 40
+ctrl = 0
+anim = 101
+sprpriority = 2
+
+[State 101, 2]
+type = PlaySnd
+trigger1 = Time = 4
+value = 0, 1
+
+[State -3]
+type = PlaySnd
+Trigger1 = MoveHit && var(5) = 1
+value = S0, 9
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.9
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit && var(5)=1
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.65
+
+[State -1, VarSet];LIMIT
+Type = VarAdd
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 11
+Value = ifelse(var(5)=1,40,10)
+
+[State 101, 1]
+type = velSet
+trigger1 = Time = 0
+X = 6
+
+[State 101, 1]
+type = velAdd
+trigger1 = Time >= 0
+trigger1 = vel X > 0
+X = -0.2
+
+[State 101, 3]
+type = HitDef
+trigger1 = Time = 0
+attr = S, NA
+damage    = 50*fvar(10)
+guardflag = HA
+priority = 4
+pausetime = 6,ifelse(var(5)=1,2,7)
+sparkno = -1
+sparkxy = -10,-40
+hitsound   = S1,2
+guardsound = S3,0
+animtype = Med
+ground.type = High
+ground.slidetime = 15
+ground.hittime  = 15
+ground.velocity = ifelse(var(5)=1,-7,-4),ifelse(var(5)=1,-5,-2)
+air.velocity = ifelse(var(5)=1,-7,-3),ifelse(var(5)=1,-4,-2)
+fall.recovertime = 20
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit && (HITCOUNT = 1)
+Anim        = 6000
+ID          = 6000
+Postype     = P2
+Pos         = 0, -40
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit && (HITCOUNT = 1)
+Name     = "HIT"
+Stateno  = 6031
+ID       = 6031
+Pos      = 0,-40
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+TriggerAll = P2stateno != [7040,7050]
+Trigger1 = MoveHit && var(5) = 1
+Value = 7040+ifelse(fvar(11)>=100,10,0)
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = MoveHit && fvar(11)>=100
+Value = 7050
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = Movecontact && var(40)>0 &&enemynear,backedgebodydist < 20
+Value = 7040
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 101, 3]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+;---------------------------------------------------------------------------
+;DB
+; CNS difficulty: easy
+[Statedef 102]
+type    = A
+movetype= A
+physics = A
+juggle  = 3
+poweradd= 50
+ctrl = 0
+anim = 102
+sprpriority = 2
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.85
+
+[State -1, VarSet];LIMIT
+Type = VarAdd
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 11
+Value = 20
+
+[State 102, 1]
+type = velSet
+trigger1 = Time = 0
+X = 3
+Y = -6
+
+[State 101, 3]
+type = ChangeState
+trigger1 = AnimElem = 3
+value = 610
+
+[Statedef 610]
+type    = A
+movetype= A
+physics = A
+
+[State 610, 1]
+type = velSet
+trigger1 = AnimElem = 4
+X = -1
+Y = -3
+
+[State 102, 1]
+type = PlaySnd
+trigger1 = Time = 5 
+value = 0, 1
+
+[State 102, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = A, NA
+damage =65*fvar(10)
+guardflag = MA
+priority = 3
+pausetime = 7,8
+sparkno = -1
+sparkxy = -5,-35
+hitsound   = S1,4
+guardsound = S3,0
+ground.type = High
+ground.slidetime = 15
+ground.hittime  = 16
+ground.velocity = 2,-6
+air.velocity = 2,-5
+fall = 1
+fall.recovertime = 20
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit && (HITCOUNT = 1)
+Anim        = 6007
+ID          = 6007
+Postype     = P2
+Pos         = 0, -50
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit && (HITCOUNT = 1)
+Name     = "HIT"
+Stateno  = 6031
+ID       = 6031
+Pos      = 0,-50
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State -3]
+type = PlaySnd
+Trigger1 = MoveHit && var(5) = 1
+value = S0, 9
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = Movecontact && var(40)>0 &&enemynear,backedgebodydist < 20
+Value = 7040
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 102, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = MoveHit && fvar(11)>=100
+Value = 7050
+Persistent = 0
+IgnoreHitPause = 1
+
+
+;---------------------------------------------------------------------------
+;DC
+; CNS difficulty: easy
+[Statedef 240]
+type    = A
+movetype= A
+physics = A
+poweradd= 50
+ctrl = 0
+anim = 240
+sprpriority = 2
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.85
+
+[State -1, VarSet];ダメージ補正
+Type = VarSet
+Trigger1 = MoveHit && var(5)=1
+Persistent = 0
+IgnoreHitPause = 1
+FV = 10
+Value = FVar(10) * 0.6
+
+[State -1, VarSet];LIMIT
+Type = VarAdd
+Trigger1 = MoveHit
+Persistent = 0
+IgnoreHitPause = 1
+FV = 11
+Value = 40
+
+[State 240, 1]
+type = velSet
+trigger1 = Time = 0
+X = 5
+Y = -7
+
+[State 240, 1]
+type = PlaySnd
+trigger1 = Time = 2
+value = 0, 2
+
+[State 240, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = A, NA
+damage =70*fvar(10)
+guardflag = MA
+priority = 3
+pausetime = 8,8
+sparkno = -1
+sparkxy = -5,-35
+hitsound   = S1,2
+guardsound = S3,0
+ground.type = High
+ground.slidetime = 10
+ground.hittime  = 14
+ground.velocity = -2,ifelse(var(5)=1,-11,-6)
+air.velocity = -2,ifelse(var(5)=1,-10,-5)
+fall = 1
+fall.recovertime = 20
+
+[State -1]
+Type        = Explod
+Trigger1    = MoveHit && (HITCOUNT = 1)
+Anim        = 6001
+ID          = 6001
+Postype     = P2
+Pos         = 0, -65
+OwnPal      = 1
+SprPriority = 8
+IgnoreHitPause = 1
+Persistent  = 0
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = MoveHit && (HITCOUNT = 1)
+Name     = "HIT"
+Stateno  = 6031
+ID       = 6031
+Pos      = 0,-65
+PosType  = P2
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+SuperMoveTime = 99999
+PauseMoveTime = 99999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State -3]
+type = PlaySnd
+Trigger1 = MoveHit && var(5) = 1
+value = S0, 9
+Persistent = 0
+IgnoreHitPause = 1
+
+[State 240, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = MoveHit && fvar(11)>=100
+Value = 7050
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1, TargetState]
+Type = TargetState
+TriggerAll = NumTarget > 0
+Trigger1 = Movecontact && var(40)>0 &&enemynear,backedgebodydist < 20
+Value = 7040
+Persistent = 0
+IgnoreHitPause = 1
+
+
+;---------------------------------------------------------------------------
+;気質発現
+[Statedef 500]
+type    = S
+movetype= I
+physics = S
+poweradd= -1000
+ctrl = 0
+anim = 2000
+sprpriority = 2
+
+[State -3]
+type = PlaySnd
+Trigger1 = time = 0
+value = S4, 8
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1]
+Type        = Explod
+Trigger1    = time >= 5
+Anim        = 8020
+ID          = 8020
+Postype     = left
+scale       = ifelse(time<=8,1-time*0.05,0.5),ifelse(time>=25,0.7-(time*0.015),0.5)
+Pos         = 160, 100
+OwnPal      = 1
+ontop = 1
+SprPriority = 9999
+IgnoreHitPause = 1
+trans = Add
+
+[State -1]
+Type        = Explod
+Trigger1    = time >= 5
+Anim        = 8021
+ID          = 8021
+Postype     = left
+Pos         = 160, 100
+scale       = ifelse(time<=8,1-time*0.05,0.5),ifelse(time>=25,0.7-(time*0.015),0.5)
+OwnPal      = 1
+ontop = 1
+SprPriority = 9999
+IgnoreHitPause = 1
+trans = Add
+
+[State -1]
+Type     = Helper
+Trigger1 = time%6 = 0
+Name     = "kisit"
+Stateno  = 6501
+ID       = 6501
+Pos      = 0,0
+PosType  = P1
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 0.3
+IgnoreHitPause = 1
+
+[State -1]
+Type     = Helper
+Trigger1 = time%8 = 0
+Name     = "kisit"
+Stateno  = 6500
+ID       = 6500
+Pos      = -30+time%5*12,0
+PosType  = P1
+OwnPal   = 1
+size.xscale = 1
+size.yscale = 1
+IgnoreHitPause = 1
+
+
+[State -1]
+Type = varadd
+trigger1 = time = 0
+v = 30
+value = -1
+Persistent  = 0
+
+[State -1]
+Type = varset
+trigger1 = time = 0
+v = 31
+value = 0
+Persistent  = 0
+
+[State -1]
+Type = varset
+trigger1 = time = 0
+v = 36
+value = 1
+Persistent  = 0
+
+[State -1]
+type = Helper
+trigger1 = time = 0
+name = " "
+ID = 8200
+postype = p1
+pos = 0, 0
+Stateno = 8200
+size.xscale = 0
+size.yscale = 0
+pausemovetime = 99999
+supermovetime = 99999
+ownpal = 1
+ignorehitpause = 1
+
+[State -1]
+type = varset
+trigger1 = Time = 0
+V = 40
+value = 900
+
+[State -1]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;--------------------------------------------------------　エフェクト
+;円形
+[StateDef 6501]
+Type        = A
+Physics     = N
+Anim        = 6501
+SprPriority = 1
+VelSet      = 0,0
+
+[State -1]
+Type     = NotHitBy
+Trigger1 = 1
+Value    = SAC, NT, ST, HT ,NA, SA, HA ,NP, SP, HP
+Time     = 10
+
+[State -1]
+Type     = Trans
+Trigger1 = 1
+Trans    = Add
+
+[State -1]
+Type     = VarAdd
+Trigger1 = Var(40) < 256
+V        = 40
+Value    = 25
+
+[State -1]
+Type     = VarSet
+Trigger1 = Var(40) >= 256
+V        = 40
+Value    = 256
+
+[State -1]
+Type     = VarAdd
+Trigger1 = Var(43) < 256
+V        = 43
+Value    = 23
+
+[State -1]
+Type     = VarSet
+Trigger1 = Var(43) >= 256
+V        = 43
+Value    = 256
+
+[State -1]
+Type     = PalFx
+Trigger1 = 1
+Time     = 1
+Add      = 0,0,0
+Mul      = 256-Var(40),256-Var(40),256-Var(43)
+
+[State -1]
+Type     = VarAdd
+Trigger1 = 1
+FV       = 20
+Value    = 0.1
+
+[State -1]
+Type     = VarAdd
+Trigger1 = 1
+FV       = 21
+Value    = 0.1
+
+[State -1]
+Type     = AngleDraw
+Trigger1 = 1
+Scale    = 0.1+FVar(20),0.1+FVar(21)
+
+[State -1]
+Type     = AngleSet
+Trigger1 = Root,StateNo = [111,114]
+Value    = -Root,Var(40)
+IgnoreHitPause = 1
+
+[State -1]
+Type     = AngleSet
+Trigger1 = Root,StateNo = [116,119]
+Value    = Root,Var(40)
+IgnoreHitPause = 1
+
+[State -1]
+Type = AssertSpecial
+Trigger1       = 1
+Flag           = Noshadow
+IgnoreHitPause = 1
+
+[State -1]
+Type     = DestroySelf
+Trigger1 = Time >= 10
+
+[StateDef 6500]
+Type        = A
+Physics     = N
+Anim        = 6500
+SprPriority = 10
+VelSet      = 0,0
+
+[State -1]
+Type     = NotHitBy
+Trigger1 = 1
+Value    = SAC, NT, ST, HT ,NA, SA, HA ,NP, SP, HP
+Time     = 10
+
+[State -1]
+Type     = Trans
+Trigger1 = 1
+Trans    = Add
+
+[State -1]
+Type     = VarAdd
+Trigger1 = Var(40) < 256
+V        = 40
+Value    = 25
+
+[State -1]
+Type     = VarSet
+Trigger1 = Var(40) >= 256
+V        = 40
+Value    = 256
+
+[State -1]
+Type     = VarAdd
+Trigger1 = Var(43) < 256
+V        = 43
+Value    = 23
+
+[State -1]
+Type     = VarSet
+Trigger1 = Var(43) >= 256
+V        = 43
+Value    = 256
+
+[State -1]
+Type     = PalFx
+Trigger1 = 1
+Time     = 1
+Add      = 0,0,0
+Mul      = 256-Var(40),256-Var(40),256-Var(43)
+
+[State -1]
+Type     = VarAdd
+Trigger1 = 1
+FV       = 20
+Value    = 0.1
+
+[State -1]
+Type     = VarAdd
+Trigger1 = 1
+FV       = 21
+Value    = 0.2
+
+[State -1]
+Type     = AngleDraw
+Trigger1 = 1
+Scale    = 0.7+FVar(20),0.1+FVar(21)
+
+[State -1]
+Type     = AngleSet
+Trigger1 = Root,StateNo = [111,114]
+Value    = -Root,Var(40)
+IgnoreHitPause = 1
+
+[State -1]
+Type     = AngleSet
+Trigger1 = Root,StateNo = [116,119]
+Value    = Root,Var(40)
+IgnoreHitPause = 1
+
+[State -1]
+Type = AssertSpecial
+Trigger1       = 1
+Flag           = Noshadow
+IgnoreHitPause = 1
+
+[State -1]
+Type     = DestroySelf
+Trigger1 = Time >= 15
+
+;＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+; ヒットエフェクト
+;＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+;円形
+[StateDef 6031]
+Type        = A
+Physics     = N
+Anim        = 6031
+SprPriority = 100
+VelSet      = 0,0
+
+[State -1]
+Type     = NotHitBy
+Trigger1 = 1
+Value    = SAC, NT, ST, HT ,NA, SA, HA ,NP, SP, HP
+Time     = 10
+
+[State -1]
+Type     = Trans
+Trigger1 = 1
+Trans    = Add
+
+[State -1]
+Type     = VarAdd
+Trigger1 = Var(40) < 256
+V        = 40
+Value    = 25
+
+[State -1]
+Type     = VarSet
+Trigger1 = Var(40) >= 256
+V        = 40
+Value    = 256
+
+[State -1]
+Type     = VarAdd
+Trigger1 = Var(43) < 256
+V        = 43
+Value    = 23
+
+[State -1]
+Type     = VarSet
+Trigger1 = Var(43) >= 256
+V        = 43
+Value    = 256
+
+[State -1]
+Type     = PalFx
+Trigger1 = 1
+Time     = 1
+Add      = 0,0,0
+Mul      = 256-Var(40),256-Var(40),256-Var(43)
+
+[State -1]
+Type     = VarAdd
+Trigger1 = 1
+FV       = 20
+Value    = 0.2
+
+[State -1]
+Type     = VarAdd
+Trigger1 = 1
+FV       = 21
+Value    = 0.2
+
+[State -1]
+Type     = AngleDraw
+Trigger1 = 1
+Scale    = 0.5+FVar(20),0.5+FVar(21)
+
+[State -1]
+Type     = AngleSet
+Trigger1 = Root,StateNo = [111,114]
+Value    = -Root,Var(40)
+IgnoreHitPause = 1
+
+[State -1]
+Type     = AngleSet
+Trigger1 = Root,StateNo = [116,119]
+Value    = Root,Var(40)
+IgnoreHitPause = 1
+
+[State -1]
+Type = AssertSpecial
+Trigger1       = 1
+Flag           = Noshadow
+IgnoreHitPause = 1
+
+[State -1]
+Type     = DestroySelf
+Trigger1 = Time >= 15
+
+;線
+[StateDef 6030]
+Type        = A
+Physics     = N
+Anim        = 6030
+SprPriority = 100
+VelSet      = 0,0
+
+[State -1]
+Type     = NotHitBy
+Trigger1 = 1
+Value    = SAC, NT, ST, HT ,NA, SA, HA ,NP, SP, HP
+Time     = 10
+
+[State -1]
+Type     = Trans
+Trigger1 = 1
+Trans    = Add
+
+[State -1]
+Type     = VarAdd
+Trigger1 = Var(40) < 256
+V        = 40
+Value    = 25
+
+[State -1]
+Type     = VarSet
+Trigger1 = Var(40) >= 256
+V        = 40
+Value    = 256
+
+[State -1]
+Type     = VarAdd
+Trigger1 = Var(43) < 256
+V        = 43
+Value    = 23
+
+[State -1]
+Type     = VarSet
+Trigger1 = Var(43) >= 256
+V        = 43
+Value    = 256
+
+[State -1]
+Type     = PalFx
+Trigger1 = 1
+Time     = 1
+Add      = 0,0,0
+Mul      = 256-Var(40),256-Var(40),256-Var(43)
+
+[State -1]
+Type     = VarAdd
+Trigger1 = 1
+FV       = 20
+Value    = 0.1
+
+[State -1]
+Type     = VarAdd
+Trigger1 = 1
+FV       = 21
+Value    = 0.15
+
+[State -1]
+type = VarRandom
+trigger1 = 1 
+v = 44
+range = 360
+
+[State 6005,~角度変更~]
+Type     = AngleSet
+Trigger1 = 1
+Value    = var(44)
+
+[State 6005,~スケールセット~]
+Type     = AngleDraw
+Trigger1 = 1
+Scale    = 0.5+FVar(20),0.5+FVar(21)
+
+[State -1]
+Type = AssertSpecial
+Trigger1       = 1
+Flag           = Noshadow
+IgnoreHitPause = 1
+
+[State -1]
+Type     = DestroySelf
+Trigger1 = Time >= 10
+
+
+
+
+[Statedef -3]
+
+;This controller plays a sound everytime KFM lands from a jump, or
+;from his back-dash.
+[State -3, Landing Sound]
+type = PlaySnd
+triggerall = Time = 1
+trigger1 = stateno = 52 ;Jump land
+trigger2 = stateno = 106 ;Run-back land
+value = S2, 0

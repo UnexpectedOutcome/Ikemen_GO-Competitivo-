@@ -1,0 +1,666 @@
+; CNSファイルはカンフーマンの定数（基本データ）と
+; 状態（各動作）を記述するものです。
+; キャラクターの心臓とも言える部分なのでとても重要です。
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;基本データ部分
+[Data]
+life              = 1000    ;体力ゲージの最大値を決めます
+power             = 3000    ;パワーゲージ最大値（デフォルトは 3000 = Lv.3 になります・オプション）
+attack            = 100     ;攻撃力パーセンテージ（デフォルトは 100% になります）
+defence           = 100     ;防御力パーセンテージ（デフォルトは 100% になります）
+fall.defence_up   = 50      ;一時的に上昇するダウン時の防御力パーセンテージ
+liedown.time      = 60      ;倒れてから起き上がるまでの時間
+airjuggle         = 15      ;ジャグルポイント限界値　★１
+sparkno           = 2       ;デフォルトのヒットスパーク番号（fightfx.airか、キャラのairから呼び出す）
+guard.sparkno     = 40      ;デフォルトのガードスパーク番号（fightfx.airか、キャラのairから呼び出す）
+KO.echo           = 0       ;ＫＯ時の声にエコーを掛けるかどうか（0=しない・1=する）
+volume            = 128     ;キャラの音量　255が最高
+intpersistindex   = 60;20,29   ;Varを次のラウンドへ持ち越しが可能 (最小=0, 最大=59)  ★２
+floatpersistindex = 40      ;FVarを次のラウンドへ持ち越しが可能 (最小=0, 最大=39) ★２
+
+
+
+;★１：「ジャグルポイント」って何？
+;　ダウン（受け身しなければ地面にそのまま吹っ飛び倒れる）効果の空中の相手に
+;　攻撃を入れられる限界を設定するポイントです。
+;　各ステートで設定した数値分攻撃が当たった時に溜まって行き、
+;　限界値に到達したり超えてしまうと全ての攻撃が一切当たらなくなります。
+;　攻撃が終わると数値が元に戻りますが、ジャグルポイントを設定してない攻撃や、
+;　場合によってはダウン効果の無い攻撃を空中の相手に何回も当てると、
+;　溜まらずに永久連続技（永久コンボ）になるので注意です。
+;　あなたがキャラを作ったら永久コンボがないか探しましょう。永久コンボは絶対に存在してはいけません。
+;
+;　なお、ゲーム中Ctrl+Cで当たり判定ボックスを表示している時に攻撃を当てるとピンク色の文字が出てきますが、
+;　その一番右の数値の部分がジャグルポイントの現在値表示になっているので確認出来ます。
+;
+;★２：「Var」と「FVar」って何？
+;　いわゆる『変数（Variables）』です。「何も入っていない番号のある箱」のようなモノで、
+;　中に自由にデータを入れ（トリガーで自由に条件を指定）、
+;　フラグを立てます（トリガーの条件が揃えば設定した数値が有効になる）。
+;　ステートコントローラのVar～～系で設定出来ますが、ここでは省略。
+;　設定する数値は、Varでは整数しか使用出来ませんが、
+;　FVarでは小数点以下（8.1や7.26とかや0.354など）が可能です。
+;　ちなみにそれぞれアドレスがあり、Varは０～５９まで、FVarは０～３９まで使う事が出来ます。
+;
+;　変数持ち越しの使用例：
+;　１：IntPersistIndex = 20,29　　（Var(20)～Var(29)の変数が次のラウンドへ持ち越しが出来ます）
+;　２：FloatPersistIndex = 25　　　（FVar(25)の変数が次のラウンドへ持ち越しが出来ます）
+;　（間違い：4,8,12,16や[22,37]などの記述は無効になります。）
+;
+;　※パラメータをIntPersistIndex=60、FloatPersistIndex=40にした場合、
+;　　それぞれ０～５９・０～３９以外の数値ならば、全ての変数の持ち越しを無効に出来ます。
+;　　バグにはならないので、使用する時が来るまではそれでも構いません。
+;
+;　覚えておくとキャラ作りに大変役立つモノなので、ある程度慣れてきたらいろいろチャレンジしてみましょう。
+;
+
+
+;---------------------------------------------------------------------------
+;サイズ設定
+[Size]
+xscale           = 1        ;キャラ画像の横のスケール
+yscale           = 1        ;キャラ画像の縦のスケール
+ground.back      = 15       ;キャラの幅（地上後方）
+ground.front     = 16       ;キャラの幅（地上前方）
+air.back         = 12       ;キャラの幅（空中後方）
+air.front        = 12       ;キャラの幅（空中前方）
+height           = 60       ;跳び越す相手のためのキャラの高さ
+attack.dist      = 160      ;攻撃を出した時に相手がガード体勢に入る最低の距離
+proj.attack.dist = 120       ;相手がガード体勢に入る発射物との最低の距離
+proj.doscale     = 0        ;xscaleとyscaleが発射物のスケールにも影響するかどうか（0=しない・1=する）
+head.pos         = -5, -90  ;BindToTargetの時に必要な頭の座標
+mid.pos          = -5, -60  ;BindToTargetの時に必要な体中心の座標
+shadowoffset     = 0        ;影の垂直方向の位置
+draw.offset      = 0,0      ;キャラ描画表示位置（Ｘ軸,Ｙ軸）
+
+;---------------------------------------------------------------------------
+;移動速度設定
+[Velocity]
+walk.fwd     = 2.4         ;前進歩行速度
+walk.back    = -2.2        ;後退歩行速度
+run.fwd      = 4.6, 0      ;前に走る時の速度（Ｘ軸,Ｙ軸）
+run.back     = -4.5,-3.8   ;後ろに走る時の速度（Ｘ軸,Ｙ軸）
+jump.neu     = 0,-9.4      ;垂直ジャンプ速度（Ｘ軸,Ｙ軸）
+jump.back    = -2.5        ;後ジャンプ速度
+jump.fwd     = 2.55        ;前ジャンプ速度
+runjump.back = -2.55,-8.1  ;後ろに走りながらのジャンプ速度（オプション）
+runjump.fwd  = 4,-8.1      ;前に走りながらのジャンプ速度（オプション）
+airjump.neu  = 0,-8.1      ;空中垂直ジャンプ速度（オプション）
+airjump.back = -2.5        ;空中後ジャンプ速度（オプション）
+airjump.fwd  = 2.55        ;空中前ジャンプ速度（オプション）
+
+;---------------------------------------------------------------------------
+;動作設定
+[Movement]
+airjump.num     = 1      ;空中ジャンプが出来る回数（オプション）
+airjump.height  = 35     ;空中ジャンプするために必要な最低限の高さ（オプション）
+yaccel          = .44    ;重力（垂直下降加速度）
+stand.friction  = .85    ;立ち状態の摩擦係数
+crouch.friction = .82    ;しゃがみ状態の摩擦係数
+
+
+;---------------------------------------------------------------------------
+; Varの使用状況
+; ここに自分が使ったvarをメモしておくといろいろと好都合です。
+; var(1)  - コマンドファイルのコンボ用
+; var(2)  - 投げに使った(800)
+; var(3)  - 残像
+
+; var(50) - Random var用
+
+;---------------------------------------------------------------------------
+;「ステート」の説明と基本的な使い方
+;---------------------------------------------------------------------------
+;■ステートとは「状態」を意味しますが、
+;　ＭＵＧＥＮでは通常攻撃や必殺技などの枠にはまらない
+;「ゲーム中における全ての行動を決めるプログラム」の事を指します。
+;「ゲージ消費が必要無く、一撃で相手を倒せる攻撃」なども簡単に作成出来るので注意です。
+;　１ステート（一つの行動）ずつに対して必ず番号（アドレス）が割り当てられます。
+;　俗に「ステートナンバー」と呼ばれています。
+;
+;■基本的な設定の例
+; [Statedef STATENO]       一つの行動を定義する記述です。「STATENO」に必ず番号を設定してください
+; type = ?      S/C/A/L/U  キャラの状態を指定
+; S=立ち　C=しゃがみ　A=空中　L=倒れている　U=前のステートの状態を引き継ぐ
+;
+; movetype = ?  I/A/H      キャラの行動内容を指定
+; I=何もしない　A=攻撃している　H=攻撃を食らっている
+;
+; physics = ?   S/C/A/N/U  キャラの物理的な体勢
+; S=立ち　C=しゃがみ　A=空中　N=重力や摩擦の影響を受けない　U=前のステートの体勢を引き継ぐ
+;
+; juggle = ?               攻撃を当てた時に溜まるジャグルポイントの設定
+;
+; [State STATENO, ?]      「ステートコントローラ」と呼ばれるステートの色々な操作を定義し、設置や追加をします
+; type = ?                 ステートコントローラの種類をこの部分に状況に応じて入れます
+; 　                       トリガーで条件を指定し、様々な効果を適用させて行きます
+;
+;
+; ※１ステートには必ず一つはステートコントローラを設置する必要があります。
+;
+; 後は実際に使われているステートを参照してください。（[Statedef 200]に更に詳しい説明もあります）
+;
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+; 基本行動のステート
+;---------------------------------------------------------------------------
+; タイムオーバー時
+; CNS レベル: 基本
+
+[Statedef 170]
+type = S
+ctrl = 0     ;ここでCtrlSetを簡略化できます。　1=自由に動かせる
+anim = 170
+velset = 0,0 ;ここでVelSetを簡略化できます。　x方向,y方向 の順
+
+[State 170, 無敵]
+type = NotHitBy
+trigger1 = 1 ;1にするといかなる条件でも有効で、0にするといかなる条件でも無効
+value = SCA  ;※
+time = 1
+
+
+;※ 無敵の設定について
+;
+;value = 1, 2, 2, 2, 2, 2… のように設定する。
+;1には、無効化する全てのS(立ち),C(屈み),A(空中)攻撃を設定する。
+;2には、無効化する攻撃属性を設定する。（NA,SA,HA,NT,ST,HT,NP,SP,HP,AA,AT,APがある）
+;
+;効果例
+;value = SCA ・ value = ,AA,AT,AP ・ value = SCA,NA,ST,HP　…全て無敵。　注意。
+;value = SC　…地上攻撃に対して全て無敵。
+;value = A, NA, NT, NP　…空中攻撃全てと通常攻撃、通常投げ、通常飛び道具に対して無敵。
+;
+;意味
+;NA+SA+HA=AA・NT+ST+HT=AT・NP+SP+HP=AP
+
+
+
+;---------------------------------------------------------------------------
+; 勝利ポーズ分岐
+; CNS レベル: 基本
+;
+;ここで勝利ポーズを選択する。　MatchOverは試合終了を判定するので、
+;一回目と二回目勝利を別のポーズにしたい時に便利。
+
+[Statedef 180]
+type = S
+
+[State 180, 勝利ポーズ1]
+type = ChangeState
+triggerall = RoundState != 0 ;エンディング対策
+trigger1 = Time = 0
+trigger1 = MatchOver = 0     ;0なら次の試合がまだ残ってるということ
+value = 182
+
+[State 180, 勝利ポーズ2]
+type = ChangeState
+trigger1 = Time = 0
+trigger1 = MatchOver = 1     ;これが1だと試合終了したとき
+trigger2 = RoundState = 0    ;エンディング時はこちらを使う
+value = 182
+
+;---------------------------------------------------------------------------
+; 勝利ポーズ
+; CNS レベル: 基本
+
+[Statedef 181];深くお辞儀
+type = S
+ctrl = 0
+anim = 182
+velset = 0,0
+
+[State 181, 無敵]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 181, カンフーボイス]
+type = Null;PlaySnd
+triggerall = Time = 1
+trigger1 = Alive
+value = 90,0
+channel = 4
+
+
+[Statedef 182];分を弁えぬ木偶めが…！
+type = S
+ctrl = 0
+anim = 183
+velset = 0,0
+sprpriority = 5
+
+[State 182, 3]
+type = AssertSpecial
+trigger1 = Time = [0,150]
+flag = RoundNotOver
+
+[State 181, 無敵]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 181, カンフーボイス]
+type = PlaySnd
+triggerall = animelem = 3
+trigger1 = Alive
+value = 55,13
+channel = 0
+
+
+
+;---------------------------------------------------------------------------
+; イントロ分岐
+; CNS レベル: 基本
+;
+; ここでは変数(var)を使っていますが、詳しい説明は後ほど。
+; VarRandomはrangeで指定された範囲からひとつを選ぶので、
+; いろいろな分岐に便利です。
+
+;イントロ選択
+[Statedef 190]
+type = S
+ctrl = 0
+anim = 0
+velset = 0,0
+
+[State 190, ランダムに変数を選ぶ]
+type = VarRandom
+trigger1 = 1
+v = 21
+range = 0,1
+
+[State 190, 上で選ばれた変数が0以外だったら]
+type = ChangeState
+trigger1 = Time = 1
+trigger1 = var(21) != 0
+value = 192
+
+[State 190, 0だったらこちらへ分岐]
+type = ChangeState
+trigger1 = Time = 1
+trigger1 = var(21) = 0
+value = 191
+
+
+;---------------------------------------------------------------------------
+; イントロ（試合開始直前のアクション）
+
+[Statedef 191]
+type = S
+ctrl = 0
+anim = 181
+velset = 0,0
+
+[State 191, アニメ変更] ;画面フェードインの間だけアニメーションを繰り返し、止まっているように見せています
+type = ChangeAnim
+trigger1 = RoundState = 0
+value = 181
+
+[State 191, 特殊効果] ;「ROUND1, FIGHT!」のアナウンスが始まるまでは、このコントローラを使ってください
+type = AssertSpecial
+trigger1 = 1
+flag = Intro ;イントロの状態になります
+
+[State 191, ボイス]
+type = PlaySnd
+triggerall = animelem = 2
+trigger1 = Alive
+value = 55,19
+channel = 0
+
+[State 191, ボイス]
+type = PlaySnd
+triggerall = animelem = 3
+trigger1 = Alive
+value = 66,2
+volume = 180
+
+[State 3001, Super]
+type = Helper
+trigger1 = animelem = 3
+id = 11001
+name = "efect"
+pos =50,-110
+postype = P1
+stateno = 11001
+helpertype = normal
+keyctrl = 0
+ownpal = 1
+ignorehitpause = 0
+
+[State 1000, 0]
+type = EnvShake
+trigger1 = animelem = 3
+time = 20
+freq = 50
+ampl = 15
+
+
+[State 191, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0 ;common1.cns参照
+
+;---------------------------------------------------------------------------
+;efect
+[Statedef 11001]
+type     = A
+movetype = I
+physics  = N
+juggle   = 1
+velset   = 0,0
+anim     = 9999
+ctrl     = 0
+sprpriority = 7
+
+[State 13006]
+Type     = Trans
+Trigger1 = 1
+Trans    = add
+
+[State 1201, 特殊効果]
+type = AssertSpecial
+trigger1 = 1
+flag = NoShadow ;影を消す
+ignorehitpause = 1
+
+[State 6002, pal-fadeout]
+type = PalFx
+trigger1 = time = (20,80)
+time = 1
+add = 100-(Time*9),100-(Time*9),100-(Time*9)
+ignorehitpause = 1
+supermovetime = 99999
+pausemovetime = 99999
+
+[State -3, Burst]
+type = VarSet
+trigger1 = Time = 0
+fvar(1) = .01
+
+[State -3, Burst]
+type = VarAdd
+trigger1 = fvar(1) > 0
+fvar(1) = .06
+
+
+
+[State 3000]
+type = explod
+trigger1 = time = 0
+anim = 11001
+id = 11001
+pos = 0,0
+postype = p1
+bindtime = 1
+removetime = 40
+sprpriority = 13
+ignorehitpause = 1
+ownpal = 0
+supermove = 1
+
+[State 3000]
+type = explod
+trigger1 = time = 0
+anim = 11002
+id = 11002
+pos = 0,0
+postype = p1
+bindtime = 1
+removetime = 40
+sprpriority = 13
+ignorehitpause = 1
+ownpal = 0
+supermove = 1
+
+[State 3000]
+type = explod
+trigger1 = time = 0
+anim = 11003
+id = 11002
+pos = 0,0
+postype = p1
+bindtime = 1
+removetime = 40
+sprpriority = 13
+ignorehitpause = 1
+ownpal = 0
+supermove = 1
+
+[State 3000]
+type = explod
+trigger1 = time = 0
+anim = 11002
+id = 11002
+pos = 0,0
+postype = p1
+bindtime = 1
+removetime = 40
+sprpriority = 13
+ignorehitpause = 1
+ownpal = 0
+supermove = 1
+facing = -1
+
+[State 3000]
+type = explod
+trigger1 = time = 0
+anim = 11003
+id = 11002
+pos = 0,0
+postype = p1
+bindtime = 1
+removetime = 40
+sprpriority = 13
+ignorehitpause = 1
+ownpal = 0
+supermove = 1
+facing = -1
+
+[State 11599, 16]
+type = modifyExplod
+trigger1 = 1
+Id = 11001
+scale = (fvar(1)*1.3),(fvar(1)*1.3)
+
+[State 11599, 16]
+type = modifyExplod
+trigger1 = 1
+Id = 11002
+scale = fvar(1),fvar(1)
+
+[State 1201, このヘルパーを消す]
+type = DestroySelf
+trigger1 = time = 45
+
+
+;---------------------------------------------------------------------------
+; イントロ（神出鬼没ver）
+
+[Statedef 192]
+type = S
+ctrl = 0
+anim = 192
+velset = 0,0
+
+[State 191, アニメ変更] ;画面フェードインの間だけアニメーションを繰り返し、止まっているように見せています
+type = ChangeAnim
+trigger1 = RoundState = 0
+value = 192
+
+[State 191, 特殊効果] ;「ROUND1, FIGHT!」のアナウンスが始まるまでは、このコントローラを使ってください
+type = AssertSpecial
+trigger1 = 1
+flag = Intro ;イントロの状態になります
+
+[State 3001, Super]
+type = Helper
+trigger1 = Time = 1
+trigger2 = Time = 8
+trigger3 = Time = 15
+id = 12030
+name = "appear"
+pos = 0,0
+postype = P1
+stateno = 12030
+helpertype = normal
+keyctrl = 0
+ownpal = 1
+ignorehitpause = 1
+pausemovetime = 999999
+supermovetime = 999999
+
+[State 191, se]
+type = PlaySnd
+trigger1 = Time = 1
+value = 65,2
+channel = 4
+
+[State 191, se]
+type = PlaySnd
+trigger1 = animelem = 11
+value = 55,12
+channel = 0
+
+[State 191, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+
+; エフェクト
+;------------------------
+[Statedef 12030]
+type    = A
+movetype= I
+physics = N
+anim = 12030
+velset = 0,0
+ctrl = 0
+sprpriority = 4
+
+[State 13006]
+Type     = Trans
+Trigger1 = 1
+Trans    = add
+
+[State 1201, 特殊効果]
+type = AssertSpecial
+trigger1 = 1
+flag = NoShadow ;影を消す
+ignorehitpause = 1
+
+[State 1000, 0]
+type = AngleSet
+trigger1 = time = 0
+value = 0
+ignorehitpause = 0
+
+[State 1000, 0]
+type = AngleDraw
+trigger1 = time = [0,34]
+ignorehitpause = 0
+
+[State 1000, 0]
+type = Angleadd
+trigger1 = time = 0
+value = 90
+ignorehitpause = 0
+
+[State 1201, このヘルパーを消す]
+type = DestroySelf
+trigger1 = animtime = 0
+
+
+;---------------------------------------------------------------------------
+; 挑発
+; CNS レベル: 基本
+[Statedef 195]
+type     = S
+movetype = I
+physics  = S
+anim     = 195
+velset   = 0,0
+ctrl     = 0
+sprpriority = 2 ;ここで表示優先度を決定できます。　範囲は-5～5、大きいほど手前に表示される
+facep2 = 1      ;相手の方を向いてから挑発（結構重要）
+
+[State 1410,0]
+type = PlaySnd
+trigger1 = AnimElem = 5
+value = 55,2
+channel = 0
+
+[State -2];POWER回復
+Type = PowerAdd
+TriggerAll = Power < 3000
+TriggerAll = RoundState = 2
+Trigger1 = GameTime % 1 = 0
+Value = 7
+
+[State 195, コントロール可否]
+type = CtrlSet
+trigger1 = Time = 25
+value = 1
+
+[State 195, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;緊急回避
+[Statedef 11111]
+type = S
+movetype = I
+physics = N
+ctrl = 0
+anim = 11111
+poweradd = 0
+sprpriority = -2
+
+[State 1410,0]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 61,0
+
+[State 220, Position]
+type = VelSet
+trigger1 = AnimElem = 1
+x = 5
+
+[State 80];投げ以外に無敵
+type = HitBy
+trigger1 = Time < 23
+value = SC, NT, ST, HT
+
+[State 80]
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[state 80]
+type = velset
+trigger1 = animelem = 4
+x = 0
+
+[State 80]
+type = AfterImageTime
+trigger1 = animtime = 0
+value = 0
+
+[State 80]
+type = ChangeState
+trigger1 = Animtime = 0
+value = 0
+ctrl = 1
+
+
+;この下、一行以上空ける事！
+
+

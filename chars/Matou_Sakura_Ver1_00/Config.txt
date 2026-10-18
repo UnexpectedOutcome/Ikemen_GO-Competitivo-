@@ -1,0 +1,4540 @@
+;==============================================================================
+;■ゲージ関連ヘルパー
+
+[Statedef 21000]
+type = A
+Physics = N
+Velset = 0,0
+sprpriority = 6
+Anim = 10039
+
+[State -1]
+type = ParentVarSet
+triggerall = RoundState=0
+triggerall = NumEnemy>0
+trigger1 = RoundNo=1&&TeamMode=single
+trigger2 = NumPartner>=1
+trigger2 = RoundNo=1&&Partner,ID>ID&&TeamMode=simul
+trigger3 = TeamMode=turns
+trigger4 = NumPartner=0&&Enemy,TeamMode=turns
+Persistent = 0
+
+;==============================================================================
+;■コンフィグ
+
+;------------------------------------------------------------------------------
+;■（初期モード選択）──────────────┐	
+;						 ↓	
+var(52) =					(100)	
+
+;()内に3桁の数値をいれることでモードセレクトの初期値を決められます。
+
+;選択完了まえにイントロを飛ばしたときは自動で初期値が採用されます。
+;AIが起動したときは初期値が適用されます。
+;※初期値は(100)
+
+;3桁目　モード選択	（0）弱体化モード
+;			（1）ノーマルモード
+;			（2）ボスモード
+
+;2桁目　ゲージ選択	（0）効果なし
+;			（1）聖杯ゲージ自動回復
+;			（2）パワーゲージ自動回復
+;			（3）全ゲージ自動回復（聖杯、パワー、体力）
+
+;1桁目　オプション選択	（0）オプションなし
+;			（1）開幕巨人召喚　　（ラウンド開始時に影の巨人を召喚）
+;			（2）自動地雷召喚　　（130F毎に地雷を敵との中間に設置）
+;			（3）オプション全選択（巨人と地雷の召喚）
+
+;==============================================================================
+
+[State -1]
+type = null
+
+;------------------------------------------------------------------------------
+;■（AIレベル設定） ──────────────────┐	
+;							↓	
+trigger1 = var(59):=					(4)	
+
+;CPU操作のAIレベルを設定します。
+;AIレベルの上昇によりダメージの高いコンボルートや厳しい固めを行うようになります。
+;回避行動やカウンター系行動の選択肢が変化します。
+
+;	(5)		
+;	(4)　強い	対AI用
+;	(3)　　↑　	対人上級者
+;	(2)　　↓　	対人中級者
+;	(1)　弱い	対人初心者
+;	(0)		
+
+;	▼AI常時起動設定────────────────┐	
+;							↓	
+	trigger2 = var(58):=var(58)+Ceil(2.0**30)*	(0)	
+
+;	※常にAIが起動してプレイヤーが操作できなくなります。
+;	※初期値は(0)の常時AI起動なし
+
+;		(1)のとき常時AI起動あり
+;		(0)のとき常時AI起動なし
+
+;		※常時AI起動なしのときでも10～12Pを選択するとAIが最速で起動します。
+
+
+;AIレベル0	MUGEN本体のランダム操作のみです。
+
+;AIレベル1	壁コンやダウン追い討ち、ジャンプ攻撃も一部しか使用しません。
+;		地上コンボや固めなどは結構まともにします。
+;		無敵技のカウンターや対空などは使用しません。
+
+;AIレベル2	AIレベル1より使用する技や連携が増え、カウンター系も一部使用します。
+;		一部の対空技や投げ回避を行うようになります。
+
+;AIレベル3	基本的な連携や差込や壁コンやダウン追い討ちをすべて使用します。
+
+;AIレベル4	人操作で難しいタイミングでのキャンセルや状況判断を使用します。
+;		基本的な動きはAIレベル3とあまり変わりがありません。
+
+;AIレベル5	AIレベル4とほぼ変わりがありませんがごく一部連携などが制限がなくなり
+;		最速でキャンセルや目押しをしてきます。
+;		（ただしAI反応速度設定には依存します）
+
+;------------------------------------------------------------------------------
+;■（AIガード精度設定） ────────────────┐	
+;							↓	
+trigger3 = var(59):=var(59)+10*				(9)	
+
+;CPU操作のガード精度を設定します。
+;ガード精度レベルの上昇により攻撃へのガードの反応速度や上下ガードの切り替えや
+;めくりへのガードが正確になります。
+
+;	　　 　基本　　中段　 めくり
+;	(10)　 100%　　100%　　100%
+;	(9)　　 45%　　 18%　　 36%
+;	(8)　　 40%　　 16%　　 32%
+;	(7)　　 35%　　 14%　　 28%
+;	(6)　　 30%　　 12%　　 24%
+;	(5)　　 25%　　 10%　　 20%
+;	(4)　　 20%　　  8%　　 16%
+;	(3)　　 15%　　  6%　　 12%
+;	(2)　　 10%　　  4%　　  8%
+;	(1)　　  5%　　  2%　　  4%
+;	(0)　　  0%　　  0%　　  0%
+
+;1F毎の確率なので発生の遅い攻撃ほど試行回数が多くガード成功率が高くなります。
+;中段は学習後の1F毎のガード精度です。
+
+;※4レベルで人間上級者ぐらいです。
+;※7レベル以上が対AI用です。
+
+;------------------------------------------------------------------------------
+;■（AI反応速度設定） ─────────────────┐	
+;							↓	
+trigger4 = var(59):=var(59)+1000*			(9)	
+
+;CPU操作の反応速度を設定します。
+;反応速度レベルの上昇により相手の攻撃に対する反撃の反応が早くなります。
+;立ち回りや反撃に影響しますが地上コンボの精度には影響ありません。
+
+;	　　　 確率　　最速F
+;	(10)　 100%　　 0F
+;	(9)　　 45%　　 1F
+;	(8)　　 40%　　 2F
+;	(7)　　 35%　　 3F
+;	(6)　　 30%　　 4F
+;	(5)　　 25%　　 5F
+;	(4)　　 20%　　 6F
+;	(3)　　 15%　　 7F
+;	(2)　　 10%　　 8F
+;	(1)　　  5%　　 9F
+;	(0)　　  0%　　10F
+
+;※レベルが低いと何もしない棒立ちが増えます。
+
+;無敵技でのカウンターや牽制ヒット後の連続技、一度学習した中段への差込や
+;対空や投げへの回避行動や立ち回りなどの反応速度に影響があります。
+;ガード後の反撃やジャンプの迎撃などは反撃や迎撃可能とAIが判断した状態であっても
+;最速F分の時間が経過していないかぎり強制的に反応確率が0%になります。
+
+;※4レベルで人間上級者ぐらいです。
+;※7レベル以上が対AI用です。
+
+;==============================================================================
+
+
+;------------------------------------------------------------------------------
+;■（ゲージ類表示スイッチ） ──────────┐	
+;						↓	
+trigger5 = var(51):=				(3)	
+
+;(0)すべて非表示
+;(1)聖杯ゲージ
+;(2)聖杯ゲージ＆システムメッセ
+;(3)聖杯ゲージ＆システムメッセ＆ダメージ表示
+
+;※聖杯ゲージ＆メッセージ類はすべてエクスプロード
+;基準値は（3）
+
+;------------------------------------------------------------------------------
+;■（魔力吸収エフェクト表示） ─────────┐	
+;						↓	
+trigger6 = var(51):=var(51)+10000000*		(12)	
+
+;( )内に1～2桁の数値でエフェクトの表示最大数を設定
+
+;ヘルパーを大量に使用できない場合は数値を下げる（シングルで8～14）
+;初期値以上に数値を上げることで一部の技での聖杯ゲージ効率が上昇します。
+
+;※エフェクト1個につきヘルパー1個使用
+;※次項のタッグ時魔力吸収エフェクト数半減設定により調整することも出来ます。
+;初期値は（12）個
+
+;------------------------------------------------------------------------------
+;■（タッグ時魔力吸収エフェクト数半減設定） ──┐	
+;						↓	
+trigger7 = var(58):=var(58)+Ceil(2.0**29)*	(1)	
+
+;相手がタッグのとき自動的に魔力吸収エフェクトで使用するヘルパー数を半減します。
+;※端数切捨て
+
+;※初期値は(1)のオン
+
+;	(0)　オフ
+;	(1)　オン
+
+;------------------------------------------------------------------------------
+;■（エフェクト簡易表示） ───────────┐	
+;						↓	
+trigger8 = var(51):=var(51)+1000000000*		(0)	
+
+;(0)通常
+;(1)簡易ヒットエフェクト＆ボスエフェクト無し
+;(2)簡易ヒットエフェクト＆ボスエフェクト無し＆泥エフェクト無し
+
+;※ヒットエフェクト1個につきヘルパー1個、ボスエフェクトはすべてエクスプロード、
+;泥はヘルパー1個+エクスプロード沢山
+;初期値は（0）
+
+;------------------------------------------------------------------------------
+;■（聖杯ゲージ表示位置） ───────────┐	
+;						↓	
+trigger9  = var(10):= 				(0)	;X座標
+trigger10 = var(11):= 				(0)	;Y座標
+
+;( )内の数値が大きいほど画面下のゲージが上方向へ移動します。
+;※Y座標(20)でクリップボードの直上
+;※基準値は0,0
+
+;------------------------------------------------------------------------------
+;■（システムメッセージ表示位置） ───────┐	
+;						↓	
+trigger11 = var(12):= 				(0)	;X座標
+trigger12 = var(13):= 				(90)	;Y座標
+
+;( )内のY座標数値が大きいほどシステムメッセージが上方向へ移動します。
+;※基準値は0,90
+
+;------------------------------------------------------------------------------
+;■（ダメージ表示位置） ────────────┐	
+;						↓	
+trigger13 = var(14):= 				(0)	;X座標
+trigger14 = var(15):= 				(120)	;Y座標
+
+;( )内のY座標数値が大きいほどダメージ表示が上方向へ移動します。
+;※基準値は0,120
+
+;------------------------------------------------------------------------------
+;■（ガードブレイクゲージ表示位置） ──────┐	
+;						↓	
+trigger15 = var(16):= 				(0)	;X座標
+trigger16 = var(17):= 				(120)	;Y座標
+
+;( )内のY座標数値が大きいほどダメージ表示が上方向へ移動します。
+;※基準値は0,120
+
+;------------------------------------------------------------------------------
+;■（聖杯ゲージ回復補正） ───────────────┐	
+;							↓	
+trigger17 = var(51):=var(51)+10*			(4)	
+
+;ゲージ選択により聖杯ゲージが自動回復する場合の回復率に補正がかかります。
+;※標準は(4)の4Fで1%回復
+
+;	(9)　効果4倍
+;	(8)　効果3倍
+;	(7)　効果2倍
+;	(6)　効果1.50倍
+;	(5)　効果1.25倍
+;	(4)　効果1倍
+;	(3)　効果3/4
+;	(2)　効果1/2
+;	(1)　効果1/4
+;	(0)　効果なし
+
+;------------------------------------------------------------------------------
+;■（パワーゲージ回復補正） ──────────────┐	
+;							↓	
+trigger18 = var(51):=var(51)+100*			(4)	
+
+;ゲージ選択によりパワーゲージが自動回復する場合の回復率に補正がかかります。
+;※標準は(4)の1Fで1点回復、1ゲージは1000点
+
+;	(9)　効果6倍
+;	(8)　効果4倍
+;	(7)　効果2倍
+;	(6)　効果1.50倍
+;	(5)　効果1.25倍
+;	(4)　効果1倍
+;	(3)　効果3/4
+;	(2)　効果1/2
+;	(1)　効果1/4
+;	(0)　効果なし
+
+;------------------------------------------------------------------------------
+;■（体力ゲージ回復補正） ───────────────┐	
+;							↓	
+trigger19 = var(51):=var(51)+1000*			(4)	
+
+;全ゲージ自動回復を選択したときに体力が回復するようになります。
+;効果1倍で99カウントで約6割回復
+;※標準は(0)の回復なし
+
+;	(9)　効果20倍
+;	(8)　効果10倍
+;	(7)　効果5倍
+;	(6)　効果3.33倍
+;	(5)　効果1.66倍
+;	(4)　効果1倍
+;	(3)　効果1/2
+;	(2)　効果1/3
+;	(1)　効果1/6
+;	(0)　効果なし
+
+;	▼被弾時体力回復停止──────────────┐	
+;							↓	
+	trigger20 = var(57):=var(57)+Ceil(2.0**20)*	(1)	
+
+;	攻撃を受けている間の体力回復が停止します。
+;	※標準は(1)の停止あり
+
+;		(1)　停止あり
+;		(0)　停止なし
+
+;------------------------------------------------------------------------------
+;■（開幕巨人召喚能力補正） ──────────────┐	
+;							↓	
+trigger21 = var(51):=var(51)+10000*			(5)	
+
+;開幕影の巨人召喚を選択したときの巨人の強さです。
+;※標準は(5)の聖杯ゲージ500%相当の召喚
+
+;	(9)　900%
+;	(8)　800%
+;	(7)　700%
+;	(6)　600%
+;	(5)　500%
+;	(4)　400%
+;	(3)　300%
+;	(2)　200%
+;	(1)　100%
+;	(0)　1%
+
+;※ボスモードの聖杯ゲージ補正は開幕召喚にはかかりません。
+
+;------------------------------------------------------------------------------
+;■（相殺強度設定） ──────────────────┐	
+;							↓	
+trigger22 = var(53):=					(3)	
+
+;打撃攻撃(触手攻撃)の相殺判定の強さを決定します。
+;モード選択により打撃と射撃に対して相殺判定がでます。
+;飛び道具に対しては仕様上設定が反映されず常に(3)相当になります。
+;※初期値は(3)
+
+;	(3)　超必殺技と必殺技と通常技のすべてに相殺可能
+;	(2)　必殺技と通常技に対して相殺可能
+;	(1)　通常技に対してのみ相殺可能
+;	(0)　相殺未使用
+
+;------------------------------------------------------------------------------
+;■（相殺継続設定） ──────────────────┐	
+;							↓	
+trigger23 = var(53):=var(53)+10*			(0)	
+
+;打撃攻撃(触手攻撃)の相殺判定の持続を決定します。
+;相手に攻撃がヒットガードされたときに相殺判定が消えるかどうか設定できます。
+;判定を残すと相手のガードキャンセル攻撃やブロッキング後の反撃なども相殺し、
+;そのまま攻撃を続行します。
+;攻めがとても強くなるためノーマルモード以下では(0)推奨です。
+;※初期値は(0)
+
+;	(2)　相殺判定消滅なし
+;	(1)　高性能なブロッキング等に対しては相殺判定1回のみ継続
+;	(0)　攻撃がヒットガード問わず敵本体に当たると相殺判定消滅
+
+;------------------------------------------------------------------------------
+;■（相殺回数設定） ──────────────────┐	
+;							↓	
+trigger24 = var(53):=var(53)+100*			(5)	
+
+;打撃攻撃(触手攻撃)の相殺判定の発生回数を決定します。
+;ジャンプ↓中攻撃は(5)以下では設定に関わらず9回まで相殺出来ます。
+;※初期値は(5)
+
+;	(9)　60回
+;	(8)　30回
+;	(7)　15回
+;	(6)　10回
+;	(5)　その技の最大攻撃回数分
+;	(4)　小攻撃2回、中攻撃3回、大攻撃4回
+;	(3)　小攻撃1回、中攻撃2回、大攻撃3回
+;	(2)　2回
+;	(1)　1回
+;	(0)　0回
+
+;※Projの飛び道具に対しては仕様上無制限に相殺可能ですが10Fに一回しか相殺できません。
+;（ただし、相殺時に射撃無敵が付与されます）
+
+;------------------------------------------------------------------------------
+;■（コマンド先行入力猶予設定） ────────────┐	
+;							↓	
+trigger25 = var(53):=var(53)+10000000*			(8)	
+
+;コマンドの先行入力の猶予時間を決定します。
+;最大99までの2桁の整数（1～99）で猶予フレームを設定します。
+;（10Fぐらいにするとリバーサル技や2C後のダッシュ等がかなり簡単になります）
+
+;※初期値は(8)の8F入力保持
+
+;ダッシュ系とハイジャンプは入力後にレバーをニュートラルにすると先行入力がリセットされます。
+;コマンド技はレバーをニュートラルにするかボタンを離すと先行入力がリセットされます。
+;（通常技の目押しの先行入力はありません）
+
+;------------------------------------------------------------------------------
+;■（割合ダメージ設定） ────────────────┐	
+;							↓	
+trigger26 = var(57):=var(57)+Ceil(2.0**19)*		(1)	
+
+;泥系投げ技の割合ダメージ補正を設定します。
+;※初期値は(1)の補正あり
+
+;	(0)　割合ダメージ補正なし（ATK依存の固定ダメージ）
+;	(1)　割合ダメージ補正あり（ATK依存の割合ダメージ）
+
+;成長ルールなどで体力が増えるときはオフを推奨します。
+;どちらの設定でも最大体力1000未満での逆補正による威力低下はありません。
+
+;------------------------------------------------------------------------------
+;■（根性値設定） ───────────────────┐	
+;							↓	
+trigger27 = var(53):=var(53)+100000*			(4)	
+
+;根性値の補正値を決定します。
+;体力が25%減るたびに防御力が補正値分上昇します。
+
+;※初期値は(4)の10%
+
+;	(9)　22.5%補正
+;	(8)　20.0%補正
+;	(7)　17.5%補正
+;	(6)　15.0%補正
+;	(5)　12.5%補正
+;	(4)　10.0%補正
+;	(3)　7.5%補正
+;	(2)　5.0%補正
+;	(1)　2.5%補正
+;	(0)　根性値無し
+
+;------------------------------------------------------------------------------
+;■（モード選択時間設定） ───────────────┐	
+;							↓	
+trigger28 = var(53):=var(53)+1000000*			(3)	
+
+;開幕前のモード選択の受付時間（タイムリミット）を決定します。
+;(0)の時はモードセレクト自体が表示されません。
+
+;※初期値は(3)の300F
+
+;	(9)　900F
+;	(8)　800F
+;	(7)　700F
+;	(6)　600F
+;	(5)　500F
+;	(4)　400F
+;	(3)　300F
+;	(2)　200F
+;	(1)　100F
+;	(0)　モードセレクト表示無し
+
+;------------------------------------------------------------------------------
+;■（初期モードランダム設定） ─────────────┐	
+;							↓	
+trigger29 = var(58):=var(58)+Ceil(2.0**24)*		(0)	
+
+;開幕前のモード選択をランダムに選択します。
+;ゲージの回復量やジャプニカ暗殺帳の補正値などもランダムになります。
+
+;※初期値は(0)のスイッチオフ
+
+;	(1)　スイッチオン
+;	(0)　スイッチオフ
+
+;※サバイバル時の敵などにご利用ください。
+
+;------------------------------------------------------------------------------
+;■（ブリス設定） ───────────────────┐	
+;							↓	
+trigger30 = var(51):=var(51)+100000*			(0)	
+
+;ブリスの衣装を選択します。
+
+;※初期値は(0)のシステムオフ
+
+;	(9)　ランダム
+
+;	(2)　ボンテージ
+;	(1)　メイド服
+
+;	(0)　システムオフ（ボンテージ固定）
+
+;※システムオンの状態では必殺投げ等でブリス指定のAir9020などを相手キャラが
+;　使用しているとその食らいポーズがブリス食らいになる不具合があります。
+
+;------------------------------------------------------------------------------
+;■（AI死体殴り設定） ─────────────────┐	
+;							↓	
+trigger31 = var(57):=var(57)+Ceil(2.0**18)*		(0)	
+
+;AI操作時のKO後にEXテレポ投げで追撃可能なときに追撃するかどうか選択できます。
+;聖杯ゲージを24%ほど余分に得られ断末魔を3回ほど追加できます。
+
+;※初期値は(0)でスイッチオフ
+
+;------------------------------------------------------------------------------
+;■（ガークラ設定） ──────────────────┐	
+;							↓	
+trigger32 = var(57):=var(57)+Ceil(2.0**17)*		(1)	
+
+;攻撃がガードや特殊ガードされることによってガードブレイクゲージが貯まります。
+;最大値の状態で攻撃がガードされたときにガードを崩し相手を無防備な状態にします。
+
+;※初期値は(1)でスイッチオン
+
+;------------------------------------------------------------------------------
+;■（ピヨり回復設定） ─────────────────┐	
+;							↓	
+trigger33 = var(57):=var(57)+Ceil(2.0**14)*		(1)	
+
+;ピヨり中（ふらつき状態になってる間）にレバー入力とボタン入力を合計100回行う
+;ことでピヨりから回復します。
+;（ALがAIレベルとモードにより1Fに1～10入力）
+
+;※初期値は(1)でスイッチオン
+
+;※ピヨり回復の内部処理はSelfStateによるステート抜けではありません。
+;※ピヨり回復の詳細は間桐桜仕様書をご覧ください。
+
+;------------------------------------------------------------------------------
+;■（壁バウンド受身設定） ───────────────┐	
+;							↓	
+trigger34 = var(57):=var(57)+Ceil(2.0**15)*		(1)	
+
+;壁に向かって大きく吹き飛ばし壁に激突させ、その後追撃できる攻撃を受身します。
+;壁に激突した瞬間に受身を取り壁に張り付いた後、空中受身状態で復帰します。
+;（弱体化モードでは使用できずノーマルモードでは一部制限があります）
+
+;例）ワイヤーダメージ、吹き飛ばし蹴り、バニシングストライク、バウンド攻撃など
+
+;※初期値は(1)でスイッチオン
+
+;※壁バウンド受身の内部処理はSelfStateによるステート抜けではありません。
+;※壁バウンド受身の詳細は間桐桜仕様書をご覧ください。
+
+;------------------------------------------------------------------------------
+;■（床バウンド受身設定） ───────────────┐	
+;							↓	
+trigger35 = var(57):=var(57)+Ceil(2.0**16)*		(1)	
+
+;地面に向かって叩き付けその反動で浮き上げ、その後追撃できる攻撃を受身します。
+;地面に激突した瞬間にそのままダウン回避テレポと同じ状態を経て復帰します。
+;（弱体化モードでは使用できずノーマルモードでは一部制限があります）
+
+;例）バスケ、バウンド攻撃、特定のブローバックエッジなど
+
+;※初期値は(1)でスイッチオン
+
+;※床バウンド受身の内部処理はSelfStateによるステート抜けではありません。
+;※床バウンド受身の詳細は間桐桜仕様書をご覧ください。
+
+;==============================================================================
+
+
+
+;------------------------------------------------------------------------------
+;■（ジャプニカ暗殺帳攻撃力補正設定） ─────────┐	
+;							↓	
+trigger36 = var(53):=var(53)+1000*			(2)	
+
+;ジャプニカ暗殺帳システムを使うかどうかを決定します。
+;相手が基本コモンに無い特殊な行動などを取るたびにポイントが貯まります。
+;暗殺帳ポイントは聖杯ゲージの上にノート型のアイコンで表示されます。
+;最大9Pまで貯まります。
+
+;暗殺帳ポイントが1P貯まるたびに補正値分のATK上昇効果があります。
+
+;※初期値は(2)
+
+;	(9)　22.5%補正
+;	(8)　20.0%補正
+;	(7)　17.5%補正
+;	(6)　15.0%補正
+;	(5)　12.5%補正
+;	(4)　10.0%補正
+;	(3)　7.5%補正
+;	(2)　5.0%補正
+;	(1)　2.5%補正
+;	(0)　システム未使用
+
+;------------------------------------------------------------------------------
+;■（ジャプニカ暗殺帳ゲージ効率設定） ─────────┐	
+;							↓	
+trigger37 = var(53):=var(53)+10000*			(3)	
+
+;暗殺帳ポイントが1P貯まるたびに聖杯ゲージとパワーゲージが設定量増加します。
+
+;※初期値は(3)
+
+;	(9)　200%増加
+;	(8)　180%増加
+;	(7)　160%増加
+;	(6)　140%増加
+;	(5)　120%増加
+;	(4)　100%増加
+;	(3)　80%増加
+;	(2)　60%増加
+;	(1)　40%増加
+;	(0)　20%増加
+
+;------------------------------------------------------------------------------
+;■（ジャプニカ暗殺帳個別対応設定） 
+
+;項目ごとに個別にスイッチのオンオフが可能です。
+
+;矢印の先の括弧内の数字が　(1)のときスイッチオン
+;			　 (0)のときスイッチオフ
+
+;▼相手がタッグのときはすべてのスイッチを選択に拠らず強制的にオフ ───┐	
+;									↓	
+	trigger38 = var(58):=var(58)+1*					(0)	
+
+;▼食らい抜け＆特殊受身による本来行動不能な状態からの復帰したとき ───┐	
+;									↓	
+	trigger39 = var(58):=var(58)+Ceil(2.0**1)*			(1)	
+
+;▼ブロッキング等により規定回数攻撃が防がれたとき ───────────┐	
+;									↓	
+	trigger40 = var(58):=var(58)+Ceil(2.0**2)*			(1)	
+
+;▼落下からダウンへ移るタイミングが基本コモンより早いとき ───────┐	
+;									↓	
+	trigger41 = var(58):=var(58)+Ceil(2.0**3)*			(1)	
+
+;▼基本ライフが高いとき ────────────────────────┐	
+;									↓	
+	trigger42 = var(58):=var(58)+Ceil(2.0**4)*			(1)	
+
+;▼基本防御力が高いとき ────────────────────────┐	
+;									↓	
+	trigger43 = var(58):=var(58)+Ceil(2.0**5)*			(1)	
+
+;▼根性値が高いとき ──────────────────────────┐	
+;									↓	
+	trigger44 = var(58):=var(58)+Ceil(2.0**6)*			(1)	
+
+;▼フライングにより攻撃を受けたとき ──────────────────┐	
+;									↓	
+	trigger45 = var(58):=var(58)+Ceil(2.0**7)*			(1)	
+
+;▼ライダーが裏切ったとき ───────────────────────┐	
+;									↓	
+	trigger46 = var(58):=var(58)+Ceil(2.0**8)*			(1)	
+
+;▼特殊ガード等により規定回数ガード硬直を減らし行動可能になったとき ──┐	
+;									↓	
+	trigger47 = var(58):=var(58)+Ceil(2.0**9)*			(1)	
+
+;▼挑発されたとき ───────────────────────────┐	
+;									↓	
+	trigger48 = var(58):=var(58)+Ceil(2.0**10)*			(1)	
+
+;▼ステートを奪う特定の攻撃で長時間拘束され追撃を受けたとき ──────┐	
+;									↓	
+	trigger49 = var(58):=var(58)+Ceil(2.0**11)*			(1)	
+
+;▼パートナーから味方殺しの攻撃を受けたとき ──────────────┐	
+;									↓	
+	trigger50 = var(58):=var(58)+Ceil(2.0**12)*			(1)	
+
+;▼体力を回復したとき ─────────────────────────┐	
+;									↓	
+	trigger51 = var(58):=var(58)+Ceil(2.0**13)*			(1)	
+
+;▼リザレクション後に死体殴りをされたとき ───────────────┐	
+;									↓	
+	trigger52 = var(58):=var(58)+Ceil(2.0**14)*			(1)	
+
+;▼起き上がりのステートを奪われていたとき ───────────────┐	
+;									↓	
+	trigger53 = var(58):=var(58)+Ceil(2.0**15)*			(1)	
+
+;▼ノーゲージの大ダメージコンボを受けたとき ──────────────┐	
+;									↓	
+	trigger54 = var(58):=var(58)+Ceil(2.0**16)*			(1)	
+
+;▼固有時制御をされたとき ───────────────────────┐	
+;									↓	
+	trigger55 = var(58):=var(58)+Ceil(2.0**17)*			(1)	
+
+;▼弾幕が激しいとき ──────────────────────────┐	
+;									↓	
+	trigger56 = var(58):=var(58)+Ceil(2.0**18)*			(1)	
+
+;▼攻撃中に背面を取られたとき ─────────────────────┐	
+;									↓	
+	trigger57 = var(58):=var(58)+Ceil(2.0**19)*			(1)	
+
+;▼無敵時間等が長いとき ────────────────────────┐	
+;									↓	
+	trigger58 = var(57):=var(57)+Ceil(2.0**5)*			(1)	
+
+;▼移動速度が速すぎるとき ───────────────────────┐	
+;									↓	
+	trigger59 = var(57):=var(57)+Ceil(2.0**6)*			(1)	
+
+;▼タイムアップしたとき ────────────────────────┐	
+;									↓	
+	trigger60 = var(57):=var(57)+Ceil(2.0**7)*			(1)	
+
+;▼存在が気に食わないとき ───────────────────────┐	
+;									↓	
+	trigger61 = var(58):=var(58)+Ceil(2.0**20)*			(0)	
+
+;ダウン後のクイックスタンディングやダウン回避、移動起き上がりなどや
+;ガードキャンセル攻撃や当て身投げ処理を使った防御ではポイントは入りません。
+
+;※タッグ戦のときは誤検知が増えるため根性値とダウンには対応しないようになります。
+;※各項目の詳細は間桐桜仕様書をご覧ください。
+
+;==============================================================================
+
+
+;------------------------------------------------------------------------------
+;■（超必殺技個別使用可否設定） 
+
+;超必殺技を対戦中に使用できるか個別にスイッチでオンオフが可能です。
+
+;矢印の先の括弧内の数字が　(1)のときスイッチオンで使用可能
+;			　 (0)のときスイッチオフで使用不可
+
+;▼リザレクション（仮）使用可否 ────────────────────┐	
+;									↓	
+	trigger62 = var(58):=var(58)+Ceil(2.0**25)*			(1)	
+
+;	▽リザレクション使用回数制限──────────────────┐	
+;									↓	
+	trigger63 = var(58):=var(58)+Ceil(2.0**22)*			(0)	
+
+;	(0)のとき一試合に1回のみ使用可能
+;	(1)のとき毎ラウンド1回使用可能
+
+;	▽リザレクション断頭規制────────────────────┐	
+;									↓	
+	trigger64 = var(58):=var(58)+Ceil(2.0**21)*			(1)	
+
+;	(0)のとき断頭ダウンなし
+;	(1)のとき断頭ダウンあり
+
+;	※多少グロ要素があるため規制可能です。
+
+;	▽リザレクション時ステート抜け設定───────────────┐	
+;									↓	
+	trigger65 = var(58):=var(58)+Ceil(2.0**23)*			(1)	
+
+;	(0)のときステート抜けなし
+;	(1)のときステート抜けあり
+
+;	※リザレクション開始後に永続ターゲットでの追撃やKO後のステート返還がなく
+;	　進行が止まる時に強制的にリザレクションを開始します。
+;	※ステート抜けはリザレクション開始後の本来攻撃が当たらない状態で特殊な方
+;	　法により追撃を受けたときのみ発動します。
+
+;▼影の巨人召喚（アート・アンリマユ）使用可否 ─────────────┐	
+;									↓	
+	trigger66 = var(58):=var(58)+Ceil(2.0**26)*			(1)	
+
+;▼悪滅（仮）使用可否 ─────────────────────────┐	
+;									↓	
+	trigger67 = var(58):=var(58)+Ceil(2.0**27)*			(1)	
+
+;▼処罰（仮）使用可否 ─────────────────────────┐	
+;									↓	
+	trigger68 = var(58):=var(58)+Ceil(2.0**28)*			(1)	
+
+
+;※バランス調整等にお使いください。
+
+;==============================================================================
+
+;------------------------------------------------------------------------------
+;■（暗殺帳技個別使用可否設定） 
+
+;暗殺帳技を対戦中に使用できるか個別にスイッチでオンオフが可能です。
+
+;矢印の先の括弧内の数字が　(1)のときスイッチオンで使用可能
+;			　 (0)のときスイッチオフで使用不可
+
+;▼移動阻害（仮）使用可否 ───────────────────────┐	
+;									↓	
+	trigger69 = var(57):=var(57)+Ceil(2.0**24)*			(1)	
+
+;▼瘴気結界使用可否 ──────────────────────────┐	
+;									↓	
+	trigger70 = var(57):=var(57)+Ceil(2.0**25)*			(1)	
+
+;▼ロー・ブロッサム（桜アイアス）使用可否 ───────────────┐	
+;									↓	
+	trigger71 = var(57):=var(57)+Ceil(2.0**26)*			(1)	
+
+;▼C.C.C使用可否  ───────────────────────────┐	
+;									↓	
+	trigger72 = var(57):=var(57)+Ceil(2.0**27)*			(1)	
+
+
+;※バランス調整等にお使いください。
+
+;==============================================================================
+
+;------------------------------------------------------------------------------
+;■（AIヘルパーID可視化設定） ─────────────┐	
+;							↓	
+trigger73 = var(57):=var(57)+Ceil(2.0**21)*		(0)	
+
+;ヘルパーID検索の結果を確認できるようにします。
+;AI調整用なので使う必要はありません。
+
+;※初期値は(0)でスイッチオフ
+
+
+;==============================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;==============================================================================
+triggerall = time=0
+trigger1 = 0
+trigger2 = 0
+trigger3 = 0
+trigger4 = 0
+trigger5 = 0
+trigger6 = 0
+trigger7 = 0
+trigger8 = 0
+trigger9 = 0
+trigger10 = 0
+trigger11 = 0
+trigger12 = 0
+trigger13 = 0
+trigger14 = 0
+trigger15 = 0
+trigger16 = 0
+trigger17 = 0
+trigger18 = 0
+trigger19 = 0
+trigger20 = 0
+trigger21 = 0
+trigger22 = 0
+trigger23 = 0
+trigger24 = 0
+trigger25 = 0
+trigger26 = 0
+trigger27 = 0
+trigger28 = 0
+trigger29 = 0
+trigger30 = 0
+trigger31 = 0
+trigger32 = 0
+trigger33 = 0
+trigger34 = 0
+trigger35 = 0
+trigger36 = 0
+trigger37 = 0
+trigger38 = 0
+trigger39 = 0
+trigger40 = 0
+trigger41 = 0
+trigger42 = 0
+trigger43 = 0
+trigger44 = 0
+trigger45 = 0
+trigger46 = 0
+trigger47 = 0
+trigger48 = 0
+trigger49 = 0
+trigger50 = 0
+trigger51 = 0
+trigger52 = 0
+trigger53 = 0
+trigger54 = 0
+trigger55 = 0
+trigger56 = 0
+trigger57 = 0
+trigger58 = 0
+trigger59 = 0
+trigger60 = 0
+trigger61 = 0
+trigger62 = 0
+trigger63 = 0
+trigger64 = 0
+trigger65 = 0
+trigger66 = 0
+trigger67 = 0
+trigger68 = 0
+trigger69 = 0
+trigger70 = 0
+trigger71 = 0
+trigger72 = 0
+trigger73 = 0
+
+Persistent = 0
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+;■コンフィグセット
+
+[State -1, 同キャラタッグ]
+type = null
+triggerall = NumPartner>=1
+triggerall = root,ID>Partner,ID
+triggerall = Partner,Name ="Matou Sakura"
+triggerall = Partner,AuthorName="rokuyuki"
+triggerall = time=0
+trigger1 = var(11):=var(11)+12
+trigger1 = var(13):=var(13)+30
+trigger1 = var(17):=var(17)+18
+trigger1 = var(51)>=2
+trigger1 = var(51):=2
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1, ランダムセレクト]
+type = ParentVarSet
+trigger1 = time=0
+trigger1 = (var(58)&(Ceil(2.0**24)))
+var(52) = Floor(Random%3)*100+Floor(Random%4)*10+Floor(Random%4)
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1, ランダムセレクト]
+type = ParentVarSet
+trigger1 = time=0
+trigger1 = (var(58)&(Ceil(2.0**24)))
+var(51) = (Ceil(var(51)/100000)*100000)+(Floor(Random%10)*10000)+(Floor(Random%10)*1000)+(Floor(Random%10)*100)+(Floor(Random%10)*10)+Ceil(var(51)%10)
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+trigger1 = time=0
+trigger1 = (var(58)&(Ceil(2.0**24)))=0
+var(51) = var(51)
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+trigger1 = time=0
+var(53) = var(53)
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+trigger1 = time=0
+var(57) = var(57)
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+trigger1 = time=0
+var(58) = var(58)
+Persistent = 0
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;==============================================================================
+;■ノーゲージ高威力コンボ測定（暗殺帳用）
+
+[State -1]
+type = null
+triggerall = ((teammode=single)||(teammode=turns))&&NumEnemy=1
+triggerall = RoundState=2
+trigger1 = var(23)=0&&(root,var(49)&(Ceil(2.0**14)))=0
+trigger1 = var(24)>=(root,LifeMax/10)*5
+trigger1 = root,movetype!=H
+trigger1 = var(49):=var(49)+(Ceil(2.0**29)*!(var(49)&(Ceil(2.0**29))))
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+trigger1 = Ceil(root,var(54)/100)=38
+trigger1 = var(49):=(var(49)|Ceil(2.0**29))-(Ceil(2.0**29))||1
+trigger1 = var(58):=(var(58)|Ceil(2.0**21))-(Ceil(2.0**21))||1
+IgnoreHitPause = 1
+
+;==============================================================================
+;■ライフ回復測定（暗殺帳用）
+
+[State -1, P2ライフ量記録]
+type = ParentVarAdd
+triggerall = Ceil(root,var(53)/1000%10)>=1
+triggerall = RoundState=2&&NumEnemy>0
+triggerall = (!(root,var(58)&(1))||!(enemy,TeamMode=simul))&&(root,var(58)&(8192))
+trigger1 = enemy(0),Life-root,fvar(23)>0
+fvar(18) = Ceil(enemy(0),Life-root,fvar(23))
+IgnoreHitPause = 1
+
+[State -1, P4ライフ量記録]
+type = ParentVarAdd
+triggerall = Ceil(root,var(53)/1000%10)>=1
+triggerall = RoundState=2&&NumEnemy>1
+triggerall = (!(root,var(58)&(1))||!(enemy,TeamMode=simul))&&(root,var(58)&(8192))
+trigger1 = enemy(1),Life-root,fvar(24)>0
+fvar(19) = Ceil(enemy(1),Life-root,fvar(24))
+IgnoreHitPause = 1
+
+;==============================================================================
+;■敵ゲージ消費計測（暗殺帳用）
+
+[State -1, 敵ゲージ消費量計測]
+type = null
+triggerall = ((teammode=single)||(teammode=turns))&&NumEnemy=1
+trigger1 = var(22)>=enemy(0),power
+trigger1 = var(23):=var(23)+(var(22)-enemy(0),power)
+IgnoreHitPause = 1
+
+[State -1, 敵ゲージ変動測定]
+type = null
+triggerall = ((teammode=single)||(teammode=turns))&&NumEnemy=1
+trigger1 = var(22)!=enemy(0),power
+trigger1 = var(22):=enemy(0),power
+IgnoreHitPause = 1
+
+[State -1, 敵ゲージ集計リセット]
+type = null
+triggerall = ((teammode=single)||(teammode=turns))&&NumEnemy=1
+triggerall = enemy(0),movetype!=A
+triggerall = root,movetype!=H
+trigger1 = var(23)>1
+trigger1 = var(23):=0
+IgnoreHitPause = 1
+
+;==============================================================================
+;■被ダメージ観測（リザレクション＆暗殺帳用）
+
+[State -1, 被ダメージ集計リセット]
+type = null
+trigger1 = var(24)>1
+trigger1 = root,movetype!=H
+trigger1 = var(24):=0
+IgnoreHitPause = 1
+
+[State -1, 被ダメージ測定]
+type = null
+trigger1 = root,Life<root,fvar(21)
+trigger1 = var(24):=var(24)+Ceil(root,fvar(21)-root,Life)
+IgnoreHitPause = 1
+
+;==============================================================================
+;■停止時間観測（触手同期用＆暗転計測＆暗殺帳用）
+
+[State -1, 総合時間計測]
+type = ParentVarAdd
+trigger1 = root,HitPauseTime<=0
+var(13) = 1
+IgnoreHitPause = 1
+
+;==============================================================================
+;■リザレクション待機中タイムカウント停止（リザレクション用）
+
+[State -1, タイムカウント停止]
+type = AssertSpecial
+triggerall = (root,var(58)&(Ceil(2.0**25)))
+triggerall = (root,var(49)&(Ceil(2.0**28)))=0
+triggerall = (root,var(49)&(Ceil(2.0**27)|Ceil(2.0**29)))
+trigger1 = RoundState=2&&root,alive=1&&root,life=1
+trigger1 = root,var(22)!=gametime
+trigger1 = root,movetype=H
+flag = timerfreeze
+IgnoreHitPause = 1
+
+;==============================================================================
+;■被ヒット数計測（重力補正用）
+
+[State -1]
+type = null
+triggerall = Ceil(root,var(52)/100%10)>=2
+trigger1 = root,movetype=H
+trigger1 = fvar(30):=Ceil(root,GetHitVar(hitcount))
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = Ceil(root,var(52)/100%10)>=2
+trigger1 = root,movetype!=H
+trigger1 = fvar(30)>=1
+trigger1 = fvar(30):=0
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+
+
+;==============================================================================
+;■弾幕測定（暗殺帳処理）
+
+[State -1]
+Type = ParentVarAdd
+triggerall = RoundState=2
+trigger1 = numenemy>0
+trigger1 = enemy(0),numproj>Ceil(fvar(20))
+fvar(39) = enemy(0),numproj-Ceil(fvar(20))
+IgnoreHitPause = 1
+
+[State -1]
+Type = ParentVarAdd
+triggerall = RoundState=2
+trigger1 = numenemy>1
+trigger1 = (enemy(0),numproj+enemy(1),numproj)>Ceil(fvar(20))
+fvar(39) = (enemy(0),numproj+enemy(1),numproj)-Ceil(fvar(20))
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = RoundState=2
+trigger1 = numenemy>0
+trigger1 = fvar(20):=enemy(0),numproj
+trigger2 = numenemy>1
+trigger2 = fvar(20):=enemy(0),numproj+enemy(1),numproj
+IgnoreHitPause = 1
+
+[State -1]
+Type = ParentVarAdd
+triggerall = RoundState=2
+trigger1 = numenemy>0
+trigger1 = Ceil(root,var(18)/1000000%100)>Ceil(fvar(21))
+fvar(39) = Ceil(root,var(18)/1000000%100)-Ceil(fvar(21))
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = RoundState=2
+trigger1 = numenemy>0
+trigger1 = fvar(21):=Ceil(root,var(18)/1000000%100)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = RoundState=2
+trigger1 = Ceil(root,var(18)/1000000%100)>0
+var(18) = Ceil(root,var(18)%1000000)+Ceil(root,var(18)/100000000)
+IgnoreHitPause = 1
+
+[State -1]
+Type = null
+triggerall = root,alive=1&&Ceil(root,var(53)/1000%10)>=1
+triggerall = RoundState<=1||time=0
+triggerall = NumEnemy>0
+triggerall = Ceil(root,var(54)%10)<=9
+triggerall = (!(root,var(58)&(1))||!(enemy,TeamMode=simul))&&(root,var(58)&(Ceil(2.0**18)))
+trigger1 = Ceil(root,fvar(39))!=Ceil(fvar(22))
+trigger1 = fvar(22):=Ceil(root,fvar(39))
+IgnoreHitPause = 1
+
+[State -2, P2暗殺帳加算]
+type = ParentVarSet
+triggerall = root,alive=1&&Ceil(root,var(53)/1000%10)>=1
+triggerall = RoundState=2&&time>=1
+triggerall = NumEnemy>0
+triggerall = Ceil(root,var(54)%10)<=9
+triggerall = (!(root,var(58)&(1))||!(enemy,TeamMode=simul))&&(root,var(58)&(Ceil(2.0**18)))
+trigger1 = Ceil(root,fvar(39))-Ceil(fvar(22))>=50
+trigger1 = fvar(22):=Ceil(fvar(22))+50
+var(54) = IfElse(Ceil(root,var(54)%10)>=8,9,Ceil(root,var(54)%10)+1)+4300
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+
+
+;==============================================================================
+;■イントロスキップ暗殺帳処理
+
+;------------------------------------------------------------------------------
+;■VSライダー暗殺帳（イントロスキップ時）
+
+[State -1, 桜声]
+type = PlaySnd
+triggerall = NumEnemy>0
+triggerall = (!(root,var(58)&(1))||!(enemy,TeamMode=simul))&&(root,var(58)&(20))
+triggerall = root,alive=1&&Ceil(root,var(53)/1000%10)>=1
+triggerall = enemy(0),RoundsExisted=0
+triggerall = root,RoundsExisted>=1
+trigger1 = RoundState=2
+trigger1 = (root,var(25)&(Ceil(2.0**17)))=0
+trigger1 = (root,var(25)&(Ceil(2.0**28)))
+trigger1 = root,var(8)!=9
+channel = 0
+lowpriority = 1
+value = S80, 9
+IgnoreHitPause = 1
+Persistent = 0
+
+;■暗殺帳加算（ライダーのくせに生意気だぞ）
+[State -1]
+type = ParentVarSet
+triggerall = NumEnemy>0
+triggerall = (!(root,var(58)&(1))||!(enemy,TeamMode=simul))&&(root,var(58)&(256))
+triggerall = root,alive=1&&Ceil(root,var(53)/1000%10)>=1
+triggerall = enemy(0),RoundsExisted=0
+triggerall = Ceil(root,var(54)%10)<=9
+trigger1 = RoundState=2
+trigger1 = (root,var(25)&(Ceil(2.0**17)))=0
+trigger1 = (root,var(25)&(Ceil(2.0**28)))
+var(54) = IfElse(Ceil(root,var(54)%10)>=5,((IfElse(Ceil(root,var(54)%10)=9,-1,0)+Ceil(root,var(54)%10)-9+4)*10)+9,Ceil(root,var(54)%10)+4)+500
+IgnoreHitPause = 1
+Persistent = 0
+
+;------------------------------------------------------------------------------
+;■暗殺帳全集（イントロスキップ時）
+
+[State -1, 桜声]
+type = PlaySnd
+triggerall = NumEnemy>0
+triggerall = (!(root,var(58)&(1))||!(enemy,TeamMode=simul))&&(root,var(58)&(20))
+triggerall = root,alive=1&&Ceil(root,var(53)/1000%10)>=1
+triggerall = Ceil(root,var(54)%10)<=9
+trigger1 = (root,var(25)&(Ceil(2.0**18)))=0
+trigger1 = RoundState=2
+trigger1 = (root,var(58)&(Ceil(2.0**20)))
+channel = 0
+lowpriority = 1
+value = S80, 11
+IgnoreHitPause = 1
+Persistent = 0
+
+;■暗殺帳加算（暗殺帳全集）
+[State -1]
+type = ParentVarSet
+triggerall = NumEnemy>0
+triggerall = (!(root,var(58)&(1))||!(enemy,TeamMode=simul))&&(root,var(58)&(20))
+triggerall = root,alive=1&&Ceil(root,var(53)/1000%10)>=1
+triggerall = Ceil(root,var(54)%10)<=9
+trigger1 = (root,var(25)&(Ceil(2.0**18)))=0
+trigger1 = RoundState=2
+trigger1 = (root,var(58)&(Ceil(2.0**20)))
+var(54) = IfElse(Ceil(root,var(54)%10)>=0,((IfElse(Ceil(root,var(54)%10)=9,-1,0)+Ceil(root,var(54)%10)-9+9)*10)+9,Ceil(root,var(54)%10)+9)+4200
+IgnoreHitPause = 1
+Persistent = 0
+
+;------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;==============================================================================
+;■コマンド先行入力記録（時間停止中対応用）
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="summons_giant"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(7000)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="delete"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1700)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="punish"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1800)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="round_anri"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(3100)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="miasma_barrier"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(3300)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="low_blossoms"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(3200)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="CCC"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(3400)
+IgnoreHitPause = 1
+
+
+;------------------------------------------------------------------------------
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="hold_a"||command="hold_b"||command="hold_c"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1600)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="teleport_a"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1100)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="teleport_b"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1101)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="teleport_c"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1102)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="set_anr_a"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1200)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="set_anr_b"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1201)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="set_anr_c"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1202)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="reppuu_ken_a"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1000)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="reppuu_ken_b"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1001)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="reppuu_ken_c"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1002)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="anr_geyser_a"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1300)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="anr_geyser_b"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1301)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="anr_geyser_c"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1302)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="anr_mi_a"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1400)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="anr_mi_b"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1401)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="anr_mi_c"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1402)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="antiair_a"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1500)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="antiair_b"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(1530)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="ground_throw"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(2800)
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="FF"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(100)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="BB"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(105)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)<=0
+trigger1 = root,command="Hi_Jump"
+var(17) = Ceil(root,var(53)/10000000%100)+100*(41)
+IgnoreHitPause = 1
+
+;==============================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;------------------------------------------------------------------------------
+;■分身対策
+
+[State -1, 無敵]
+type = NotHitBy
+trigger1 = 1
+value = SCA, AA,AT,AP
+Time = 1
+IgnoreHitPause = 1
+
+[State -1, 反射消滅]
+type = HitOverride
+trigger1 = 1
+attr = SCA, AA,AT,AP
+stateno = 5
+time = 1
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+;■プレイヤーID
+
+[State -1]
+type = null
+trigger1 = NumEnemy>0
+trigger1 = enemy(0),ID=root,fvar(0)
+trigger1 = var(50):=0
+trigger2 = NumEnemy>1
+trigger2 = enemy(1),ID=root,fvar(0)
+trigger2 = var(50):=1
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+
+
+;==============================================================================
+;■聖杯ゲージ
+
+;------------------------------------------------------------------------------
+;■枠描画
+
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = NumExplod(18000)=0
+
+anim = 18000
+ID = 18000
+
+sprpriority = 6
+postype = Back
+pos = -5-var(10), 237-var(11)
+facing = 1
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;■聖杯文字
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = NumExplod(18010)=0
+
+anim = 18010
+ID = 18010
+
+sprpriority = 8
+postype = Back
+pos = IfElse(TeamSide=1,5-var(10),320-266-var(10)), 237-var(11)
+facing = IfElse(root,TeamSide=1,1,-1)
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;■聖杯影
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = NumExplod(18012)=0
+
+anim = 18012
+ID = 18012
+
+sprpriority = 6
+postype = Back
+pos = IfElse(TeamSide=1,9-var(10),320-311-var(10)), 232-8-var(11)
+facing = IfElse(root,TeamSide=1,1,-1)
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+[State -1]
+type = ModifyExplod
+triggerall = !IsHelper(7005)
+trigger1 = NumExplod(18012)=1
+
+ID = 18012
+scale = Ceil(root,fvar(20)/420)*0.1,Ceil(root,fvar(20)/420)*0.1
+IgnoreHitPause = 1
+
+;■聖杯本体
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = NumExplod(18011)=0
+
+anim = 18011
+ID = 18011
+
+sprpriority = 7
+postype = Back
+pos = IfElse(TeamSide=1,5-var(10),320+8-315-var(10)), 232-var(11)
+facing = IfElse(root,TeamSide=1,1,-1)
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;------------------------------------------------------------------------------
+;■聖杯ゲージ量
+[State -1];P1初期化
+type = ParentVarSet
+trigger1 = root,Life=root,LifeMax||RoundState<=1
+fvar(21) = root,Life
+IgnoreHitPause = 1
+
+[State -1];P3初期化
+type = ParentVarSet
+trigger1 = NumPartner
+trigger1 = partner,Life=partner,LifeMax||RoundState<=1
+fvar(22) = partner,Life
+IgnoreHitPause = 1
+
+[State -1];P2初期化
+type = ParentVarSet
+trigger1 = NumEnemy>=1
+trigger1 = enemy(0),Life=enemy(0),LifeMax||RoundState<=1
+fvar(23) = enemy(0),Life
+IgnoreHitPause = 1
+
+[State -1];P4初期化
+type = ParentVarSet
+trigger1 = NumEnemy>=2
+trigger1 = enemy(1),Life=enemy(1),LifeMax||RoundState<=1
+fvar(24) = enemy(1),Life
+IgnoreHitPause = 1
+
+[State -1];P1ゲージ増量判定
+type = ParentVarAdd
+trigger1 = root,Life<root,fvar(21)
+fvar(20) = IfElse(Ceil(root,var(52)/100%10)<=1,root,fvar(21)-root,Life,(root,fvar(21)-root,Life)*2)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+trigger1 = root,Life<root,fvar(21)
+var(25) = root,var(25)+(1*!(root,var(25)&(1)))
+IgnoreHitPause = 1
+
+[State -1];P3ゲージ増量判定
+type = ParentVarAdd
+trigger1 = NumPartner
+trigger1 = partner,Life<root,fvar(22)
+fvar(20) = IfElse(Ceil(root,var(52)/100%10)<=1,root,fvar(22)-partner,Life,(root,fvar(22)-partner,Life)*2)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+trigger1 = NumPartner
+trigger1 = partner,Life<root,fvar(22)
+var(25) = root,var(25)+(1*!(root,var(25)&(1)))
+IgnoreHitPause = 1
+
+[State -1];P2ゲージ増量判定
+type = ParentVarAdd
+trigger1 = NumEnemy>=1
+trigger1 = enemy(0),Life<root,fvar(23)
+fvar(20) = IfElse(Ceil(root,var(52)/100%10)<=1,root,fvar(23)-enemy(0),Life,(root,fvar(23)-enemy(0),Life)*2)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+trigger1 = NumEnemy>=1
+trigger1 = enemy(0),Life<root,fvar(23)
+var(25) = root,var(25)+(1*!(root,var(25)&(1)))
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+trigger1 = NumEnemy>=1
+trigger1 = enemy(0),Life<root,fvar(23)
+var(12) = root,var(12)+Ceil(root,fvar(23)-enemy(0),Life)
+IgnoreHitPause = 1
+
+[State -1];P4ゲージ増量判定
+type = ParentVarAdd
+trigger1 = NumEnemy>=2
+trigger1 = enemy(1),Life<root,fvar(24)
+fvar(20) = IfElse(Ceil(root,var(52)/100%10)<=1,root,fvar(24)-enemy(1),Life,(root,fvar(24)-enemy(1),Life)*2)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+trigger1 = NumEnemy>=2
+trigger1 = enemy(1),Life<root,fvar(24)
+var(25) = root,var(25)+(1*!(root,var(25)&(1)))
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+trigger1 = NumEnemy>=2
+trigger1 = enemy(1),Life<root,fvar(24)
+var(12) = root,var(12)+Ceil(root,fvar(24)-enemy(1),Life)
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+;■聖杯ゲージ自動上昇
+[State -1]
+type = ParentVarAdd
+triggerall = RoundState=2
+trigger1 = Ceil(root,var(52)/10%10)%2&&root,fvar(20)<5600
+fvar(20) = IfElse((root,var(51)/10%10)=9,4,IfElse((root,var(51)/10%10)=8,3,IfElse((root,var(51)/10%10)=7,2,0.25*(root,var(51)/10%10))))
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = RoundState=2
+trigger1 = Ceil(root,var(52)/10%10)%2&&root,fvar(20)<=5600
+var(25) = root,var(25)+(1*!(root,var(25)&(1)))
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+;■聖杯ゲージゲージ最大最小値
+[State -1]
+type = ParentVarSet
+trigger1 = Ceil(root,var(52)/100%10)<=1&&root,fvar(20)>=2800
+trigger2 = Ceil(root,var(52)/100%10)>=2&&root,fvar(20)>=5600
+fvar(20) = IfElse(Ceil(root,var(52)/100%10)<=1,2800,5600)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+trigger1 = root,fvar(20)<0
+fvar(20) = 0
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+
+;■ゲージ削除
+[State -1]
+type = RemoveExplod
+trigger1 = (root,var(25)&(1))
+trigger2 = RoundState<=1
+ID = 18001
+IgnoreHitPause = 1
+
+;■ゲージ描画
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = NumExplod(18001)=0
+
+anim = 18001
+ID = 18001
+
+sprpriority = 7
+postype = Back
+pos = IfElse(TeamSide=1,5-var(10),IfElse(root,fvar(20)>=1400,5+var(10),4+var(10))), 237-var(11)
+facing = 1
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = IfElse(Ceil(root,var(52)/100%10)<=1,root,fvar(20)/5600,root,fvar(20)/11200),0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;------------------------------------------------------------------------------
+;■数字削除(100の位)
+[State -1]
+type = RemoveExplod
+trigger1 = (root,var(25)&(1))
+trigger2 = RoundState<=1
+ID = 18100
+IgnoreHitPause = 1
+
+;■数字描画(100の位)
+[State -1]
+type = Explod
+triggerall = NumExplod(18100)=0
+trigger1 = Ceil(root,var(52)/100%10)<=1&&Floor(root,fvar(20)/400)>=1
+trigger2 = Ceil(root,var(52)/100%10)>=2&&Floor(root,fvar(20)/800)>=1
+
+anim = IfElse(Ceil(root,var(52)/100%10)<=1,18020+Floor(root,fvar(20)/400),18020+Floor(root,fvar(20)/800))
+ID = 18100 ;(100の位)
+
+sprpriority = 7
+postype = Back
+pos = IfElse(TeamSide=1,85-var(10),320-(201-1)-var(10)), 237-var(11)
+facing = IfElse(root,TeamSide=1,1,-1)
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;------------------------------------------------------------------------------
+;■数字削除(10の位)
+[State -1]
+type = RemoveExplod
+triggerall = !IsHelper(7005)
+trigger1 = (root,var(25)&(1))
+trigger2 = RoundState<=1
+ID = 18110
+IgnoreHitPause = 1
+
+;■数字描画(10の位)
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>0
+triggerall = NumExplod(18110)=0
+trigger1 = Ceil(root,var(52)/100%10)<=1&&(Floor(root,fvar(20)/40)%10>=1||Floor(root,fvar(20)/400)>=1)
+trigger2 = Ceil(root,var(52)/100%10)>=2&&(Floor(root,fvar(20)/80)%10>=1||Floor(root,fvar(20)/800)>=1)
+
+anim = IfElse(Ceil(root,var(52)/100%10)<=1,18020+Floor(root,fvar(20)/40)%10,18020+Floor(root,fvar(20)/80)%10)
+ID = 18110 ;(10の位)
+
+sprpriority = 7
+postype = Back
+pos = IfElse(TeamSide=1,91-var(10),320-(207-1)-var(10)), 237-var(11)
+facing = IfElse(root,TeamSide=1,1,-1)
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;------------------------------------------------------------------------------
+;■数字削除(1の位)
+[State -1]
+type = RemoveExplod
+trigger1 = (root,var(25)&(1))
+trigger2 = RoundState<=1
+ID = 18111
+IgnoreHitPause = 1
+
+;■数字描画(1の位)
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = NumExplod(18111)=0
+
+anim = IfElse(Ceil(root,var(52)/100%10)<=1,18020+Floor(root,fvar(20)/4)%10,18020+Floor(root,fvar(20)/8)%10)
+ID = 18111 ;(1の位)
+
+sprpriority = 7
+postype = Back
+pos = IfElse(TeamSide=1,97-var(10),320-(213-1)-var(10)), 237-var(11)
+facing = IfElse(root,TeamSide=1,1,-1)
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;------------------------------------------------------------------------------
+;■数字削除(小数点以下)
+[State -1]
+type = RemoveExplod
+trigger1 = (root,var(25)&(1))
+trigger2 = RoundState<=1
+ID = 18120
+IgnoreHitPause = 1
+
+;■数字描画(小数点以下)
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = NumExplod(18120)=0
+
+anim = IfElse(Ceil(root,var(52)/100%10)<=1,18030+Floor(root,fvar(20)/0.4)%10,18030+Floor(root,fvar(20)/0.8)%10)
+ID = 18120 ;(1の位)
+
+sprpriority = 7
+postype = Back
+pos = IfElse(TeamSide=1,103-var(10),320-(219-1)-var(10)), 237-var(11)
+facing = IfElse(root,TeamSide=1,1,-1)
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;■数字描画(％)
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = NumExplod(18140)=0
+
+anim = 18040
+ID = 18140 ;(％)
+
+sprpriority = 7
+postype = Back
+pos = IfElse(TeamSide=1,111-var(10),320-(227-1)-var(10)), 237-var(11)
+facing = IfElse(root,TeamSide=1,1,-1)
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;------------------------------------------------------------------------------
+;■聖杯ゲージスイッチリセット
+[State -1]
+type = ParentVarSet
+trigger1 = (root,var(25)&(1))
+var(25) = (root,var(25)|1)-(1)
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+;■P2アーマーダメージ記録（AI用）
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+triggerall = root,alive=1&&((teammode=single)||(teammode=turns))&&NumEnemy=1
+triggerall = RoundState=2
+triggerall = enemy(0),movetype!=H
+triggerall = enemy(0),Life<root,fvar(23)
+trigger1 = numhelper(3360)
+trigger1 = helper(3360),var(25)=0
+trigger2 = numhelper(3360)=0
+
+var(45) = IfElse(Ceil(root,var(45)/10000)+Ceil(root,fvar(23)-enemy(0),Life)>=99999,99999,(Ceil(root,var(45)/10000)+Ceil(root,fvar(23)-enemy(0),Life))*10000)+Ceil(root,var(45)%10000)
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+;■現在ライフ保管
+[State -1]
+type = ParentVarSet
+trigger1 = root,Life!=root,fvar(21)
+fvar(21) = root,Life
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+trigger1 = NumPartner
+trigger1 = partner,Life!=root,fvar(22)
+fvar(22) = partner,Life
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+trigger1 = NumEnemy>=1
+trigger1 = enemy(0),Life!=root,fvar(23)
+fvar(23) = enemy(0),Life
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+trigger1 = NumEnemy>=2
+trigger1 = enemy(1),Life!=root,fvar(24)
+fvar(24) = enemy(1),Life
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+;==============================================================================
+;■ダメージ表示
+
+;------------------------------------------------------------------------------
+;■ダメージ集計リセット
+[State -1]
+type = ParentVarSet
+trigger1 = root,var(12)>1
+trigger1 = NumEnemy
+trigger1 = enemy(var(50)),movetype!=H
+trigger2 = movetype=H
+var(12) = 0
+
+[State -1]
+type = VarSet
+trigger1 = root,var(12)>1
+var(21) = root,var(12)
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+;■ダメージ文字削除
+[State -1]
+type = RemoveExplod
+triggerall = root,var(12)>=0
+trigger1 = NumEnemy
+trigger1 = enemy(var(50)),movetype=H&&P2StateNo!=[120,155]
+ID = 18130
+IgnoreHitPause = 1
+
+;■ダメージ文字描画
+[State -1]
+type = Explod
+triggerall = root,var(12)>0
+triggerall = Ceil(root,var(51)%10)>=3
+trigger1 = NumExplod(18130)=0
+trigger1 = enemy(var(50)),movetype=H&&P2StateNo!=[120,155]
+
+anim = IfElse(TeamSide=1,18130,18131)
+ID = 18130
+
+sprpriority = 7
+postype = Back
+pos = IfElse(TeamSide=1,36-var(14),320-(284)-var(14)), 179-var(15)
+facing = IfElse(root,TeamSide=1,1,-1)
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;------------------------------------------------------------------------------
+;■数字削除(1の位)
+[State -1]
+type = RemoveExplod
+triggerall = root,var(12)>=0
+trigger1 = NumEnemy
+trigger1 = enemy(var(50)),movetype=H&&P2StateNo!=[120,155]
+ID = 18211
+IgnoreHitPause = 1
+
+;■数字描画(1の位)
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>=3
+triggerall = root,var(12)>0
+trigger1 = NumExplod(18211)=0
+trigger1 = P2StateNo!=[120,155]
+
+anim = IfElse(TeamSide=1,18150+Ceil(root,var(12)%10),18160+Ceil(root,var(12)%10))
+ID = 18211 ;(1の位+200)
+
+sprpriority = 7
+postype = Back
+pos = IfElse(TeamSide=1,28-var(14),320-(276)-var(14)), 180-var(15)
+facing = IfElse(root,TeamSide=1,1,-1)
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;------------------------------------------------------------------------------
+;■数字削除(10の位)
+[State -1]
+type = RemoveExplod
+trigger1 = root,var(12)>=0
+trigger1 = NumEnemy
+trigger1 = enemy(var(50)),movetype=H&&P2StateNo!=[120,155]
+ID = 18210
+IgnoreHitPause = 1
+
+;■数字描画(10の位)
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>=3
+triggerall = root,var(12)>0
+triggerall = NumExplod(18210)=0
+triggerall = P2StateNo!=[120,155]
+trigger1 = Ceil(Floor(root,var(12)/10)%10) =0&&Floor(root,var(12)/100)>0
+trigger2 = Ceil(Floor(root,var(12)/10)%10)>0
+
+anim = IfElse(TeamSide=1,18150+Ceil(Floor(root,var(12)/10)%10),18160+Ceil(Floor(root,var(12)/10)%10))
+ID = 18210 ;(10の位)
+
+sprpriority = 7
+postype = Back
+pos = IfElse(TeamSide=1,22-var(14),320-(270)-var(14)), 180-var(15)
+facing = IfElse(root,TeamSide=1,1,-1)
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;------------------------------------------------------------------------------
+;■数字削除(100の位)
+[State -1]
+type = RemoveExplod
+trigger1 = root,var(12)>=0
+trigger1 = NumEnemy
+trigger1 = enemy(var(50)),movetype=H&&P2StateNo!=[120,155]
+ID = 18200
+IgnoreHitPause = 1
+
+;■数字描画(100の位)
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>=3
+triggerall = root,var(12)>0
+triggerall = NumExplod(18200)=0
+triggerall = P2StateNo!=[120,155]
+trigger1 = Ceil(Floor(root,var(12)/100)%10) =0&&Floor(root,var(12)/1000)>0
+trigger2 = Ceil(Floor(root,var(12)/100)%10)>0
+
+anim = IfElse(TeamSide=1,18150+Ceil(Floor(root,var(12)/100)%10),18160+Ceil(Floor(root,var(12)/100)%10))
+ID =18200 ;(100の位)
+
+sprpriority = 7
+postype = Back
+pos = IfElse(TeamSide=1,16-var(14),320-(264)-var(14)), 180-var(15)
+facing = IfElse(root,TeamSide=1,1,-1)
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;------------------------------------------------------------------------------
+;■数字削除(1000の位)
+[State -1]
+type = RemoveExplod
+trigger1 = root,var(12)>=0
+trigger1 = NumEnemy
+trigger1 = enemy(var(50)),movetype=H&&P2StateNo!=[120,155]
+ID = 18220
+IgnoreHitPause = 1
+
+;■数字描画(1000の位)
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>=3
+triggerall = root,var(12)>0
+triggerall = NumExplod(18220)=0
+triggerall = P2StateNo!=[120,155]
+trigger1 = Ceil(Floor(root,var(12)/1000)%10) =0&&Floor(root,var(12)/10000)>0
+trigger2 = Ceil(Floor(root,var(12)/1000)%10)>0
+
+anim = IfElse(TeamSide=1,18150+Ceil(Floor(root,var(12)/1000)%10),18160+Ceil(Floor(root,var(12)/1000)%10))
+ID = 18220 ;(100の位)
+
+sprpriority = 7
+postype = Back
+pos = IfElse(TeamSide=1,10-var(14),320-(259)-var(14)), 180-var(15)
+facing = IfElse(root,TeamSide=1,1,-1)
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+
+;==============================================================================
+;■重複表示回避
+
+;------------------------------------------------------------------------------
+;■インバリ文字列制御フラグ
+[State -1]
+type = ParentVarSet
+triggerall = P2MoveType=H
+trigger1 = NumEnemy
+trigger1 = enemy(var(50)),alive
+trigger1 = enemy(var(50)),CanRecover=1
+trigger1 = enemy(var(50)),Pos Y<0
+trigger1 = P2stateno=5050
+trigger1 = Ceil(root,var(11)%10)!=2
+var(11) = Floor(root,var(11)/10)*10+(1)
+
+;■インバリ文字列制御フラグリセット
+[State -1]
+type = ParentVarSet
+trigger1 = NumEnemy
+trigger1 = enemy(var(50)),MoveType!=H
+trigger2 = movetype=H
+var(11) = Floor(root,var(11)/10)*10+(0)
+
+;■カウンター文字列制御フラグ
+[State -1]
+type = ParentVarSet
+triggerall = P2MoveType=H
+triggerall = root,fvar(10)>0
+trigger1 = NumEnemy
+trigger1 = enemy(var(50)),alive
+trigger1 = Ceil(Floor(root,var(11)/10)%10)!=2
+var(10) = IfElse(TeamSide=1,18060*10+5,18061*10+5)
+
+[State -1]
+type = ParentVarSet
+triggerall = P2MoveType=H
+triggerall = root,fvar(10)>0
+trigger1 = NumEnemy
+trigger1 = enemy(var(50)),alive
+trigger1 = Ceil(Floor(root,var(11)/10)%10)!=2
+
+var(11) = Floor(root,var(11)/100)+10*(2)+Ceil(root,var(11)%10)
+
+;■カウンター文字列制御リセット
+[State -1]
+type = ParentVarSet
+trigger1 = NumEnemy
+trigger1 = enemy(var(50)),MoveType!=H
+trigger2 = movetype=H
+var(11) = Floor(root,var(11)/100)+10*(0)+Ceil(root,var(11)%10)
+
+
+;==============================================================================
+;■文字列制御
+
+;------------------------------------------------------------------------------
+;■文字削除
+[State -1]
+type = RemoveExplod
+triggerall = Ceil(root,var(51)%10)>=2
+triggerall = Ceil(root,var(10)%10)<=4&&root,var(10)
+trigger1 = (NumExplod(18050)+NumExplod(18051)+NumExplod(18052)+NumExplod(18053))>=3
+ID = IfElse(NumExplod(18050)&&NumExplod(18051),18050,IfElse(NumExplod(18051)&&NumExplod(18053),18051,IfElse(NumExplod(18050)&&NumExplod(18053),18053,IfElse(NumExplod(18051)&&NumExplod(18052),18051,18052))))
+IgnoreHitPause = 1
+
+;■文字表示
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>=2
+trigger1 = Ceil(root,var(10)%10)=0
+trigger1 = root,var(10)
+
+anim = (Floor(root,var(10)/10))
+ID = IfElse(NumExplod(18051)&&!NumExplod(18050)&&!NumExplod(18052)&&!NumExplod(18053),18053,IfElse(!NumExplod(18050),18050,IfElse(!NumExplod(18051),18051,18052)))
+
+sprpriority = 6
+postype = Back
+pos = IfElse(TeamSide=1,15-var(12),320-(261)-var(12)), 200-var(13)
+facing = IfElse(root,TeamSide=1,1,-1)
+
+bindtime = -1
+removetime = -2
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;■文字位置
+[State -1]
+type = ModifyExplod
+triggerall = Ceil(root,var(51)%10)>=2
+triggerall = Ceil(root,var(10)%10)>0&&root,var(10)
+trigger1 = NumExplod(18050)&&NumExplod(18051)
+trigger2 = NumExplod(18050)&&NumExplod(18052)
+trigger3 = NumExplod(18050)&&NumExplod(18053)
+trigger4 = NumExplod(18051)&&NumExplod(18052)
+trigger5 = NumExplod(18051)&&NumExplod(18053)
+
+ID = IfElse(NumExplod(18050)&&NumExplod(18051),18050,IfElse(NumExplod(18050)&&NumExplod(18052),18052,IfElse(NumExplod(18050)&&NumExplod(18053),18053,IfElse(NumExplod(18051)&&NumExplod(18052),18051,18051))))
+
+postype = Back
+pos = IfElse(TeamSide=1,15-var(12),320-(261)-var(12)), 200-var(13)+(6-Ceil(root,var(10)%10))*2+10
+facing = IfElse(root,TeamSide=1,1,-1)
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;■文字位置
+[State -1]
+type = ModifyExplod
+triggerall = Ceil(root,var(51)%10)>=2
+triggerall = Ceil(root,var(10)%10)>0&&root,var(10)
+trigger1 = NumExplod(18050)&&(NumExplod(18051)+NumExplod(18052)+NumExplod(18053))=0
+trigger2 = NumExplod(18051)&&(NumExplod(18050)+NumExplod(18052)+NumExplod(18053))=0
+trigger3 = NumExplod(18052)&&(NumExplod(18050)+NumExplod(18051)+NumExplod(18053))=0
+trigger4 = NumExplod(18053)&&(NumExplod(18050)+NumExplod(18051)+NumExplod(18052))=0
+
+ID = IfElse((NumExplod(18051)+NumExplod(18052)+NumExplod(18053))=0,18050,IfElse((NumExplod(18050)+NumExplod(18052)+NumExplod(18053))=0,18051,IfElse((NumExplod(18050)+NumExplod(18051)+NumExplod(18053))=0,18052,18053)))
+
+postype = Back
+pos = IfElse(TeamSide=1,15-var(12),320-(261)-var(12)), 200-var(13)+(6-Ceil(root,var(10)%10))*2
+facing = IfElse(root,TeamSide=1,1,-1)
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;■文字位置
+[State -1]
+type = ModifyExplod
+triggerall = Ceil(root,var(51)%10)>=2
+triggerall = Ceil(root,var(10)%10)>0&&root,var(10)
+trigger1 = NumExplod(18050)&&NumExplod(18051)
+trigger2 = NumExplod(18050)&&NumExplod(18052)
+trigger3 = NumExplod(18050)&&NumExplod(18053)
+trigger4 = NumExplod(18051)&&NumExplod(18052)
+trigger5 = NumExplod(18051)&&NumExplod(18053)
+
+ID = IfElse(NumExplod(18050)&&NumExplod(18051),18051,IfElse(NumExplod(18050)&&NumExplod(18052),18050,IfElse(NumExplod(18050)&&NumExplod(18053),18050,IfElse(NumExplod(18051)&&NumExplod(18052),18052,18053))))
+
+postype = Back
+pos = IfElse(TeamSide=1,15-var(12),320-(261)-var(12)), 200-var(13)+(6-Ceil(root,var(10)%10))*2
+facing = IfElse(root,TeamSide=1,1,-1)
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;■表示位置フラグ管理
+[State -1]
+type = ParentVarSet
+triggerall = Ceil(root,var(51)%10)>=2
+trigger1 = Ceil(root,var(10)%10)=0&& root,var(10)
+var(10) = 0
+IgnoreHitPause = 1
+
+;■表示位置フラグ管理
+[State -1]
+type = ParentVarAdd
+triggerall = Ceil(root,var(51)%10)>=2
+trigger1 = Ceil(root,var(10)%10)>0&&root,var(10)
+var(10) = -1
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+
+
+;==============================================================================
+;■ガークラゲージ
+
+;------------------------------------------------------------------------------
+;■枠描画
+
+[State -1]
+type = Explod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+triggerall = NumHelper(20000)=0
+trigger1 = NumExplod(18900)=0
+
+anim = 18900
+ID = 18900
+
+sprpriority = 9
+postype = Back
+pos = 15+var(16), 182-var(17)
+facing = 1
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;■枠削除
+[State -1]
+type = RemoveExplod
+trigger1 = NumHelper(20000)
+trigger2 = RoundState<=1
+ID = 18900
+IgnoreHitPause = 1
+
+;■ゲージ削除
+[State -1]
+type = RemoveExplod
+trigger1 = root,fvar(15)||root,fvar(15)=0
+trigger2 = RoundState<=1
+ID = 18901
+IgnoreHitPause = 1
+
+;■ゲージ描画
+[State -1]
+type = Explod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+triggerall = root,fvar(15)
+trigger1 = NumExplod(18901)=0
+
+anim = 18901
+ID = 18901
+
+sprpriority = 8
+postype = Back
+pos = IfElse(TeamSide=1,15+var(16),IfElse(root,fvar(15)>=50,15+var(16),14+var(16))), 182-var(17)
+facing = 1
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = IfElse(root,fvar(15)>=100,0.5,root,fvar(15)/200),0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;------------------------------------------------------------------------------
+;■シールドマーク
+
+[State -1, 空マーク01]
+type = Explod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = RoundState=2
+trigger1 = NumExplod(18908)=0
+
+anim = 18904
+ID = 18908
+
+sprpriority = 10
+postype = Back
+pos = 16+var(16), 187-var(17)
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+[State -1]
+type = RemoveExplod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = root,fvar(15)>=67
+trigger1 = RoundState=2
+trigger1 = NumExplod(18908)>=1
+ID = 18908
+IgnoreHitPause = 1
+
+[State -1, 75%黄色シールド01]
+type = Explod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = root,fvar(15)=[67,99]
+trigger1 = RoundState=2
+trigger1 = NumExplod(18902)=0
+
+anim = 18902
+ID = 18902
+
+sprpriority = 10
+postype = Back
+pos = 16+var(16), 187-var(17)
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+[State -1]
+type = RemoveExplod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = root,fvar(15)<=66||root,fvar(15)>=100
+trigger1 = NumExplod(18902)>=1
+ID = 18902
+IgnoreHitPause = 1
+
+[State -1, 100%赤色シールド01]
+type = Explod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = root,fvar(15)>=100
+trigger1 = RoundState=2
+trigger1 = NumExplod(18905)=0
+
+anim = 18903
+ID = 18905
+
+sprpriority = 10
+postype = Back
+pos = 16+var(16), 187-var(17)
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+[State -1]
+type = RemoveExplod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = root,fvar(15)<100
+trigger1 = NumExplod(18905)>=1
+ID = 18905
+IgnoreHitPause = 1
+
+[State -1, 空マーク02]
+type = Explod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = RoundState=2
+trigger1 = root,fvar(15)=[100,166]
+trigger1 = NumExplod(18909)=0
+
+anim = 18904
+ID = 18909
+
+sprpriority = 10
+postype = Back
+pos = 23+var(16), 187-var(17)
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+[State -1]
+type = RemoveExplod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = root,fvar(15)<100||root,fvar(15)>=167
+trigger1 = RoundState=2
+trigger1 = NumExplod(18909)>=1
+ID = 18909
+IgnoreHitPause = 1
+
+[State -1, 75%黄色シールド02]
+type = Explod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = root,fvar(15)=[167,199]
+trigger1 = RoundState=2
+trigger1 = NumExplod(18903)=0
+
+anim = 18902
+ID = 18903
+
+sprpriority = 10
+postype = Back
+pos = 23+var(16), 187-var(17)
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+[State -1]
+type = RemoveExplod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = root,fvar(15)<=166||root,fvar(15)>=200
+trigger1 = NumExplod(18903)>=1
+ID = 18903
+IgnoreHitPause = 1
+
+[State -1, 100%赤色シールド02]
+type = Explod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = root,fvar(15)>=200
+trigger1 = RoundState=2
+trigger1 = NumExplod(18906)=0
+
+anim = 18903
+ID = 18906
+
+sprpriority = 10
+postype = Back
+pos = 23+var(16), 187-var(17)
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+[State -1]
+type = RemoveExplod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = root,fvar(15)<200
+trigger1 = NumExplod(18906)>=1
+ID = 18906
+IgnoreHitPause = 1
+
+[State -1, 空マーク03]
+type = Explod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = RoundState=2
+trigger1 = root,fvar(15)=[200,266]
+trigger1 = NumExplod(18910)=0
+
+anim = 18904
+ID = 18910
+
+sprpriority = 10
+postype = Back
+pos = 30+var(16), 187-var(17)
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+[State -1]
+type = RemoveExplod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = root,fvar(15)<200||root,fvar(15)>=267
+trigger1 = RoundState=2
+trigger1 = NumExplod(18910)>=1
+ID = 18910
+IgnoreHitPause = 1
+
+[State -1, 75%黄色シールド03]
+type = Explod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = root,fvar(15)=[267,299]
+trigger1 = RoundState=2
+trigger1 = NumExplod(18904)=0
+
+anim = 18902
+ID = 18904
+
+sprpriority = 10
+postype = Back
+pos = 30+var(16), 187-var(17)
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+[State -1]
+type = RemoveExplod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = root,fvar(15)<=266||root,fvar(15)>=300
+trigger1 = NumExplod(18904)>=1
+ID = 18904
+IgnoreHitPause = 1
+
+[State -1, 100%赤色シールド03]
+type = Explod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = root,fvar(15)>=300
+trigger1 = RoundState=2
+trigger1 = NumExplod(18907)=0
+
+anim = 18903
+ID = 18907
+
+sprpriority = 10
+postype = Back
+pos = 30+var(16), 187-var(17)
+facing = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+[State -1]
+type = RemoveExplod
+triggerall = (root,var(57)&(Ceil(2.0**17)))
+trigger1 = root,fvar(15)<300
+trigger1 = NumExplod(18907)>=1
+ID = 18907
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+;■試合終了後ゲージ類削除
+
+[State 21000, END]
+type = RemoveExplod
+trigger1 = RoundState=4&&MatchOver&&Lose
+IgnoreHitPause = 1
+
+;==============================================================================
+;■ジャプニカ暗殺帳
+
+;------------------------------------------------------------------------------
+;■暗殺帳表示
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = var(20)=0
+trigger1 = NumExplod(18301)=0
+trigger1 = Ceil(root,var(54)%10)>=1
+trigger1 = var(20):=var(20)+1
+trigger2 = var(20)=1
+trigger2 = NumExplod(18302)=0
+trigger2 = Ceil(root,var(54)%10)>=2
+trigger2 = var(20):=var(20)+1
+trigger3 = var(20)=2
+trigger3 = NumExplod(18303)=0
+trigger3 = Ceil(root,var(54)%10)>=3
+trigger3 = var(20):=var(20)+1
+trigger4 = var(20)=3
+trigger4 = NumExplod(18304)=0
+trigger4 = Ceil(root,var(54)%10)>=4
+trigger4 = var(20):=var(20)+1
+trigger5 = var(20)=4
+trigger5 = NumExplod(18305)=0
+trigger5 = Ceil(root,var(54)%10)>=5
+trigger5 = var(20):=var(20)+1
+trigger6 = var(20)=5
+trigger6 = NumExplod(18306)=0
+trigger6 = Ceil(root,var(54)%10)>=6
+trigger6 = var(20):=var(20)+1
+trigger7 = var(20)=6
+trigger7 = NumExplod(18307)=0
+trigger7 = Ceil(root,var(54)%10)>=7
+trigger7 = var(20):=var(20)+1
+trigger8 = var(20)=7
+trigger8 = NumExplod(18308)=0
+trigger8 = Ceil(root,var(54)%10)>=8
+trigger8 = var(20):=var(20)+1
+trigger9 = var(20)=8
+trigger9 = NumExplod(18309)=0
+trigger9 = Ceil(root,var(54)%10)>=9
+trigger9 = var(20):=var(20)+1
+
+anim = 18003
+ID = 18300+var(20)
+
+sprpriority = 7+var(20)
+postype = Back
+pos = 47+Ceil(var(20)*3)-var(10), 232-var(11)
+facing = 1
+
+bindtime = -1
+removetime = -1
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;------------------------------------------------------------------------------
+;■暗殺帳削除
+
+[State -1, SE]
+type = PlaySnd
+triggerall = var(20)>0
+trigger1 = Ceil(root,var(54)%10)!=var(20)
+value = S70, 25
+
+[State -1]
+type = Explod
+trigger1 = var(20)=1
+trigger1 = NumExplod(18301)=1
+trigger1 = Ceil(root,var(54)%10)=0
+trigger2 = var(20)=2
+trigger2 = NumExplod(18302)=1
+trigger2 = Ceil(root,var(54)%10)=1
+trigger3 = var(20)=3
+trigger3 = NumExplod(18303)=1
+trigger3 = Ceil(root,var(54)%10)=2
+trigger4 = var(20)=4
+trigger4 = NumExplod(18304)=1
+trigger4 = Ceil(root,var(54)%10)=3
+trigger5 = var(20)=5
+trigger5 = NumExplod(18305)=1
+trigger5 = Ceil(root,var(54)%10)=4
+trigger6 = var(20)=6
+trigger6 = NumExplod(18306)=1
+trigger6 = Ceil(root,var(54)%10)=5
+trigger7 = var(20)=7
+trigger7 = NumExplod(18307)=1
+trigger7 = Ceil(root,var(54)%10)=6
+trigger8 = var(20)=8
+trigger8 = NumExplod(18308)=1
+trigger8 = Ceil(root,var(54)%10)=7
+trigger9 = var(20)=9
+trigger9 = NumExplod(18309)=1
+trigger9 = Ceil(root,var(54)%10)=8
+
+anim = 18004
+ID = 18399
+
+sprpriority = 7+var(20)
+postype = Back
+pos = 47+Ceil(var(20)*3)-var(10), 232-var(11)
+facing = 1
+
+bindtime = -1
+removetime = -2
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)=1
+trigger1 = NumExplod(18301)=1
+trigger1 = Ceil(root,var(54)%10)=0
+trigger1 = var(20):=0
+ID = 18301
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)=2
+trigger1 = NumExplod(18302)=1
+trigger1 = Ceil(root,var(54)%10)<=1
+trigger1 = var(20):=1
+ID = 18302
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)=3
+trigger1 = NumExplod(18303)=1
+trigger1 = Ceil(root,var(54)%10)<=2
+trigger1 = var(20):=2
+ID = 18303
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)=4
+trigger1 = NumExplod(18304)=1
+trigger1 = Ceil(root,var(54)%10)<=3
+trigger1 = var(20):=3
+ID = 18304
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)=5
+trigger1 = NumExplod(18305)=1
+trigger1 = Ceil(root,var(54)%10)<=4
+trigger1 = var(20):=4
+ID = 18305
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)=6
+trigger1 = NumExplod(18306)=1
+trigger1 = Ceil(root,var(54)%10)<=5
+trigger1 = var(20):=5
+ID = 18306
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)=7
+trigger1 = NumExplod(18307)=1
+trigger1 = Ceil(root,var(54)%10)<=6
+trigger1 = var(20):=6
+ID = 18307
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)=8
+trigger1 = NumExplod(18308)=1
+trigger1 = Ceil(root,var(54)%10)<=7
+trigger1 = var(20):=7
+ID = 18308
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)=9
+trigger1 = NumExplod(18309)=1
+trigger1 = Ceil(root,var(54)%10)<=8
+trigger1 = var(20):=8
+ID = 18309
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)=0
+trigger1 = NumExplod(18301)=1
+trigger1 = Ceil(root,var(54)%10)=0
+ID = 18301
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)<=1
+trigger1 = NumExplod(18302)=1
+trigger1 = Ceil(root,var(54)%10)<=1
+ID = 18302
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)<=2
+trigger1 = NumExplod(18303)=1
+trigger1 = Ceil(root,var(54)%10)<=2
+ID = 18303
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)<=3
+trigger1 = NumExplod(18304)=1
+trigger1 = Ceil(root,var(54)%10)<=3
+ID = 18304
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)<=4
+trigger1 = NumExplod(18305)=1
+trigger1 = Ceil(root,var(54)%10)<=4
+ID = 18305
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)<=5
+trigger1 = NumExplod(18306)=1
+trigger1 = Ceil(root,var(54)%10)<=5
+ID = 18306
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)<=6
+trigger1 = NumExplod(18307)=1
+trigger1 = Ceil(root,var(54)%10)<=6
+ID = 18307
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)<=7
+trigger1 = NumExplod(18308)=1
+trigger1 = Ceil(root,var(54)%10)<=7
+ID = 18308
+IgnoreHitPause = 1
+
+[State -1]
+type = RemoveExplod
+trigger1 = var(20)<=8
+trigger1 = NumExplod(18309)=1
+trigger1 = Ceil(root,var(54)%10)<=8
+ID = 18309
+IgnoreHitPause = 1
+
+
+;------------------------------------------------------------------------------
+;■日記表示
+
+[State -1]
+type = RemoveExplod
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = Ceil(root,var(54)/100%100)>=1
+ID = 18350
+
+[State -1]
+type = RemoveExplod
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = Ceil(root,var(54)/100%100)>=1
+ID = 18400
+
+;■同キャラ対戦用日記位置補正
+[State -1]
+type = null
+triggerall = Ceil(root,var(51)%10)>0
+triggerall = Ceil(root,var(54)/100%100)>=1
+trigger1 = numenemy>=1&&TeamSide=1
+trigger1 = enemy(0),Name ="Matou Sakura"
+trigger1 = enemy(0),AuthorName="rokuyuki"
+trigger1 = var(19):=25
+trigger2 = numenemy>=2&&TeamSide=1
+trigger2 = enemy(1),Name ="Matou Sakura"
+trigger2 = enemy(1),AuthorName="rokuyuki"
+trigger2 = var(19):=25
+trigger3 = numenemy>=1&&TeamSide=2
+trigger3 = enemy(0),Name ="Matou Sakura"
+trigger3 = enemy(0),AuthorName="rokuyuki"
+trigger3 = var(19):=105
+trigger4 = numenemy>=2&&TeamSide=2
+trigger4 = enemy(1),Name ="Matou Sakura"
+trigger4 = enemy(1),AuthorName="rokuyuki"
+trigger4 = var(19):=105
+trigger5 = var(19):=35
+IgnoreHitPause = 1
+
+;■日記表示
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = Ceil(root,var(54)/100%100)>=1
+
+anim = 18350+Ceil(root,var(54)/100%100)
+ID = 18350
+
+sprpriority = -10
+postype = left
+pos = IfElse(Ceil(BackEdgeDist+FrontEdgeDist)>=300,Ceil(((BackEdgeDist+FrontEdgeDist+30)-225)*0.6),65), var(19)+15
+facing = 1
+
+bindtime = -1
+removetime = -2
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+;■1P2Pアイコン表示
+[State -1]
+type = Explod
+triggerall = Ceil(root,var(51)%10)>0
+triggerall = Ceil(root,var(54)/100%100)>=1
+trigger1 = numenemy>=1
+trigger1 = enemy(0),Name ="Matou Sakura"
+trigger1 = enemy(0),AuthorName="rokuyuki"
+trigger2 = numenemy>=2
+trigger2 = enemy(1),Name ="Matou Sakura"
+trigger2 = enemy(1),AuthorName="rokuyuki"
+
+anim = IfElse(TeamSide=1,18401,18402)
+ID = 18400
+
+sprpriority = -10
+postype = left
+
+pos = IfElse(Ceil(BackEdgeDist+FrontEdgeDist)>=300,Ceil(((BackEdgeDist+FrontEdgeDist+30)-225)*0.6)-25,40), var(19)+2+15
+facing = 1
+
+bindtime = -1
+removetime = -2
+ownpal = 1
+scale = 0.5,0.5
+
+IgnoreHitPause = 1
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+
+;------------------------------------------------------------------------------
+;■聖杯ゲージ
+
+[State -1, スイッチ]
+type = ParentVarSet
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = Ceil(root,var(54)/100%100)>=1
+var(25) = root,var(25)+(1*!(root,var(25)&(1)))
+IgnoreHitPause = 1
+
+[State -1, 増加]
+type = ParentVarAdd
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = Ceil(root,var(54)/100%100)>=1
+fvar(20) = IfElse(Ceil(root,var(52)/100%10)=2,2,1)*(((80+(Ceil(root,var(53)/10000%10)*80))*(Ceil(root,var(54)/10%10)+1)))
+IgnoreHitPause = 1
+
+;■パワーゲージ
+[State -1]
+type = PowerAdd
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = Ceil(root,var(54)/100%100)>=1
+value = (200+(Ceil(root,var(53)/10000%10)*200))*(Ceil(root,var(54)/10%10)+1)
+IgnoreHitPause = 1
+
+;■SE
+[State -1, 桜声]
+type = PlaySnd
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = Ceil(root,var(54)/100%100)>=1
+trigger1 = (root,var(58)&(Ceil(2.0**20)))=0||RoundState>=2
+channel = 0
+lowpriority = 1
+value = S3, 44
+
+[State -1, SE]
+type = PlaySnd
+triggerall = Ceil(root,var(51)%10)>0
+trigger1 = Ceil(root,var(54)/100%100)>=1
+channel = 4
+lowpriority = 0
+value = S70, 25
+
+;■リセット
+[State -1]
+type = ParentVarSet
+trigger1 = Ceil(root,var(54)/100%100)>=1
+trigger1 = Ceil(root,var(54)%10)<=var(20)
+var(54) = Ceil(root,var(54)%10)
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+
+
+;==============================================================================
+;■ステージ端検出
+
+[State -1]
+type = ScreenBound
+trigger1 = 1
+value = 0
+movecamera = 0,0
+IgnoreHitPause = 1
+
+[State -1]
+type = PosSet
+trigger1 = time=0
+x = 0
+y = 0
+IgnoreHitPause = 1
+
+;■右端検出射撃
+[State -1]
+type = Projectile
+trigger1 = time=0
+projID = 10000
+projanim = 10039
+velocity = 100, 0
+offset = helper(21000),Pos x, 0
+projstagebound = 0
+projedgebound = 99999
+projremovetime = -1
+supermovetime = 9999999
+pausemovetime = 9999999
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1]
+type = Projectile
+trigger1 = time>1&&!root,numprojID(10000)
+trigger1 = fvar(0):=fvar(0)-110
+projID = 10001
+projanim = 10039
+velocity = 10, 0
+offset = fvar(0), 0
+projstagebound = 0
+projedgebound = 99999
+projremovetime = -1
+supermovetime = 9999999
+pausemovetime = 9999999
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1]
+type = Projectile
+trigger1 = time>1&&!root,numprojID(10000)&&!root,numprojID(10001)
+trigger1 = fvar(0):=fvar(0)-11
+projID = 10002
+projanim = 10039
+velocity = 1, 0
+offset = fvar(0), 0
+projstagebound = 0
+projedgebound = 99999
+projremovetime = -1
+supermovetime = 9999999
+pausemovetime = 9999999
+Persistent = 0
+IgnoreHitPause = 1
+
+;■左端検出射撃
+[State -1]
+type = Projectile
+trigger1 = time=0
+projID = 10010
+projanim = 10039
+velocity = -100, 0
+offset = helper(21000),Pos x, 0
+projstagebound = 0
+projedgebound = 99999
+projremovetime = -1
+supermovetime = 9999999
+pausemovetime = 9999999
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1]
+type = Projectile
+trigger1 = time>1&&!root,numprojID(10010)
+trigger1 = fvar(1):=fvar(1)+110
+projID = 10011
+projanim = 10039
+velocity = -10, 0
+offset = fvar(1), 0
+projstagebound = 0
+projedgebound = 99999
+projremovetime = -1
+supermovetime = 9999999
+pausemovetime = 9999999
+Persistent = 0
+IgnoreHitPause = 1
+
+[State -1]
+type = Projectile
+trigger1 = time>1&&!root,numprojID(10010)&&!root,numprojID(10011)
+trigger1 = fvar(1):=fvar(1)+11
+projID = 10012
+projanim = 10039
+velocity = -1, 0
+offset = fvar(1), 0
+projstagebound = 0
+projedgebound = 99999
+projremovetime = -1
+supermovetime = 9999999
+pausemovetime = 9999999
+Persistent = 0
+IgnoreHitPause = 1
+
+;■右端測定
+[State -1]
+type = null
+triggerall = fvar(2)=root,var(13)
+trigger1 = root,numprojID(10000)
+trigger1 = fvar(0):=fvar(0)+100
+trigger2 = root,numprojID(10001)&&!root,numprojID(10000)
+trigger2 = fvar(0):=fvar(0)+10
+trigger3 = root,numprojID(10002)&&!root,numprojID(10001)
+trigger3 = fvar(0):=fvar(0)+1
+IgnoreHitPause = 1
+
+;■左端測定
+[State -1]
+type = null
+triggerall = fvar(2)=root,var(13)
+trigger1 = root,numprojID(10010)
+trigger1 = fvar(1):=fvar(1)-100
+trigger2 = root,numprojID(10011)&&!root,numprojID(10010)
+trigger2 = fvar(1):=fvar(1)-10
+trigger3 = root,numprojID(10012)&&!root,numprojID(10011)
+trigger3 = fvar(1):=fvar(1)-1
+IgnoreHitPause = 1
+
+;■距離計測中時間停止観測
+[State -1]
+type = null
+trigger1 = (root,numprojID(10000)||root,numprojID(10001)||root,numprojID(10002))
+trigger1 = fvar(2):=root,var(13)
+trigger2 = (root,numprojID(10010)||root,numprojID(10011)||root,numprojID(10012))
+trigger2 = fvar(2):=root,var(13)
+IgnoreHitPause = 1
+
+;■ステージ前方端距離
+[State -1]
+type = null
+trigger1 = !(root,numprojID(10000)||root,numprojID(10001)||root,numprojID(10002))
+trigger1 = !(root,numprojID(10010)||root,numprojID(10011)||root,numprojID(10012))
+trigger1 = var(0):=Ceil(Abs(helper(21000),Pos x-root,Pos x+fvar(root,facing=-1)))
+IgnoreHitPause = 1
+
+;■ステージ後方端距離
+[State -1]
+type = null
+trigger1 = !(root,numprojID(10000)||root,numprojID(10001)||root,numprojID(10002))
+trigger1 = !(root,numprojID(10010)||root,numprojID(10011)||root,numprojID(10012))
+trigger1 = var(1):=Ceil(Abs(helper(21000),Pos x-root,Pos x+fvar(root,facing=1)))
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;==============================================================================
+;■AI用学習機能（ジャポニカ学習帳）
+
+;------------------------------------------------------------------------------
+;■P2中段下段攻撃測定
+
+;■ガード開始判定
+[State -1, しゃがみガード]
+type = null
+triggerall = root,var(59)>=1
+trigger1 = root,StateNo=131||root,StateNo=[152,153]
+trigger1 = var(49):=var(49)+(Ceil(2.0**1)*!(var(49)&(Ceil(2.0**1))))
+trigger2 = root,StateNo=120&&root,StateType=C
+trigger2 = var(49):=var(49)+(Ceil(2.0**1)*!(var(49)&(Ceil(2.0**1))))
+IgnoreHitPause = 1
+
+[State -1, 立ちガード]
+type = null
+triggerall = root,var(59)>=1
+trigger1 = root,StateNo=130||root,StateNo=[150,151]
+trigger1 = var(49):=var(49)+(Ceil(2.0**2)*!(var(49)&(Ceil(2.0**2))))
+trigger2 = root,StateNo=120&&root,StateType=S
+trigger2 = var(49):=var(49)+(Ceil(2.0**2)*!(var(49)&(Ceil(2.0**2))))
+IgnoreHitPause = 1
+
+;■地上中段学習
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = (var(49)&(Ceil(2.0**1)))
+triggerall = root,movetype=H
+triggerall = (root,anim=[5000,5300])&&(root,StateNo!=[120,159])
+triggerall = enemy(0),StateNo>=200
+triggerall = enemy(0),StateType!=A	;◆&&enemy(0),MoveType=A
+triggerall = enemy(0),StateNo!=Ceil(var(27)/1000)&&enemy(0),StateNo!=Ceil(var(28)/1000)&&enemy(0),StateNo!=Ceil(var(29)/1000)
+triggerall = enemy(0),StateNo!=Ceil(var(30)/1000)&&enemy(0),StateNo!=Ceil(var(31)/1000)&&enemy(0),StateNo!=Ceil(var(32)/1000)
+trigger1 = var(27)=0
+trigger1 = var(27):=IfElse(enemy(0),time>=99,990+enemy(0),StateNo*100,enemy(0),time*10+enemy(0),StateNo*1000)
+trigger2 = var(28)=0
+trigger2 = var(28):=IfElse(enemy(0),time>=99,990+enemy(0),StateNo*100,enemy(0),time*10+enemy(0),StateNo*1000)
+trigger3 = var(29)=0
+trigger3 = var(29):=IfElse(enemy(0),time>=99,990+enemy(0),StateNo*100,enemy(0),time*10+enemy(0),StateNo*1000)
+IgnoreHitPause = 1
+
+;■地上ガード不能学習
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = (var(49)&(Ceil(2.0**2)))
+triggerall = root,movetype=H
+triggerall = (root,anim=[5000,5300])&&(root,StateNo!=[120,159])
+triggerall = enemy(0),StateNo>=200
+triggerall = enemy(0),StateType!=A	;◆&&enemy(0),MoveType=A
+triggerall = enemy(0),StateNo=Ceil(var(27)/1000)||enemy(0),StateNo=Ceil(var(28)/1000)||enemy(0),StateNo=Ceil(var(29)/1000)
+triggerall = enemy(0),StateNo!=Ceil(var(30)/1000)&&enemy(0),StateNo!=Ceil(var(31)/1000)&&enemy(0),StateNo!=Ceil(var(32)/1000)
+trigger1 = var(30)=0
+trigger1 = var(30):=IfElse(enemy(0),time>=99,990+enemy(0),StateNo*100,enemy(0),time*10+enemy(0),StateNo*1000)
+trigger2 = var(31)=0
+trigger2 = var(31):=IfElse(enemy(0),time>=99,990+enemy(0),StateNo*100,enemy(0),time*10+enemy(0),StateNo*1000)
+trigger3 = var(32)=0
+trigger3 = var(32):=IfElse(enemy(0),time>=99,990+enemy(0),StateNo*100,enemy(0),time*10+enemy(0),StateNo*1000)
+IgnoreHitPause = 1
+
+[State -1, 中段仮記録リセット]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = (var(49)&(Ceil(2.0**2)))
+triggerall = root,movetype=H
+triggerall = (root,anim=[5000,5300])&&(root,StateNo!=[120,159])
+triggerall = enemy(0),StateNo>=200
+triggerall = enemy(0),StateType!=A	;◆&&enemy(0),MoveType=A
+triggerall = enemy(0),StateNo=Ceil(var(27)/1000)||enemy(0),StateNo=Ceil(var(28)/1000)||enemy(0),StateNo=Ceil(var(29)/1000)
+trigger1 = enemy(0),StateNo=Ceil(var(27)/1000)
+trigger1 = var(27):=0
+trigger2 = enemy(0),StateNo=Ceil(var(28)/1000)
+trigger2 = var(28):=0
+trigger3 = enemy(0),StateNo=Ceil(var(29)/1000)
+trigger3 = var(29):=0
+IgnoreHitPause = 1
+
+;■空中下段学習
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = (var(49)&(Ceil(2.0**2)))
+triggerall = root,movetype=H
+triggerall = (root,anim=[5000,5300])&&(root,StateNo!=[120,159])
+triggerall = enemy(0),StateNo>=200
+triggerall = enemy(0),StateType=A	;◆&&enemy(0),MoveType=A
+triggerall = enemy(0),StateNo!=var(33)&&enemy(0),StateNo!=var(34)
+triggerall = enemy(0),StateNo!=var(35)&&enemy(0),StateNo!=var(36)
+trigger1 = var(33)=0
+trigger1 = var(33):=enemy(0),StateNo
+trigger2 = var(34)=0
+trigger2 = var(34):=enemy(0),StateNo
+IgnoreHitPause = 1
+
+;■地上ガード不能学習（P2空中）
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = (var(49)&(Ceil(2.0**1)))
+triggerall = root,movetype=H
+triggerall = (root,anim=[5000,5300])&&(root,StateNo!=[120,159])
+triggerall = enemy(0),StateNo>=200
+triggerall = enemy(0),StateType=A	;◆&&enemy(0),MoveType=A
+triggerall = enemy(0),StateNo=var(33)||enemy(0),StateNo=var(34)
+triggerall = enemy(0),StateNo!=var(35)&&enemy(0),StateNo!=var(36)
+trigger1 = var(35)=0
+trigger1 = var(35):=enemy(0),StateNo
+trigger2 = var(36)=0
+trigger2 = var(36):=enemy(0),StateNo
+IgnoreHitPause = 1
+
+[State -1, 空中下段仮記録リセット]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = (var(49)&(Ceil(2.0**1)))
+triggerall = root,movetype=H
+triggerall = (root,anim=[5000,5300])&&(root,StateNo!=[120,159])
+triggerall = enemy(0),StateNo>=200
+triggerall = enemy(0),StateType=A	;◆&&enemy(0),MoveType=A
+triggerall = enemy(0),StateNo=var(33)||enemy(0),StateNo=var(34)
+trigger1 = enemy(0),StateNo=var(33)
+trigger1 = var(33):=0
+trigger2 = enemy(0),StateNo=var(34)
+trigger2 = var(34):=0
+IgnoreHitPause = 1
+
+;■ガード解除判定
+[State -1, しゃがみガード]
+type = null
+triggerall = root,var(59)>=1
+trigger1 = !(root,StateNo=120||root,StateNo=131||root,StateNo=[152,153])
+trigger1 = var(49):=(var(49)|Ceil(2.0**1))-(Ceil(2.0**1))||1
+IgnoreHitPause = 1
+
+[State -1, 立ちガード]
+type = null
+triggerall = root,var(59)>=1
+trigger1 = !(root,StateNo=120||root,StateNo=130||root,StateNo=[150,151])
+trigger1 = var(49):=(var(49)|Ceil(2.0**2))-(Ceil(2.0**2))||1
+IgnoreHitPause = 1
+
+;■オーバーフローリセット
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+trigger1 = var(27)=Ceil(2.0**31-1)
+trigger1 = var(27):=0
+trigger2 = var(28)=Ceil(2.0**31-1)
+trigger2 = var(28):=0
+trigger3 = var(29)=Ceil(2.0**31-1)
+trigger3 = var(29):=0
+trigger4 = var(30)=Ceil(2.0**31-1)
+trigger4 = var(30):=0
+trigger5 = var(31)=Ceil(2.0**31-1)
+trigger5 = var(31):=0
+trigger6 = var(32)=Ceil(2.0**31-1)
+trigger6 = var(32):=0
+trigger7 = var(33)=Ceil(2.0**31-1)
+trigger7 = var(33):=0
+trigger8 = var(34)=Ceil(2.0**31-1)
+trigger8 = var(34):=0
+trigger9 = var(35)=Ceil(2.0**31-1)
+trigger9 = var(35):=0
+trigger10 = var(36)=Ceil(2.0**31-1)
+trigger10 = var(36):=0
+IgnoreHitPause = 1
+
+;■変数セット
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(27)!=0
+trigger1 = Ceil(root,var(27)/10)!=Ceil(var(27)/10)
+var(27) = Ceil(var(27)/10)*10+Ceil(root,var(27)%10)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(28)!=0
+trigger1 = Ceil(root,var(28)/10)!=Ceil(var(28)/10)
+var(28) = Ceil(var(28)/10)*10+Ceil(root,var(28)%10)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(29)!=0
+trigger1 = Ceil(root,var(29)/10)!=Ceil(var(29)/10)
+var(29) = Ceil(var(29)/10)*10+Ceil(root,var(29)%10)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(30)!=0
+trigger1 = Ceil(root,var(30)/10)!=Ceil(var(30)/10)
+var(30) = Ceil(var(30)/10)*10+Ceil(root,var(30)%10)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(31)!=0
+trigger1 = Ceil(root,var(31)/10)!=Ceil(var(31)/10)
+var(31) = Ceil(var(31)/10)*10+Ceil(root,var(31)%10)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(32)!=0
+trigger1 = Ceil(root,var(32)/10)!=Ceil(var(32)/10)
+var(32) = Ceil(var(32)/10)*10+Ceil(root,var(32)%10)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(33)!=0
+trigger1 = Ceil(root,var(33)/10)!=Ceil(var(33)/10)
+var(33) = Ceil(var(33)/10)*10+Ceil(root,var(33)%10)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(34)!=0
+trigger1 = Ceil(root,var(34)/10)!=Ceil(var(34)/10)
+var(34) = Ceil(var(34)/10)*10+Ceil(root,var(34)%10)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(35)!=0
+trigger1 = Ceil(root,var(35)/10)!=Ceil(var(35)/10)
+var(35) = Ceil(var(35)/10)*10+Ceil(root,var(35)%10)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(36)!=0
+trigger1 = Ceil(root,var(36)/10)!=Ceil(var(36)/10)
+var(36) = Ceil(var(36)/10)*10+Ceil(root,var(36)%10)
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+;■P2当身投げ攻撃測定
+
+;■ステート奪取当身投げ学習
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = var(46)>=1
+triggerall = abs(root,var(22)-gametime)=1
+triggerall = (root,var(49)&(Ceil(2.0**13)))
+triggerall = enemy(0),StateType!=A&&enemy(0),MoveType=A
+trigger1 = var(37)=0
+trigger1 = var(37):=var(46)
+trigger1 = var(46):=0
+trigger2 = var(38)=0
+trigger2 = var(38):=var(46)
+trigger2 = var(46):=0
+trigger3 = var(39)=0
+trigger3 = var(39):=var(46)
+trigger3 = var(46):=0
+IgnoreHitPause = 1
+
+;■P2当身投げステート測定
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = abs(root,var(22)-gametime)=0
+triggerall = enemy(0),StateType!=A&&enemy(0),MoveType=A
+triggerall = enemy(0),StateNo>=200
+triggerall = enemy(0),StateNo!=[5000,5300]
+triggerall = enemy(0),StateNo!=Ceil(var(37)/10000)
+triggerall = enemy(0),StateNo!=Ceil(var(38)/10000)
+triggerall = enemy(0),StateNo!=Ceil(var(39)/10000)
+trigger1 = var(46):=IfElse(abs(enemy(0),AnimTime)+enemy(0),time>=999,enemy(0),StateNo*10000+9990,enemy(0),StateNo*10000+(abs(enemy(0),AnimTime)+enemy(0),time)*10)
+IgnoreHitPause = 1
+
+;■P2当身投げステート測定リセット
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+trigger1 = enemy(0),MoveType!=A
+trigger1 = var(46):=0
+IgnoreHitPause = 1
+
+;■オーバーフローリセット
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+trigger1 = var(37)=Ceil(2.0**31-1)
+trigger1 = var(37):=0
+trigger2 = var(38)=Ceil(2.0**31-1)
+trigger2 = var(38):=0
+trigger3 = var(39)=Ceil(2.0**31-1)
+trigger3 = var(39):=0
+IgnoreHitPause = 1
+
+;■変数セット
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(37)!=0
+trigger1 = Ceil(root,var(37)/10)!=Ceil(var(37)/10)
+var(37) = Ceil(var(37)/10)*10+Ceil(root,var(37)%10)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(38)!=0
+trigger1 = Ceil(root,var(38)/10)!=Ceil(var(38)/10)
+var(38) = Ceil(var(38)/10)*10+Ceil(root,var(38)%10)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(39)!=0
+trigger1 = Ceil(root,var(39)/10)!=Ceil(var(39)/10)
+var(39) = Ceil(var(39)/10)*10+Ceil(root,var(39)%10)
+IgnoreHitPause = 1
+
+
+;------------------------------------------------------------------------------
+;■P2投げ技攻撃測定
+
+;■P2投げ被弾学習
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = abs(root,var(22)-gametime)>=1
+triggerall = root,MoveType=H
+triggerall = root,MoveReversed=0
+triggerall = enemy(0),StateType!=A&&enemy(0),MoveType=A
+triggerall = enemy(0),time<=1
+triggerall = (enemy(0),PrevStateNo=[200,4999])||(enemy(0),PrevStateNo>=5300)
+triggerall = (var(49)&(Ceil(2.0**3)))
+triggerall = Ceil(var(41)/10000)!=enemy(0),PrevStateNo
+triggerall = Ceil(var(42)/10000)!=enemy(0),PrevStateNo
+triggerall = Ceil(var(43)/10000)!=enemy(0),PrevStateNo
+triggerall = Ceil(var(44)/10000)!=enemy(0),PrevStateNo
+trigger1 = var(41)=0&&var(47)>=1
+trigger1 = var(41):=var(47)+10
+trigger1 = var(49):=(var(49)|Ceil(2.0**3))-(Ceil(2.0**3))||1
+trigger2 = var(42)=0&&var(47)>=1
+trigger2 = var(42):=var(47)+10
+trigger2 = var(49):=(var(49)|Ceil(2.0**3))-(Ceil(2.0**3))||1
+trigger3 = var(43)=0&&var(47)>=1
+trigger3 = var(43):=var(47)+10
+trigger3 = var(49):=(var(49)|Ceil(2.0**3))-(Ceil(2.0**3))||1
+trigger4 = var(44)=0&&var(47)>=1
+trigger4 = var(44):=var(47)+10
+trigger4 = var(49):=(var(49)|Ceil(2.0**3))-(Ceil(2.0**3))||1
+IgnoreHitPause = 1
+
+;■P2投げ被弾回数記録
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = abs(root,var(22)-gametime)>=1
+triggerall = root,MoveType=H
+triggerall = root,MoveReversed=0
+triggerall = enemy(0),StateType!=A&&enemy(0),MoveType=A
+triggerall = enemy(0),time<=1
+triggerall = (enemy(0),PrevStateNo=[200,4999])||(enemy(0),PrevStateNo>=5300)
+triggerall = (var(49)&(Ceil(2.0**3)))
+trigger1 = Ceil(var(41)/10000)=enemy(0),PrevStateNo
+trigger1 = var(41):=IfElse(Ceil(var(41)/10%10)>=9,var(41),var(41)+10)
+trigger1 = var(49):=(var(49)|Ceil(2.0**3))-(Ceil(2.0**3))||1
+trigger2 = Ceil(var(42)/10000)=enemy(0),PrevStateNo
+trigger2 = var(42):=IfElse(Ceil(var(42)/10%10)>=9,var(42),var(42)+10)
+trigger2 = var(49):=(var(49)|Ceil(2.0**3))-(Ceil(2.0**3))||1
+trigger3 = Ceil(var(43)/10000)=enemy(0),PrevStateNo
+trigger3 = var(43):=IfElse(Ceil(var(43)/10%10)>=9,var(43),var(43)+10)
+trigger3 = var(49):=(var(49)|Ceil(2.0**3))-(Ceil(2.0**3))||1
+trigger4 = Ceil(var(44)/10000)=enemy(0),PrevStateNo
+trigger4 = var(44):=IfElse(Ceil(var(44)/10%10)>=9,var(44),var(44)+10)
+trigger4 = var(49):=(var(49)|Ceil(2.0**3))-(Ceil(2.0**3))||1
+IgnoreHitPause = 1
+
+;■P2投げ状態判定リセット
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+trigger1 = enemy(0),MoveType!=A
+trigger1 = (var(49)&(Ceil(2.0**3)))
+trigger1 = var(49):=(var(49)|Ceil(2.0**3))-(Ceil(2.0**3))||1
+trigger2 = root,MoveReversed>=1
+trigger2 = (var(49)&(Ceil(2.0**3)))
+trigger2 = var(49):=(var(49)|Ceil(2.0**3))-(Ceil(2.0**3))||1
+IgnoreHitPause = 1
+
+;■P2投げステート測定リセット
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+trigger1 = enemy(0),MoveType!=A
+trigger1 = var(47):=0
+trigger2 = root,MoveReversed>=1
+trigger2 = var(47):=0
+IgnoreHitPause = 1
+
+;■P2投げステート測定
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = enemy(0),StateType!=A
+triggerall = enemy(0),MoveType=A
+triggerall = enemy(0),HitDefAttr=SC, AT
+triggerall = var(49):=var(49)+(Ceil(2.0**3)*!(var(49)&(Ceil(2.0**3))))
+triggerall = Ceil(var(41)/10000)!=enemy(0),StateNo
+triggerall = Ceil(var(42)/10000)!=enemy(0),StateNo
+triggerall = Ceil(var(43)/10000)!=enemy(0),StateNo
+triggerall = Ceil(var(44)/10000)!=enemy(0),StateNo
+trigger1 = var(47):=IfElse(enemy(0),time>=99,9900+Ceil(var(47)%100),enemy(0),time*100+Ceil(var(47)%100))
+trigger1 = var(47):=var(47)+enemy(0),StateNo*10000
+IgnoreHitPause = 1
+
+;■オーバーフローリセット
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+trigger1 = var(41)=Ceil(2.0**31-1)
+trigger1 = var(41):=0
+trigger2 = var(42)=Ceil(2.0**31-1)
+trigger2 = var(42):=0
+trigger3 = var(43)=Ceil(2.0**31-1)
+trigger3 = var(43):=0
+trigger4 = var(44)=Ceil(2.0**31-1)
+trigger4 = var(44):=0
+IgnoreHitPause = 1
+
+;■変数セット
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(41)!=0
+trigger1 = Ceil(root,var(41)/10)!=Ceil(var(41)/10)
+var(41) = Ceil(var(41)/10)*10+Ceil(root,var(41)%10)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(42)!=0
+trigger1 = Ceil(root,var(42)/10)!=Ceil(var(42)/10)
+var(42) = Ceil(var(42)/10)*10+Ceil(root,var(42)%10)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(43)!=0
+trigger1 = Ceil(root,var(43)/10)!=Ceil(var(43)/10)
+var(43) = Ceil(var(43)/10)*10+Ceil(root,var(43)%10)
+IgnoreHitPause = 1
+
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(44)!=0
+trigger1 = Ceil(root,var(44)/10)!=Ceil(var(44)/10)
+var(44) = Ceil(var(44)/10)*10+Ceil(root,var(44)%10)
+IgnoreHitPause = 1
+
+
+;------------------------------------------------------------------------------
+
+
+;------------------------------------------------------------------------------
+;■P1通常技空振り学習
+
+
+;------------------------------------------------------------------------------
+;■P1立ち小攻撃測定
+
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = root,StateNo=200
+triggerall = enemy(0),MoveType!=A&&enemy(0),StateType=C
+triggerall = (enemy(0),Ctrl)||(enemy(0),StateNo=131)||(enemy(0),StateNo=[152,153])
+trigger1 = Ceil(root,var(52)/100%10)>=1&&root,AnimElemTime(6)=0
+trigger1 = (Ceil(enemy(0),pos x*enemy(0),facing+root,pos x*root,facing)*-1)-enemy(0),const(size.ground.front)=[75,105]
+trigger1 = var(49):=var(49)+(Ceil(2.0**10)*!(var(49)&(Ceil(2.0**10))))
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = root,StateNo=200
+triggerall = enemy(0),MoveType!=A&&enemy(0),StateType=C
+triggerall = (enemy(0),Ctrl)||(enemy(0),StateNo=131)||(enemy(0),StateNo=[152,153])
+trigger1 = root,AnimElemTime(7)=0
+trigger1 = (Ceil(enemy(0),pos x*enemy(0),facing+root,pos x*root,facing)*-1)-enemy(0),const(size.ground.front)=[50,110]
+trigger1 = var(49):=var(49)+(Ceil(2.0**12)*!(var(49)&(Ceil(2.0**12))))
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = root,StateNo=200
+triggerall = enemy(0),MoveType!=A&&enemy(0),StateType=S
+triggerall = (enemy(0),Ctrl)||(enemy(0),StateNo=130)||(enemy(0),StateNo=[150,151])
+trigger1 = Ceil(root,var(52)/100%10)>=1&&root,AnimElemTime(6)=0
+trigger1 = (Ceil(enemy(0),pos x*enemy(0),facing+root,pos x*root,facing)*-1)-enemy(0),const(size.ground.front)=[75,105]
+trigger1 = var(49):=var(49)+(Ceil(2.0**11)*!(var(49)&(Ceil(2.0**11))))
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = root,StateNo=200
+triggerall = enemy(0),MoveType!=A&&enemy(0),StateType=S
+triggerall = (enemy(0),Ctrl)||(enemy(0),StateNo=130)||(enemy(0),StateNo=[150,151])
+trigger1 = root,AnimElemTime(7)=0
+trigger1 = (Ceil(enemy(0),pos x*enemy(0),facing+root,pos x*root,facing)*-1)-enemy(0),const(size.ground.front)=[50,110]
+trigger1 = var(49):=var(49)+(Ceil(2.0**13)*!(var(49)&(Ceil(2.0**13))))
+IgnoreHitPause = 1
+
+;■P1立ち小攻撃空振り測定
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = root,StateNo=200
+trigger1 = root,NumTarget(200)>0&&root,MoveContact>=1
+trigger1 = enemy(0),StateType=C
+trigger1 = var(49):=(var(49)|Ceil(2.0**10))-(Ceil(2.0**10))||1
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = root,StateNo=200
+trigger1 = root,NumTarget(201)>0&&root,MoveContact>=1
+trigger1 = enemy(0),StateType=C
+trigger1 = var(49):=(var(49)|Ceil(2.0**12))-(Ceil(2.0**12))||1
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = root,StateNo=200
+trigger1 = root,NumTarget(200)>0&&root,MoveContact>=1
+trigger1 = enemy(0),StateType=S
+trigger1 = var(49):=(var(49)|Ceil(2.0**11))-(Ceil(2.0**11))||1
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = root,StateNo=200
+trigger1 = root,NumTarget(201)>0&&root,MoveContact>=1
+trigger1 = enemy(0),StateType=S
+trigger1 = var(49):=(var(49)|Ceil(2.0**13))-(Ceil(2.0**13))||1
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+;■P1立ち←中攻撃測定
+
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = root,StateNo=220
+triggerall = enemy(0),MoveType!=A&&enemy(0),StateType=C
+triggerall = (enemy(0),Ctrl)||(enemy(0),StateNo=131)||(enemy(0),StateNo=[152,153])
+trigger1 = root,AnimElemTime(8)=0
+trigger1 = (Ceil(enemy(0),pos x*enemy(0),facing+root,pos x*root,facing)*-1)-enemy(0),const(size.ground.front)=[0,80]
+trigger1 = var(49):=var(49)+(Ceil(2.0**14)*!(var(49)&(Ceil(2.0**14))))
+trigger2 = root,AnimElemTime(10)=0
+trigger2 = (Ceil(enemy(0),pos x*enemy(0),facing+root,pos x*root,facing)*-1)-enemy(0),const(size.ground.front)=[37,127]
+trigger2 = var(49):=var(49)+(Ceil(2.0**14)*!(var(49)&(Ceil(2.0**14))))
+trigger3 = root,AnimElemTime(12)=0
+trigger3 = (Ceil(enemy(0),pos x*enemy(0),facing+root,pos x*root,facing)*-1)-enemy(0),const(size.ground.front)=[0,162]
+trigger3 = var(49):=var(49)+(Ceil(2.0**14)*!(var(49)&(Ceil(2.0**14))))
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = root,StateNo=220
+triggerall = enemy(0),MoveType!=A&&enemy(0),StateType=S
+triggerall = (enemy(0),Ctrl)||(enemy(0),StateNo=130)||(enemy(0),StateNo=[150,151])
+trigger1 = root,AnimElemTime(8)=0
+trigger1 = (Ceil(enemy(0),pos x*enemy(0),facing+root,pos x*root,facing)*-1)-enemy(0),const(size.ground.front)=[0,80]
+trigger1 = var(49):=var(49)+(Ceil(2.0**15)*!(var(49)&(Ceil(2.0**15))))
+trigger2 = root,AnimElemTime(10)=0
+trigger2 = (Ceil(enemy(0),pos x*enemy(0),facing+root,pos x*root,facing)*-1)-enemy(0),const(size.ground.front)=[37,127]
+trigger2 = var(49):=var(49)+(Ceil(2.0**15)*!(var(49)&(Ceil(2.0**15))))
+trigger3 = root,AnimElemTime(12)=0
+trigger3 = (Ceil(enemy(0),pos x*enemy(0),facing+root,pos x*root,facing)*-1)-enemy(0),const(size.ground.front)=[0,162]
+trigger3 = var(49):=var(49)+(Ceil(2.0**15)*!(var(49)&(Ceil(2.0**15))))
+IgnoreHitPause = 1
+
+;■P1立ち←中攻撃空振り測定
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = root,StateNo=220
+triggerall = root,NumTarget(220)>0&&root,MoveContact>=1
+trigger1 = enemy(0),StateType=C
+trigger1 = var(49):=(var(49)|Ceil(2.0**14))-(Ceil(2.0**14))||1
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = NumEnemy>0
+triggerall = root,StateNo=220
+triggerall = root,NumTarget(220)>0&&root,MoveContact>=1
+trigger1 = enemy(0),StateType=S
+trigger1 = var(49):=(var(49)|Ceil(2.0**15))-(Ceil(2.0**15))||1
+IgnoreHitPause = 1
+
+
+;------------------------------------------------------------------------------
+;■P2前方移動起き上がり予測
+
+;■P2ダウン後移動時測定
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+triggerall = (root,var(49)&(Ceil(2.0**15)))
+triggerall = NumEnemy>0
+triggerall = enemy(0),StateNo!=5110&&enemy(0),StateNo!=5080&&enemy(0),StateNo!=5081
+triggerall = 1;★enemy(0),StateType=L	;◆ダウン中限定？
+triggerall = enemy(0),MoveType!=A	;□食らい中待機中
+triggerall = enemy(0),vel x>0		;□前方移動中
+triggerall = enemy(0),StateNo!=Ceil(var(40)/10000)
+trigger1 = var(40):=enemy(0),StateNo*10000+IfElse(abs(enemy(0),AnimTime)+enemy(0),time>=9990,9990,(abs(enemy(0),AnimTime)+enemy(0),time)*10)
+IgnoreHitPause = 1
+
+;■オーバーフローリセット
+[State -1]
+type = null
+triggerall = root,var(59)>=1
+trigger1 = var(40)=Ceil(2.0**31-1)
+trigger1 = var(40):=0
+IgnoreHitPause = 1
+
+;■変数セット
+[State -1]
+type = ParentVarSet
+triggerall = root,var(59)>=1
+trigger1 = var(40)!=0
+trigger1 = Ceil(root,var(40)/10)!=Ceil(var(40)/10)
+var(40) = Ceil(var(40)/10)*10+Ceil(root,var(40)%10)
+IgnoreHitPause = 1
+
+
+;------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;==============================================================================
+;■AI用P1状態測定（P1ガード時間記録）
+
+;□時間カウント
+[State -1]
+Type = null
+triggerall = root,var(59)>=1
+triggerall = numhelper(23000)
+triggerall = NumEnemy>0
+;〓基本条件
+triggerall = enemy(var(50)),statetype!=L
+triggerall = root,statetype!=L
+;〓フラグ加算（近距離）
+trigger1 = root,stateno=[150,159]
+trigger1 = root,fvar(26)<=100
+trigger1 = fvar(9):=fvar(9)+1
+;〓フラグ加算（遠距離）
+trigger2 = root,InGuardDist||helper(23000),InGuardDist||root,stateno=[150,159]
+trigger2 = root,fvar(26)>=180
+trigger2 = fvar(10):=fvar(10)+1
+IgnoreHitPause = 1
+
+;□遠距離ガード時間経過リセット
+[State -1]
+Type = null
+triggerall = root,var(59)>=1
+triggerall = numhelper(23000)
+trigger1 = root,fvar(26)>=100||(root,InGuardDist=0&&helper(23000),InGuardDist=0)
+trigger1 = fvar(9):=0
+trigger2 = root,fvar(26)<=180
+trigger2 = fvar(10):=0
+IgnoreHitPause = 1
+
+
+;==============================================================================
+;■AI用P1状態測定（GuardDist成立時間記録）
+
+;□時間カウント（GuardDist成立時）
+[State -1]
+Type = null
+triggerall = root,var(59)>=1
+triggerall = numhelper(23000)
+triggerall = NumEnemy>0
+;〓基本条件
+triggerall = enemy(var(50)),statetype!=L
+triggerall = root,statetype!=L
+;〓フラグ加算
+trigger1 = root,InGuardDist=1||helper(23000),InGuardDist=1
+trigger1 = fvar(11):=fvar(11)+1
+IgnoreHitPause = 1
+
+;□GuardDist成立時間経過リセット
+[State -1]
+Type = null
+triggerall = root,var(59)>=1
+triggerall = numhelper(23000)
+trigger1 = root,InGuardDist=0&&helper(23000),InGuardDist=0
+trigger1 = fvar(11):=0
+IgnoreHitPause = 1
+
+
+;------------------------------------------------------------------------------
+
+
+;==============================================================================
+;■壁バウンド受身
+
+
+;------------------------------------------------------------------------------
+;■壁受身用吹き飛び距離測定
+
+[State -1,測定始点]
+type = null
+trigger1 = Ceil(gametime-root,var(22))>0
+trigger1 = root,movetype=H
+trigger1 = root,life>0
+trigger1 = Ceil(fvar(3))=0
+trigger1 = fvar(3):=Ceil(var(1))
+IgnoreHitPause = 1
+
+[State -1, 測定リセット]
+type = null
+triggerall = Ceil(fvar(3))
+trigger1 = Ceil(gametime-root,var(22))<=0
+trigger1 = fvar(3):=0
+trigger2 = root,movetype!=H&&root,statetype!=A
+trigger2 = fvar(3):=0
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+;■壁受身用被カウンター測定
+
+[State -1, P1攻撃測定]
+type = null
+triggerall = root,movetype=A&&root,time=1
+trigger1 = root,stateno=[200,999]
+trigger1 = fvar(4):=60
+trigger2 = root,stateno=[1000,1699]
+trigger2 = fvar(4):=80
+trigger3 = root,stateno=[1700,2999]
+trigger3 = fvar(4):=100
+IgnoreHitPause = 1
+
+[State -1, カウントダウン]
+type = null
+trigger1 = Ceil(fvar(4))>=1
+trigger1 = fvar(4):=Ceil(fvar(4)-1)
+IgnoreHitPause = 1
+
+[State -1, 測定リセット]
+type = null
+trigger1 = Ceil(gametime-root,var(22))<=0
+trigger1 = root,movetype!=A
+trigger1 = Ceil(fvar(4))>=1
+trigger1 = fvar(4):=0
+trigger2 = Ceil(fvar(4))<0
+trigger2 = fvar(4):=0
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+;■壁受身用被超必殺技測定
+
+[State -1, P2攻撃測定]
+type = null
+triggerall = root,movetype=H&&root,time=1
+trigger1 = numenemy>0
+trigger1 = Ceil(enemynear(root,var(16)),HitDefAttr=SCA,HA)
+trigger1 = fvar(5):=60
+IgnoreHitPause = 1
+
+[State -1, カウントダウン]
+type = null
+trigger1 = Ceil(fvar(5))>=1
+trigger1 = fvar(5):=Ceil(fvar(5)-1)
+IgnoreHitPause = 1
+
+[State -1, 測定リセット]
+type = null
+trigger1 = Ceil(gametime-root,var(22))<=0
+trigger1 = root,movetype!=H
+trigger1 = Ceil(fvar(5))>=1
+trigger1 = fvar(5):=0
+trigger2 = Ceil(fvar(5))<0
+trigger2 = fvar(5):=0
+IgnoreHitPause = 1
+
+
+;------------------------------------------------------------------------------
+;■被弾用ヘルパー呼出
+
+[State -1, 画面左端ヘルパー呼出]
+type = Helper
+triggerall = numhelper(8500)=0
+triggerall = root,fvar(20)>=600
+triggerall = root,alive=1&&root,Life>0&&RoundState=2
+triggerall = IfElse(root,var(59)>=1,1,root,command="recovery")
+triggerall = (root,var(49)&(Ceil(2.0**29)))=0
+triggerall = (root,var(57)&(Ceil(2.0**15)))
+triggerall = Ceil(root,var(52)/100%10)>=1
+triggerall = Ceil(gametime-root,var(22))>0
+triggerall = root,movetype=H&&root,statetype=A
+triggerall = Ceil(root,BackEdgeBodyDist)<=30||Ceil(root,FrontEdgeBodyDist)<=30
+triggerall = IfElse(Ceil(root,var(52)/100%10)>=2,1,Ceil(fvar(4))=0&&Ceil(fvar(5))=0)
+
+trigger1 = (abs(root,vel x)>abs(root,vel y*1.25))&&(abs(root,vel x)>=6.0&&root,vel y=[-4.0,1.0])
+trigger1 = IfElse(Ceil(root,var(52)/100%10)>=2,1,(root,GetHitVar(hittime)<=0&&root,GetHitVar(fall.recover)=1))
+trigger2 = abs(Ceil(fvar(3))-Ceil(var(1)))>=IfElse(Ceil(root,var(52)/100%10)>=2,30,60)
+
+helpertype = normal
+name = "wall_recover"
+stateno = 8500
+ID = 8500
+postype = left
+pos = 0, 0
+facing = 0
+keyctrl = 0
+ownpal = 1
+IgnoreHitPause = 1
+
+[State -1, 画面右端ヘルパー呼出]
+type = Helper
+triggerall = numhelper(8501)=0
+triggerall = root,fvar(20)>=600
+triggerall = root,alive=1&&root,Life>0&&RoundState=2
+triggerall = IfElse(root,var(59)>=1,1,root,command="recovery")
+triggerall = (root,var(49)&(Ceil(2.0**29)))=0
+triggerall = (root,var(57)&(Ceil(2.0**15)))
+triggerall = Ceil(root,var(52)/100%10)>=1
+triggerall = Ceil(gametime-root,var(22))>0
+triggerall = root,movetype=H&&root,statetype=A
+triggerall = Ceil(root,BackEdgeBodyDist)<=30||Ceil(root,FrontEdgeBodyDist)<=30
+triggerall = IfElse(Ceil(root,var(52)/100%10)>=2,1,Ceil(fvar(4))=0&&Ceil(fvar(5))=0)
+
+trigger1 = (abs(root,vel x)>abs(root,vel y*1.25))&&(abs(root,vel x)>=6.0&&root,vel y=[-4.0,1.0])
+trigger1 = IfElse(Ceil(root,var(52)/100%10)>=2,1,(root,GetHitVar(hittime)<=0&&root,GetHitVar(fall.recover)=1))
+trigger2 = abs(Ceil(fvar(3))-Ceil(var(1)))>=IfElse(Ceil(root,var(52)/100%10)>=2,30,60)
+
+helpertype = normal
+name = "wall_recover"
+stateno = 8500
+ID = 8501
+postype = right
+pos = 0, 0
+facing = 0
+keyctrl = 0
+ownpal = 1
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+
+
+;==============================================================================
+;■床バウンド受身
+
+
+;------------------------------------------------------------------------------
+;■床バウンド受身用落下距離測定
+
+[State -1,測定始点]
+type = null
+trigger1 = Ceil(gametime-root,var(22))>0
+trigger1 = root,movetype=H
+trigger1 = root,life>0
+trigger1 = Ceil(fvar(6))=0
+trigger1 = fvar(6):=Ceil(root,pos y)
+IgnoreHitPause = 1
+
+[State -1, 測定リセット]
+type = null
+triggerall = Ceil(fvar(6))
+trigger1 = Ceil(gametime-root,var(22))<=0
+trigger1 = fvar(6):=0
+trigger2 = root,movetype!=H&&root,statetype!=A
+trigger2 = fvar(6):=0
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+;■被弾用ヘルパー呼出
+
+[State -1, 画面下ヘルパー呼出]
+type = Helper
+triggerall = numhelper(8510)=0
+triggerall = root,fvar(20)>=200
+triggerall = root,alive=1&&root,Life>0&&RoundState=2
+triggerall = IfElse(root,var(59)>=1,1,root,command="recovery")
+triggerall = (root,var(49)&(Ceil(2.0**29)))=0
+triggerall = (root,var(57)&(Ceil(2.0**16)))
+triggerall = Ceil(root,var(52)/100%10)>=1
+triggerall = Ceil(gametime-root,var(22))>0
+triggerall = root,movetype=H&&(root,statetype=A||root,statetype=L)
+triggerall = root,pos y>=-25&&root,vel y>=10.0
+trigger1 = abs(root,vel x)<abs(root,vel y*1.25)
+trigger1 = IfElse(Ceil(root,var(52)/100%10)>=2,1,(root,GetHitVar(hittime)<=0&&root,GetHitVar(fall.recover)=1))
+trigger2 = abs(Ceil(fvar(6))-Ceil(root,pos y))>=IfElse(Ceil(root,var(52)/100%10)>=2,30,60)
+
+helpertype = normal
+name = "floor_recover"
+stateno = 8510
+ID = 8510
+postype = p1
+pos = -Ceil((-facing*root,pos x)+(facing*pos x)),IfElse(root,pos y>=0,Ceil(root,pos y-50),0)
+facing = 0
+keyctrl = 0
+ownpal = 1
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+
+
+;==============================================================================
+;■ピヨり回復
+
+;------------------------------------------------------------------------------
+;■レバガチャ
+
+[State -1]
+type = null
+triggerall = root,anim=5300
+trigger1 = root,command="up"
+trigger1 = fvar(7):=fvar(7)+1
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,anim=5300
+trigger1 = root,command="down"
+trigger1 = fvar(7):=fvar(7)+1
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,anim=5300
+trigger1 = root,command="back"
+trigger1 = fvar(7):=fvar(7)+1
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,anim=5300
+trigger1 = root,command="fwd"
+trigger1 = fvar(7):=fvar(7)+1
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,anim=5300
+trigger1 = root,command="a"
+trigger1 = fvar(7):=fvar(7)+1
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,anim=5300
+trigger1 = root,command="b"
+trigger1 = fvar(7):=fvar(7)+1
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,anim=5300
+trigger1 = root,command="c"
+trigger1 = fvar(7):=fvar(7)+1
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,anim=5300
+trigger1 = root,command="x"
+trigger1 = fvar(7):=fvar(7)+1
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,anim=5300
+trigger1 = root,command="y"
+trigger1 = fvar(7):=fvar(7)+1
+IgnoreHitPause = 1
+
+[State -1]
+type = null
+triggerall = root,anim=5300
+trigger1 = root,command="z"
+trigger1 = fvar(7):=fvar(7)+1
+IgnoreHitPause = 1
+
+[State -1, AI用レバガチャ]
+type = null
+triggerall = root,var(59)>=1
+triggerall = (root,var(57)&(Ceil(2.0**14)))
+triggerall = root,anim=5300
+trigger1 = Ceil(root,var(52)/100%10)=0
+trigger1 = fvar(7):=fvar(7)+Ceil((var(59)/1000%100)/4.0)+1
+trigger2 = Ceil(root,var(52)/100%10)=1
+trigger2 = fvar(7):=fvar(7)+Ceil((var(59)/1000%100)/2.0)+1
+trigger3 = Ceil(root,var(52)/100%10)=2
+trigger3 = fvar(7):=fvar(7)+Ceil(var(59)/1000%100)+5
+IgnoreHitPause = 1
+
+[State -1, リセット]
+type = null
+triggerall = root,anim!=5300
+trigger1 = fvar(7)!=0
+trigger1 = fvar(7):=0
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+;■被弾用ヘルパー呼出
+
+[State -1, ピヨり回復ヘルパー呼出]
+type = Helper
+triggerall = numhelper(8520)=0
+triggerall = root,alive=1&&root,Life>0&&RoundState=2
+triggerall = (root,var(49)&(Ceil(2.0**29)))=0
+triggerall = (root,var(57)&(Ceil(2.0**14)))
+triggerall = Ceil(gametime-root,var(22))>0
+triggerall = root,movetype!=A&&(root,statetype=S||root,statetype=C)
+trigger1 = root,anim=5300
+trigger1 = fvar(7)>=100
+
+helpertype = normal
+name = "floor_recover"
+stateno = 8520
+ID = 8520
+postype = p1
+pos = -Ceil((-facing*root,pos x)+(facing*pos x)),Ceil(root,pos y-25)
+facing = 0
+keyctrl = 0
+ownpal = 1
+IgnoreHitPause = 1
+
+;------------------------------------------------------------------------------
+
+
+
+
+
+
+
+;------------------------------------------------------------------------------
+
+

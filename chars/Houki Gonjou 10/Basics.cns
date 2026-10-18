@@ -1,0 +1,687 @@
+;---------------------------------------------------------------------------
+; Walk
+[Statedef 20]
+type    = S
+physics = S
+sprpriority = 0
+
+[State 20, 1]
+type = VelSet
+trigger1 = command = "holdfwd"
+x = const(velocity.walk.fwd.x)
+
+[State 20, 2]
+type = VelSet
+trigger1 = command = "holdback"
+x = const(velocity.walk.back.x)
+
+[State 20, 3]
+type = ChangeAnim
+triggerall = vel x > 0
+trigger1 = Anim != 20 && Anim != 5
+trigger2 = Anim = 5 && AnimTime = 0
+value = 20
+
+[State 20, PlaySnd]
+type = PlaySnd
+triggerall = anim = 20
+trigger1 = Animelem = 2 || Animelem = 6
+value = 2,3
+
+[State 20, PlaySnd]
+type = PlaySnd
+triggerall = anim = 21
+trigger1 = Animelem = 2 || Animelem = 5
+value = 2,3
+
+[State 20, 4]
+type = ChangeAnim
+triggerall = vel x < 0
+trigger1 = Anim != 21 && Anim != 5
+trigger2 = Anim = 5 && AnimTime = 0
+value = 21
+
+;---------------------------------------------------------------------------
+; Jump Start
+[Statedef 40]
+type    = S
+physics = S
+anim = 40
+ctrl = 0
+sprpriority = 1
+facep2 = 1
+
+[State 40, 1]
+type = VarSet
+trigger1 = Time = 0
+sysvar(1) = 0
+
+[State 40, 2]
+type = VarSet
+trigger1 = command = "holdfwd"
+sysvar(1) = 1
+
+[State 40, 3]
+type = VarSet
+trigger1 = command = "holdback"
+sysvar(1) = -1
+
+[State 40, 4]
+type = VelSet
+trigger1 = AnimTime = 0
+x = ifelse(sysvar(1)=0, const(velocity.jump.neu.x), ifelse(sysvar(1)=1, const(velocity.jump.fwd.x), const(velocity.jump.back.x)))
+y = const(velocity.jump.y)
+
+[State 40, 5]
+type = VelSet
+trigger1 = AnimTime = 0
+trigger1 = prevstateno = 100 ;RUN_FWD
+trigger1 = sysvar(1) = 1
+x = const(velocity.runjump.fwd.x)
+
+[State 40, Explod]
+type = Explod
+trigger1 = time = 0
+anim = 8002
+ID = 8002
+pos = -5,0
+postype = p1  ;p2,front,back,left,right
+facing = 1
+vfacing = 1
+bindtime = 1
+removetime = -2
+pausemovetime = 0
+scale = 0.5,0.5
+sprpriority = 0
+ontop = 0
+ownpal = 1
+removeongethit = 0
+
+[State 40, 6]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 50
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; Jump Land
+[Statedef 52]
+type    = S
+physics = S
+ctrl = 0
+anim = 47
+
+[State -2, 0]
+type = varset
+trigger1 = time = 0
+v = 4
+value = 0
+
+[State 52, 1]
+type = VelSet
+trigger1 = Time = 0
+y = 0
+
+[State 52, 2]
+type = PosSet
+trigger1 = Time = 0
+y = 0
+
+[State 52, 3]
+type = CtrlSet
+trigger1 = Time = 3
+value = 1
+
+[State 52, Explod]
+type = Explod
+trigger1 = time = 0
+anim = 8002
+ID = 52
+pos = -5,0
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = 1
+removetime = -2
+pausemovetime = 0
+scale = 0.5,0.5
+sprpriority = 0
+ontop = 0
+ownpal = 1
+removeongethit = 0
+
+[State 52, 5]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; Run forward
+[Statedef 100]
+type    = S
+physics = S
+anim = 100
+sprpriority = 1
+
+[State 100, PlaySnd]
+type = PlaySnd
+triggerall = anim = 100
+trigger1 = Time = 0
+value = 2,4
+
+[State 100, PlaySnd]
+type = PlaySnd
+triggerall = anim = 100
+trigger1 = Animelem = 3 || Animelem = 6
+value = 2,3
+
+[State 100, 1]
+type = VelSet
+trigger1 = 1
+x = const(velocity.run.fwd.x)
+
+[State 100, 2] ;Prevent run from canceling into walk
+type = AssertSpecial
+trigger1 = 1
+flag = NoWalk
+
+[State 100, 3] ;Prevent from turning
+type = AssertSpecial
+trigger1 = 1
+flag = NoAutoTurn
+
+[State 100, Explod]
+type = Explod
+trigger1 = Animelem = 3 || Animelem = 6
+anim = 8003
+ID = 8003
+pos = -15,-9
+postype = p1
+facing = 1
+vel = -2,0
+vfacing = 1
+bindtime = 1
+removetime = -2
+pausemovetime = 0
+sprpriority = 3
+ownpal = 1
+ontop = 1
+removeongethit = 0
+
+[State 100, 3]
+type = ChangeState
+trigger1 = command != "holdfwd" && Var(15) = 0
+trigger2 = Var(15) && P2BodyDist X < 16
+value = 101
+ctrl = 0
+
+;---------------------------------------------------------------------------
+; Run Stop
+[Statedef 101]
+type    = S
+movetype= I
+physics = N
+velset = 1.5,0
+ctrl = 0
+anim = 101
+sprpriority = 2
+
+[State 101, Explod]
+type = Explod
+trigger1 = Time = 1
+anim = 8003
+ID = 8003
+pos = 15,-9
+postype = p1
+facing = 1
+vel = -2,0
+vfacing = 1
+bindtime = 1
+removetime = -2
+pausemovetime = 0
+sprpriority = -3
+ontop = 1
+ownpal = 1
+removeongethit = 0
+
+[State 101, ps]
+type = PlaySnd
+trigger1 = time = 0
+value = s2, 4
+
+[State 101, 3]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; Hop backwards (land)
+[Statedef 106]
+type    = S
+physics = S
+ctrl = 0
+anim = 47
+
+[State 106, PlaySnd]
+type = PlaySnd
+triggerall = anim = 106
+trigger1 = Animelem = 4
+value = 2,3
+
+[State 106, 1]
+type = VelSet
+trigger1 = Time = 0
+y = 0
+
+[State 106, 2]
+type = PosSet
+trigger1 = Time = 0
+y = 0
+
+[State 106, Explod]
+type = Explod
+trigger1 = time = 2
+anim = 8003
+ID = 8003
+pos = 0,0
+postype = p1
+facing = 1
+vel = 2,0
+vfacing = 1
+bindtime = 1
+removetime = -2
+pausemovetime = 0
+sprpriority = 3
+ontop = 0
+ownpal = 1
+removeongethit = 0
+
+[State 106, 5]
+type = ChangeState
+trigger1 = Time = 7
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;Foward Arial Dash
+[Statedef 615]
+type    = A
+movetype= I
+physics = N
+velset = 10,0
+ctrl = 1
+anim = 615
+
+[State 615, 0]
+type = ctrlset
+trigger1 = time >= 0
+value = 0
+
+[State 615, 0]
+type = Varset
+trigger1 = time = 0
+v = 4
+value = 1
+
+[State 615, VelSet]
+type = VelSet
+trigger1 = Animelem = 2
+x = 5
+y = 0
+
+[State 615, Dash Effect 1]
+type = Explod
+triggerall = anim = 615  || movetype != I
+trigger1 = time > 4 && (time%5) = 1
+anim = 8000
+ID = 8000
+pos = 5,-53
+sprpriority = 1
+ownpal = 1
+ignorehitpause = 1
+random = 0,50
+vel = -2.5,0
+scale = 0.8,0.8
+bindtime = 2
+pausemovetime = 10
+supermovetime = 10
+removetime = 10
+
+[State 615, Dash Effect 1]
+type = Explod
+triggerall = anim = 615  || movetype != I
+trigger1 = time > 4 && (time%4) = 1
+anim = 8000
+ID = 8000
+pos = 5,-53
+sprpriority = 1
+ownpal = 1
+ignorehitpause = 1
+random = 0,80
+vel = -2.0,0
+scale = 0.8,0.8
+bindtime = 2
+pausemovetime = 10
+supermovetime = 10
+removetime = 10
+
+[State 615, Dash Effect 1]
+type = Explod
+triggerall = anim = 615  || movetype != I
+trigger1 = time > 4 && (time%5) = 1
+anim = 8000
+ID = 8000
+pos = 5,-53
+sprpriority = 7
+ownpal = 1
+ignorehitpause = 1
+random = 0,50
+vel = -2.5,0
+scale = 0.7,0.7
+bindtime = 2
+pausemovetime = 10
+supermovetime = 10
+removetime = 10
+
+[State 615, Dash Effect 1]
+type = Explod
+triggerall = anim = 615 || movetype != I
+trigger1 = time > 4 && (time%4) = 1
+anim = 8000
+ID = 8000
+pos = 5,-53
+sprpriority = 7
+ownpal = 1
+ignorehitpause = 1
+random = 0,80
+vel = -2.0,0
+scale = 0.7,0.7
+bindtime = 2
+pausemovetime = 10
+supermovetime = 10
+removetime = 10
+
+[State 615, Dash Effect 2]
+type = Explod
+trigger1 = Animelem = 1
+anim = 8001
+ID = 8001
+pos = 5,-53
+postype = p1
+facing = 1
+vfacing = 1
+bindtime = 1
+removetime = -2
+pausemovetime = 0
+scale = 1,1
+sprpriority = 0
+ontop = 0
+ownpal = 1
+
+[State 615, ChangeState]
+type = ChangeState
+triggerall= statetype = A && time > 10 && (ctrl || movecontact)
+trigger1 = !var(59)&& command = "FF"
+trigger2 = var(59) && random<var(50)*1.1 & P2BodyDist X > 100 && P2MoveType !=A &&abs(p2BodyDist Y)<10
+value = 615
+
+[State 615, PlaySnd]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = S2,0
+
+[State 615, ChangeState]
+type = ChangeState
+trigger1 = Time = 19
+value = 616
+
+;---------------------------------------------------------------------------
+;Foward Arial Dash Falling
+[Statedef 616]
+type    = A
+physics = A
+anim = 616
+
+[State 616, Null]
+type = Null
+trigger1 = 1
+
+;---------------------------------------------------------------------------
+;Backwards Arial Dash
+[Statedef 620]
+type    = A
+movetype= I
+physics = N
+velset = -10,0
+ctrl = 1
+anim = 620
+
+[State 620, 0]
+type = ctrlset
+trigger1 = time >= 0
+value = 0
+
+[State 620, 0]
+type = Varset
+trigger1 = time = 0
+v = 4
+value = 1
+
+[State 620, VelSet]
+type = VelSet
+trigger1 = Animelem = 2
+x = -5
+y = 0
+
+[State 620, Dash Effect 1]
+type = Explod
+triggerall = anim = 620 || movetype != I
+trigger1 = time > 5 && (time%5) = 1
+anim = 8000
+ID = 8000
+pos = -6,-70
+sprpriority = 2
+ownpal = 1
+ignorehitpause = 1
+random = 0,65
+vel = -2.5,0
+scale = 0.8,0.8
+bindtime = 2
+pausemovetime = 9
+supermovetime = 9
+removetime = 9
+
+[State 620, Dash Effect 1]
+type = Explod
+triggerall = anim = 620 || movetype != I
+trigger1 = time > 5 && (time%4) = 1
+anim = 8000
+ID = 8000
+pos = -6,-70
+sprpriority = 3
+ownpal = 1
+ignorehitpause = 1
+random = 0,85
+vel = -2.0,0
+scale = 0.8,0.8
+bindtime = 2
+pausemovetime = 9
+supermovetime = 9
+removetime = 9
+
+[State 620, Dash Effect 1]
+type = Explod
+triggerall = anim = 620 || movetype != I
+trigger1 = time > 5 && (time%5) = 1
+anim = 8000
+ID = 8000
+pos = -6,-70
+sprpriority = 5
+ownpal = 1
+ignorehitpause = 1
+random = 0,65
+vel = -2.5,0
+scale = 0.7,0.7
+bindtime = 2
+pausemovetime = 9
+supermovetime = 9
+removetime = 9
+
+[State 620, Dash Effect 1]
+type = Explod
+triggerall = anim = 620 || movetype != I
+trigger1 = (time%4) = 1
+anim = 8000
+ID = 8000
+pos = -6,-70
+sprpriority = 6
+ownpal = 1
+ignorehitpause = 1
+random = 0,85
+vel = -2,0
+scale = 0.7,0.7
+bindtime = 2
+pausemovetime = 9
+supermovetime = 9
+removetime = 9
+
+[State 620, Explod]
+type = Explod
+trigger1 = Animelem = 1
+anim = 8001
+ID = 8001
+pos = -6,-70
+postype = p1  ;p2,front,back,left,right
+facing = 1
+vfacing = 1
+bindtime = 1
+removetime = -2
+pausemovetime = 0
+scale = 1,1
+sprpriority = 0
+ontop = 0
+ownpal = 1
+
+[State 620, ChangeState]
+type = ChangeState
+triggerall= statetype = A && time > 10 && (ctrl || movecontact)
+trigger1 = !var(59)&& command = "BB"
+trigger2 = var(59) && random<var(50)*1.1 & P2BodyDist X > 100 && P2MoveType !=A &&abs(p2BodyDist Y)<10
+value = 615
+
+[State 620, PlaySnd]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = S2,1
+
+[State 620, ChangeState]
+type = ChangeState
+trigger1 = Time = 19
+value = 616
+
+;---------------------------------------------------------------------------
+;Backwards Arial Dash Falling
+[Statedef 616]
+type    = A
+physics = A
+anim = 616
+
+[State 616, Null]
+type = Null
+trigger1 = 1
+
+;---------------------------------------------------------------------------
+;Arial Dashes Landing
+[Statedef 625]
+type    = S
+physics = S
+ctrl = 0
+anim = 47
+
+[State 625, VelSet]
+type = VelSet
+trigger1 = Time = 0
+y = 0
+
+[State 625, PosSet]
+type = PosSet
+trigger1 = Time = 0
+y = 0
+
+[State 625, CtrlSet]
+type = CtrlSet
+trigger1 = Time = 3
+value = 1
+
+[State 625, ChangeState]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+
+;---------------------------------------------------------------------------
+; You Die
+[Statedef 5150]
+type    = L
+movetype= H
+physics = N
+sprpriority = -3
+ctrl = 0
+
+[State 5150, 1] ;Normal anim
+type = ChangeAnim
+triggerall = prevstateno != 2008
+triggerall = Time = 0
+triggerall = SelfAnimExist(5140)
+trigger1 = (anim != [5111,5119]) && (anim != [5171,5179])
+trigger2 = !SelfAnimExist(5140 + (anim % 10))
+value = 5140
+
+[State 5150, 3] ;Hit up type anim
+type = ChangeAnim
+triggerall = prevstateno != 2008
+trigger1 = Time = 0
+trigger1 = (anim = [5111,5119]) || (anim = [5171,5179])
+trigger1 = SelfAnimExist(5140 + (anim % 10))
+value = 5140 + (anim % 10)
+
+[State 5150, 4] ;Match over anim
+type = ChangeAnim
+triggerall = prevstateno != 2008
+persistent = 0
+;trigger1 = Time = 0
+trigger1 = MatchOver = 1
+trigger1 = Anim = [5140,5149]
+trigger1 = SelfAnimExist(anim+10)
+value = anim+10
+
+[State 5150, 5] ;Switch to 5110 if liedead anim does not exist
+type = ChangeAnim
+triggerall = prevstateno != 2008
+trigger1 = Time = 0
+trigger1 = Anim != [5140,5159]
+trigger1 = Anim != [5110,5119]
+value = 5110
+
+[State 5150, 6] ;Friction
+type = VelMul
+trigger1 = 1
+x = 0.85
+
+[State 5150, 7] ;Friction
+type = VelSet
+trigger1 = Vel x < .05
+persistent = 0
+x = 0
+
+[State 5150, AssertSpecial]
+type = AssertSpecial
+trigger1 = prevstateno = 2008
+flag = invisible
+
+[State 5150, 8]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1

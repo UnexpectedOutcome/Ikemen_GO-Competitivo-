@@ -1,0 +1,2275 @@
+;===========================================================================
+; 常時監視ステート（－２）
+;===========================================================================
+;---------------------------------------------------------------------------
+; 通常の食らい状態（Statedef 5000～5199間）でも、
+; 相手に（「P2StateNo」や「TargetState」等で）制御を奪われても、
+; 常に登録したステートコントローラが有効になります。
+; サブシステム等を制御する時に重宝するでしょう。
+;---------------------------------------------------------------------------
+
+[Statedef -2]
+;===========================================================================
+;設定用変数セット記述
+;===========================================================================
+
+;---------------------------------------------------------------------------
+;気合と根性ゲージセット /
+;-----------------------
+[State -2, 気合と根性ゲージ最大値]
+type = varset
+Trigger1 = 1
+fvar(3)  = (50) ;( )内の数値を1以上で設定します
+
+[State -2, 気合と根性ゲージX軸位置調整]
+type = varset
+Trigger1 = 1
+var(3)  = (0) ;( )内の数値を好みで設定します 
+
+[State -2, 気合と根性ゲージY軸位置調整]
+type = varset
+Trigger1 = 1
+var(4)  = (0) ;( )内の数値を好みで設定します
+
+[State -2, 根性カウントX軸位置調整]
+type = varset
+Trigger1 = 1
+var(5)  = (0) ;( )内の数値を好みで設定します 
+
+[State -2, 根性カウントY軸位置調整]
+type = varset
+Trigger1 = 1
+var(6)  = (0) ;( )内の数値を好みで設定します
+
+;---------------------------------------------------------------------------
+;すごいガード時のエフェクト /
+;---------------------------
+[State -2, すごいガード時のエフェクト設定]
+type = varset
+Trigger1 = 1
+var(1)  = (0) ;( )内の数値を1か0で設定する
+              ;0だとプライマルアーマー風　1だと原作っぽく七色の爆発が出ます
+
+;===========================================================================
+;システム制御用記述
+;===========================================================================
+[State -2, システム制御用ヘルパー発生]
+type = Helper
+trigger1 = numhelper(7) = 0
+helpertype = normal
+name = "Number-seven"
+ID = 7
+pos = 0,0
+postype = p1
+facing = 1
+stateno = 7
+keyctrl = 0
+ownpal = 1
+supermovetime = 999999999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999999999
+
+[State -2 ,システム制御用のヘルパーくらい出させろ]
+type = AssertSpecial
+trigger1 = roundstate <= 2
+trigger1 = numhelper(7) = 0
+flag = noko
+flag2 = intro
+
+[State -2 ,システム制御用のヘルパーくらい出させろ]
+type = NotHitBy
+trigger1 = roundstate < 2
+value2 = SCA,AA,AP,AT
+time = 5
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999  
+ignorehitpause = 1
+persistent= 1
+
+;---------------------------------------------------------------------------
+;気合と根性システム関連 /
+;-----------------------
+[State -2, 根性ゲージセット]
+type = varset
+Trigger1 = RoundState != 2
+Trigger1 = fvar(0) != fvar(3)
+fvar(0) = fvar(3)
+
+[State -2, 気合ゲージセット]
+type = varset
+Trigger1 = RoundState != 2
+Trigger1 = fvar(1) != fvar(3)
+fvar(1) = fvar(3)
+
+;---------------------------
+[State -2, 気合ゲージ回復]
+type = varadd
+Trigger1 = RoundState = 2
+Trigger1 = movetype != A
+Trigger1 = var(2) = 0 ;気合と根性シールド時回復しないように
+Trigger1 = stateno != [900,950] ;すごいガード時回復しないように
+Trigger1 = fvar(1) < fvar(3)
+fvar(1)  = (fvar(3)/900*(1+(ctrl = 1))/(1+(NumExplod(7050)!=0)))*(1+(var(40)*0.3)+(var(40)=10)*3)
+ignorehitpause = 1
+persistent= 1
+
+[State -2,気合ゲージ枯渇]
+type = varset
+Trigger1 = RoundState = 2
+Trigger1 = fvar(1) <= 0
+Trigger1 = helper(7),NumExplod(7000) != 0
+fvar(1)  = -fvar(3)
+ignorehitpause = 1
+persistent= 1
+
+[State -2,気合ゲージ復帰]
+type = varset
+Trigger1 = RoundState = 2
+Trigger1 = movetype != A
+Trigger1 = fvar(1) > 0
+Trigger1 = helper(7),NumExplod(7050) = 1
+fvar(1)  = fvar(3)
+ignorehitpause = 1
+persistent= 1
+
+[State -2, 気合ゲージ最大値オーバー時]
+type = varset
+Trigger1 = RoundState = 2
+Trigger1 = fvar(1) > fvar(3)
+fvar(1)  = fvar(3) 
+ignorehitpause = 1
+persistent= 1
+
+;---------------------------
+[State -2,根性ゲージ回復]
+type = varadd
+Trigger1 = RoundState = 2
+Trigger1 = movetype != H
+Trigger1 = var(2) = 0 ;気合と根性シールド時回復しないように
+Trigger1 = stateno != [900,950] ;すごいガード時回復しないように
+Trigger1 = fvar(1) > 0
+Trigger1 = fvar(0) < fvar(3)
+fvar(0)  = ((fvar(3)/600)*(fvar(1)/fvar(3))/(1+(ctrl = 0)+(NumExplod(7150)!=0)))*(1+(var(40)*0.3)+(var(40)=10)*3)
+ignorehitpause = 1
+persistent= 1
+
+[State -2,根性ゲージ枯渇]
+type = varset
+Trigger1 = RoundState = 2
+Trigger1 = fvar(0) <= 0
+Trigger1 = helper(7),NumExplod(7100) != 0
+fvar(0)  = -fvar(3)
+ignorehitpause = 1
+persistent= 1
+
+[State -2,根性ゲージ復帰]
+type = varset
+Trigger1 = RoundState = 2
+Trigger1 = movetype != H
+Trigger1 = fvar(0) > 0
+Trigger1 = helper(7),NumExplod(7150) = 1
+fvar(0)  = fvar(3)
+ignorehitpause = 1
+persistent= 1
+
+[State -2,根性ゲージ最大値オーバー時]
+type = varset
+Trigger1 = RoundState = 2
+Trigger1 = fvar(0) > fvar(3)
+fvar(0)  = fvar(3) 
+ignorehitpause = 1
+persistent= 1
+
+[State -2,根性ゲージ最大値オーバー時]
+type = varset
+Trigger1 = RoundState = 2
+Trigger1 = fvar(0) < -fvar(3)
+fvar(0)  = -fvar(3) 
+ignorehitpause = 1
+persistent= 1
+
+
+;---------------------------
+[State -2, キャンセル回数リセット]
+type = varset
+Triggerall = RoundState = 2
+Trigger1 = numtarget = 0
+Trigger1 = ctrl = 1
+var(10) = 0
+
+[State -2, 行動ランクリセット]
+type = varset
+Triggerall = RoundState = 2
+Trigger1 = numtarget = 0
+Trigger1 = ctrl = 1
+var(11) = 0
+
+;空キャン判定用エフェクト消し
+[State -2,コンタクト時に消える]
+type = RemoveExplod
+Trigger1 = movecontact = 1
+trigger2 = ProjContact = 1
+Trigger3 = MoveReversed  = 1
+Trigger4 = movetype != A
+Trigger5 = ctrl = 1
+Trigger6 = numexplod(1430) != 0
+ID = 77
+supermovetime = 999999999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999999999
+ignorehitpause	= 1
+
+;補正判定用エフェクト消し
+[State -2,ターゲットを保持しなくなったら解除]
+type = RemoveExplod
+Trigger1 = numtarget = 0
+Trigger1 = NumExplod(14)!= 0
+ID = 14
+supermovetime = 999999999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999999999
+ignorehitpause	= 1
+
+
+;---------------------------
+[State -2, 攻撃力=気合ゲージ比例]
+type = AttackMulSet
+trigger1 = fvar(1) > 0 
+value = (0.1+(0.9*(fvar(1)/fvar(3))))*(0.8+(numtarget=0)*0.2-(prevstateno=stateno)*0.5)/(1+(NumExplod(14)!=0))
+
+[State -2, 気合枯渇時]
+type = AttackMulSet
+trigger1 = fvar(1) <= 0 
+value = 0.1
+
+[State -2, 防御力=根性ゲージ比例]
+type = DefenceMulSet
+trigger1 = fvar(0) >= 0
+value = 2-1*(fvar(0) / fvar(3))
+
+[State -2, 根性枯渇時]
+type = DefenceMulSet
+trigger1 = fvar(0) <= 0 
+value = 2
+
+[State -2, 根性枯渇時]
+type = AssertSpecial
+trigger1 = fvar(0) <= 0
+flag = nostandguard
+flag2 = nocrouchguard
+flag3 = noairguard
+
+;---------------------------
+[State -2, 念のため解除]
+type = varset
+trigger1 = (stateno != [900,950])
+var(0) = 0
+supermovetime = 999999999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999999999
+ignorehitpause	= 1
+
+;---------------------------------------------------------------------------
+;エフェクト制御　 /
+;-----------------
+;150-エフェクト消し
+[State -2,ガードEF]
+type = RemoveExplod
+Trigger1 = movetype = A
+ID = 150
+
+;-----------------------------------
+;650-エフェクト消し
+[State -2,斜め下]
+type = RemoveExplod
+Trigger1 = pos Y = 0
+Trigger2 = stateno != 650
+ID = 660
+
+;-----------------------------------
+;すごパ(物理)用エフェクト消し
+[State -2,収束1002]
+type = RemoveExplod
+Trigger1 = (Anim!=1000)
+Trigger2 = (Anim=1000)&&(AnimElemTime(17)>0)
+Trigger3 = movetype != A
+ID = 1002
+
+;-----------------------------------
+;すごパ(特殊)用エフェクト消し
+[State -2,収束1002]
+type = RemoveExplod
+Trigger1 = (Anim!=1100)
+Trigger2 = (Anim=1100)&&(AnimElemTime(21)>0)
+Trigger3 = movetype != A
+ID = 1102
+
+;-----------------------------------
+;すごいパンチ用エフェクト消アニメ
+[State , 水平]
+type = Explod
+triggerall = numexplod(1010) != 0
+triggerall = numexplod(1015) = 0
+trigger1 = (stateno != 1000)&&(stateno != 1310)
+trigger2 = (stateno = 1000)||(stateno = 2000)||(stateno = 3000)
+trigger2 = ((animelem = 25)||(movecontact))
+trigger3 = (anim = 1310)&&((animelem = 12)||(movecontact))
+trigger4 = (stateno = 1000)||(stateno = 2000)||(stateno = 3000)
+trigger4 = time <= 1
+anim = 6605
+ID = 1015
+postype = P1
+pos =  ceil(230*Const(size.xscale)),ceil(-150*Const(size.yscale))
+facing = 1
+vfacing= 1
+scale = 1*Const(size.xscale),1*Const(size.yscale)
+bindtime = 1
+removetime = -2
+sprpriority = 6
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+ignorehitpause	= 1
+
+
+;空中すごいパンチ用エフェクト消し
+[State -2,水平]
+type = RemoveExplod
+Trigger1 = numexplod(1015) != 0
+ID = 1010
+ignorehitpause	= 1 
+
+;-----------------------------------
+;空中すごいパンチ用エフェクト消アニメ
+[State , 斜め下]
+type = Explod
+trigger1 = numexplod(1600) != 0
+trigger1 = numexplod(1605) = 0
+trigger1 = (stateno != 1600) && (stateno != 1620)
+anim = 6605
+ID = 1605
+postype = P1
+pos = ceil(170*Const(size.xscale)),ceil(-180*Const(size.yscale))
+facing = 1
+vfacing= 1
+scale = Const(size.xscale),Const(size.yscale)
+bindtime = 1
+removetime = -2
+sprpriority = 6
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+
+
+;空中すごいパンチ用エフェクト消し
+[State -2,斜め下]
+type = RemoveExplod
+Trigger1 = numexplod(1605) != 0
+ID = 1600
+
+;-----------------------------------
+;空中すごいキック用エフェクト消アニメ
+[State , 斜め下]
+type = Explod
+triggerall = numexplod(1720) != 0
+triggerall = numexplod(1705) = 0
+trigger1 = (stateno != 1720)
+trigger2 = (stateno = 1720)
+trigger2 = time <= 1
+anim = 6755
+ID = 1705
+postype = P1
+pos = 0,0
+facing = 1
+vfacing= 1
+scale = Const(size.xscale),Const(size.yscale)
+bindtime = 1
+removetime = -2
+sprpriority = 6
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+
+
+;空中すごいキック用エフェクト消し
+[State -2,斜め下]
+type = RemoveExplod
+Trigger1 = numexplod(1705) != 0
+ID = 1720
+
+;-----------------------------------
+;すごい対空パンチ用エフェクト消えアニメ
+[State , 斜め上]
+type = Explod
+trigger1 = numexplod(1750) != 0
+trigger1 = numexplod(1755) = 0
+trigger1 = stateno != 1750
+anim = 6755
+ID = 1755
+postype = P1
+pos = ceil(-40*Const(size.xscale)),ceil(-260*Const(size.yscale))
+facing = 1
+vfacing= -1
+scale = Const(size.xscale),Const(size.yscale)
+bindtime = 1
+removetime = -2
+sprpriority = 6
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+
+;すごい対空パンチ用エフェクト消し
+[State -2,斜め上]
+type = RemoveExplod
+Trigger1 = numexplod(1755) != 0
+ID = 1750
+
+;-----------------------------------
+;ゲージ溜め用エフェクト消えアニメ
+[State , 消えアニメ]
+type = Explod
+triggerall = numexplod(704) = 0
+triggerall = stateno != 700
+trigger1 = numexplod(702) != 0
+trigger2 = numexplod(703) != 0
+anim = 704
+ID = 704
+postype = P1
+pos = -5,0
+vel =  0,-15
+facing = -1
+vfacing= 1
+scale = 1.3*Const(size.xscale),1.3*Const(size.yscale)
+bindtime = 1
+removetime = -2
+sprpriority = 6
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+
+[State , 消えアニメ]
+type = Explod
+triggerall = numexplod(704) = 0
+triggerall = stateno != 700
+trigger1 = numexplod(705) != 0
+trigger2 = numexplod(706) != 0
+anim = 707
+ID = 704
+postype = P1
+pos = -5,0
+vel =  0,-15
+facing = -1
+vfacing= 1
+scale = 1.3*Const(size.xscale),1.3*Const(size.yscale)
+bindtime = 1
+removetime = -2
+sprpriority = 6
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+
+[State , 消えアニメ]
+type = Explod
+triggerall = numexplod(704) = 0
+triggerall = stateno != 700
+trigger1 = numexplod(708) != 0
+trigger2 = numexplod(709) != 0
+anim = 710
+ID = 704
+postype = P1
+pos = -5,0
+vel =  0,-15
+facing = -1
+vfacing= 1
+scale = 1.3*Const(size.xscale),1.3*Const(size.yscale)
+bindtime = 1
+removetime = -2
+sprpriority = 6
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+
+;ゲージ溜め用エフェクト消し
+[State -2,消す];開始
+type = RemoveExplod
+Trigger1 = numexplod(704) != 0
+ID = 702
+
+[State -2,消す];開始
+type = RemoveExplod
+Trigger1 = numexplod(704) != 0
+ID = 705
+
+[State -2,消す];開始
+type = RemoveExplod
+Trigger1 = numexplod(704) != 0
+ID = 708
+
+[State -2,消す];蒼
+type = RemoveExplod
+Trigger1 = numexplod(704) != 0
+ID = 703
+
+[State -2,消す];紅
+type = RemoveExplod
+Trigger1 = numexplod(704) != 0
+ID = 706
+
+[State -2,消す];金
+type = RemoveExplod
+Trigger1 = numexplod(704) != 0
+ID = 709
+
+;-----------------------------------
+;たいらんれいぶ用エフェクト消えアニメ
+[State , 水平]
+type = Explod
+triggerall = numexplod(3005) != 0
+triggerall = numexplod(3006) = 0
+trigger1 = (stateno != 3000)
+trigger2 = (anim = 3000)&&(animelem = 25)
+trigger3 = (anim = 3000)&&(movecontact)
+trigger3 = (animelemtime(25) < 0)&&(animelemtime(23) >= 0)
+anim = 3006
+ID = 3006
+postype = P1
+pos =  ceil(230*Const(size.xscale)),ceil(-150*Const(size.yscale))
+facing = 1
+vfacing= 1
+scale = 0.8*Const(size.xscale),1*Const(size.yscale)
+bindtime = 1
+removetime = -2
+sprpriority = 6
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+ignorehitpause	= 1
+
+
+;空中すごいパンチ用エフェクト消し
+[State -2,水平]
+type = RemoveExplod
+Trigger1 = numexplod(3006) != 0
+ID = 3005
+ignorehitpause	= 1 
+
+[State , 斜め]
+type = null;Explod
+triggerall = numexplod(3010) != 0
+triggerall = numexplod(3100) = 0
+trigger1 = (stateno != 3000)||(anim != 3000)
+trigger2 = (anim = 3000)&&(animelem = 48)
+trigger3 = (anim = 3000)&&(movecontact)
+trigger3 = (animelemtime(48) < 0)&&(animelemtime(45) >= 0)
+anim = 3011
+ID = 3011
+postype = P1
+pos =  ceil(230*Const(size.xscale)),ceil(-150*Const(size.yscale))
+facing = 1
+vfacing= 1
+scale = 0.6*Const(size.xscale),0.7*Const(size.yscale)
+bindtime = 1
+removetime = -2
+sprpriority = 6
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+ignorehitpause	= 1
+
+
+;空中すごいパンチ用エフェクト消し
+[State -2,水平]
+type = RemoveExplod
+Trigger1 = numexplod(3011) != 0
+ID = 3010
+ignorehitpause	= 1 
+
+;---------------------------------------------------------------------------
+;デバッグ用スイッチ /　兼　パレットNoによる追加効果
+;-------------------
+
+
+[State -2, 気合ゲージ]
+type = varset
+Trigger1 = 0 ;★デバッグ用ゲージ満タン
+
+Trigger2 = PalNo = 7
+Trigger3 = PalNo = 9
+Trigger4 = PalNo = 11
+Trigger5 = PalNo = 12
+
+fvar(1)  = (fvar(3)) 
+ignorehitpause = 1
+persistent= 1
+
+
+[State -2, 根性カウント]
+type = varset
+Trigger1 = 0 ;★デバッグ用カウント入力
+
+Trigger2 = PalNo = 8
+Trigger3 = PalNo = 9
+Trigger4 = PalNo = 11
+Trigger5 = PalNo = 12
+
+var(40) = 10 
+ignorehitpause = 1
+persistent= 1
+
+
+[State -2, 通常ゲージ]
+type = Poweradd
+Trigger1 = 0 ;★デバッグ用ゲージ満タン
+
+Trigger2 = PalNo = 10
+Trigger3 = PalNo = 11
+Trigger4 = PalNo = 12
+
+value = 3000
+ignorehitpause = 1
+persistent= 1
+
+
+[State -2, 根性ゲージ]
+type = varset
+Trigger1 = 0 ;★デバッグ用ゲージ満タン
+
+Trigger2 = PalNo = 12
+
+fvar(0)  = (fvar(3)) 
+ignorehitpause = 1
+persistent= 1
+
+
+[State -2, 気合と根性シールド]
+type = varset
+Trigger1 = 0 ;★デバッグ用常時展開
+var(2)  = 10 
+ignorehitpause = 1
+persistent= 1
+
+
+;[シールド処理時保険]-----------------------------------
+[State -2,水平]
+type = lifeset
+Trigger1 = roundstate >= 2
+Trigger1 = numhelper(7) != 0
+Trigger1 = helper(7),fvar(0) > 0
+Trigger1 = var(2) != 0
+value = ceil(helper(7),fvar(0))
+ignorehitpause	= 1
+
+[State -2,水平]
+type = NotHitBy
+Triggerall = roundstate >= 2
+Triggerall = numhelper(7) != 0
+Triggerall = var(2) != 0
+trigger1 = (stateno >= 5000) 
+trigger2 = (stateno < 5000) && (movetype = H)
+value2 = ,AA,AP,AT
+time = 90
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999  
+ignorehitpause = 1
+persistent= 1
+
+[State -2,水平]
+type = selfstate
+Triggerall = roundstate >= 2
+Triggerall = numhelper(7) != 0
+Triggerall = var(2) != 0
+triggerall = roundstate < 3
+trigger1 = (stateno >= 5000) 
+trigger2 = (stateno < 5000) && (movetype = H)
+value = 1256
+ignorehitpause	= 1 
+
+;-----------------------------------
+[State -2, クリップボード]
+type = DisplayToClipboard
+trigger1 = 1
+;text = "sugoga=%d, sild=%d, kiai=%f, konjou=%f \n"
+;params = var(0),var(2),fvar(1),fvar(0)
+text = "Projsuu=%d, Projtime=%d, kiai=%f, konjou=%f \n"
+params = var(50),var(52),fvar(1),fvar(0)
+ignorehitpause	= 1
+
+
+[State -2, クリップボード（追加専用）]
+type = AppendToClipboard
+trigger1 = 1
+text = "Ckaisuu=%d, Krank=%d, P2dist X=%f, P2dist Y=%f \n"
+params = var(10),var(11),(P2dist X),(P2dist Y)
+ignorehitpause	= 1
+
+
+[State -2, クリップボード（追加専用）]
+type = null;AppendToClipboard
+trigger1 = 1
+text = "Position X=%d,Y=%d, Velocity X=%f,Y=%f, Hit=%d \n"
+params = floor(Pos X),floor(Pos Y),(Vel X),(Vel Y),(MoveHit)
+
+;===========================================================================
+; 準常時監視ステート（－３）
+;===========================================================================
+;---------------------------------------------------------------------------
+; こちらは通常の食らい状態以外の「P2StateNo」や「TargetState」等で制御された、
+; 作成者が任意に指定した相手側の食らいステートに限り、
+; 登録したステートコントローラが有効にはなりません。
+; －１や－２と上手く使い分けて行きましょう。
+;---------------------------------------------------------------------------
+
+[Statedef -3]
+
+;-----------------------------------
+;すごい足踏み自分喰らい用
+[State -3,喰らいステート移行]
+type = ChangeState
+triggerall = stateno != 1920
+triggerall = var(2) = 0
+triggerall = movetype != H
+triggerall = (statetype = S)||(statetype = C)
+triggerall = (stateno != [1500,1599])&&(stateno != [800,899]);投げ技中ではないとき
+trigger1 = numexplod(1950) = 0
+trigger1 = NumProjID(1950) != 0
+trigger2 = ProjContactTime(1950) = 1 
+value = 1920
+
+;-----------------------------------
+[State -3, 通常行動系音をstop]
+type = StopSnd
+trigger1 = movetype != I
+channel = 3
+
+;-----------------------------------
+
+[State 195, 声]
+type = PlaySnd
+trigger1 = stateno != [120,159]
+trigger1 = gethitvar(damage) != 0
+trigger1 = random < gethitvar(damage)*5
+value = 5, (5000 + (random%4))
+channel = 0
+lowpriority = 1
+
+
+;===========================================================================
+; システム制御用ヘルパー
+;===========================================================================
+[Statedef 7]
+type    = A
+movetype= I
+physics = N
+velset = 0,0
+ctrl = 0
+
+;[基本的な設定]-----------------------------------------------------------
+[State 7];親と同じ方向向く
+type = Turn
+trigger1 = Root,Facing != Facing
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause	= 1
+
+[State 7];親と同じ位置へ
+Type = posset 
+Trigger1 = 1
+x = ceil(Root,pos x) 
+y = ceil(Root,pos y)  
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1
+
+[State 7]
+type = NotHitBy
+trigger1 = 1
+value = ,AA,AT
+time=999
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999  
+ignorehitpause = 1
+persistent= 1
+
+[State 7]
+type = NotHitBy
+trigger1 = Root,var(2) = 0
+trigger2 = time <= 5
+value2 = ,AA,AP,AT
+time = 1
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999  
+ignorehitpause = 1
+persistent= 1
+
+[State 7]
+type = HitOverride
+trigger1 = 1
+slot = 0
+attr = SCA, AA,AP,AT
+stateno = 7
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1 
+
+;[気合と根性ゲージ表示]-----------------------------------------------------
+;-------------------------------------------------
+;1P側
+;-------------------------------------------------
+[State -2, 気合ゲージ下地]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 1
+Trigger1 = (Root,fvar(1)) != 0
+anim = 7000+((Root,fvar(1)) <= 0)*50
+ID = 7500
+postype = left
+pos = 52+(Root,var(3)),220+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = (80*(Root,fvar(1))/(Root,fvar(3))),0.05
+bindtime = -1
+removetime = 2
+sprpriority = 4
+ontop = 0
+shadow = 0, 0, 0
+Trans = addalpha   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+[State -2, 根性ゲージ表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 1
+Trigger1 = (Root,fvar(0)) != 0
+anim = 7100-((Root,fvar(0)) <= 0)*50
+ID = 7500
+postype = left
+pos = 52+(Root,var(3)),232+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = (80*(Root,fvar(0))/(Root,fvar(3))),0.05
+bindtime = -1
+removetime = 2
+sprpriority = 4
+ontop = 0
+shadow = 0, 0, 0
+Trans = addalpha   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+
+[State -2, 気合ゲージ表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 1
+Trigger1 = (Root,fvar(1)) != 0
+anim = 7000+((Root,fvar(1)) <= 0)*50
+ID = 7000+((Root,fvar(1)) <= 0)*50
+postype = left
+pos = 52+(Root,var(3)),220+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = (80*(Root,fvar(1))/(Root,fvar(3))),0.05
+bindtime = -1
+removetime = 2
+sprpriority = 5
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+[State -2, 根性ゲージ表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 1
+Trigger1 = (Root,fvar(0)) != 0
+anim = 7100-((Root,fvar(0)) <= 0)*50
+ID = 7100+((Root,fvar(0)) <= 0)*50
+postype = left
+pos = 52+(Root,var(3)),232+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = (80*(Root,fvar(0))/(Root,fvar(3))),0.05
+bindtime = -1
+removetime = 2
+sprpriority = 5
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+
+[State -2, ゲージ枠表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 1 
+anim = 7500
+ID = 7500
+postype = left
+pos = 20+(Root,var(3)),220+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = 0.33,0.33
+bindtime = -1
+removetime = 2
+sprpriority = 6
+ontop = 1
+shadow = 0, 0, 0
+Trans = none   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+[State -2, ゲージ枠表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 1
+anim = 7500
+ID = 7500
+postype = left
+pos = 20+(Root,var(3)),232+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = 0.33,0.33
+bindtime = -1
+removetime = 2
+sprpriority = 6
+ontop = 1
+shadow = 0, 0, 0
+Trans = none   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+[State -2, 気合文字表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 1
+Trigger1 = (Root,fvar(1)) > 0 
+anim = 7200
+ID = 7500
+postype = left
+pos = 32+(Root,var(3)),221+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = 0.07,0.07
+bindtime = -1
+removetime = 2
+sprpriority = 7
+ontop = 1
+shadow = 0, 0, 0
+Trans = none   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+
+[State -2, 根性文字表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 1
+Trigger1 = (Root,fvar(0)) > 0 
+anim = 7300
+ID = 7500
+postype = left
+pos = 32+(Root,var(3)),233+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = 0.07,0.07
+bindtime = -1
+removetime = 2
+sprpriority = 7
+ontop = 1
+shadow = 0, 0, 0
+Trans = none ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+
+[State -2, 根性カウント表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 1
+anim = (7600+Root,var(40))
+ID = 7600
+postype = left
+pos = 30+(Root,var(5)),30+(Root,var(6))
+facing = 1
+vfacing= 1
+scale = 0.1,0.1
+bindtime = -1
+removetime = 2
+sprpriority = 7
+ontop = 1
+shadow = 0, 0, 0
+Trans = add1 ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+;-------------------------------------------------
+;2P側
+;-------------------------------------------------
+[State -2, 気合ゲージ下地]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 2
+Trigger1 = (Root,fvar(1)) != 0
+anim = 7000+((Root,fvar(1)) <= 0)*50
+ID = 7500
+postype = right
+pos = -98-(Root,var(3)),220+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = (80*(Root,fvar(1))/(Root,fvar(3))),0.05
+bindtime = -1
+removetime = 2
+sprpriority = 4
+ontop = 0
+shadow = 0, 0, 0
+Trans = addalpha   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+[State -2, 根性ゲージ表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 2
+Trigger1 = (Root,fvar(0)) != 0
+anim = 7100-((Root,fvar(0)) <= 0)*50
+ID = 7500
+postype = right
+pos = -98-(Root,var(3)),232+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = (80*(Root,fvar(0))/(Root,fvar(3))),0.05
+bindtime = -1
+removetime = 2
+sprpriority = 4
+ontop = 0
+shadow = 0, 0, 0
+Trans = addalpha   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+
+[State -2, 気合ゲージ表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 2
+Trigger1 = (Root,fvar(1)) != 0
+anim = 7000+((Root,fvar(1)) <= 0)*50
+ID = 7000+((Root,fvar(1)) <= 0)*50
+postype = right
+pos = -98-(Root,var(3)),220+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = (80*(Root,fvar(1))/(Root,fvar(3))),0.05
+bindtime = -1
+removetime = 2
+sprpriority = 5
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+[State -2, 根性ゲージ表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 2
+Trigger1 = (Root,fvar(0)) != 0
+anim = 7100-((Root,fvar(0)) <= 0)*50
+ID = 7100+((Root,fvar(0)) <= 0)*50
+postype = right
+pos = -98-(Root,var(3)),232+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = (80*(Root,fvar(0))/(Root,fvar(3))),0.05
+bindtime = -1
+removetime = 2
+sprpriority = 5
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+
+[State -2, ゲージ枠表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 2 
+anim = 7500
+ID = 7500
+postype = right
+pos = -130-(Root,var(3)),220+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = 0.33,0.33
+bindtime = -1
+removetime = 2
+sprpriority = 6
+ontop = 1
+shadow = 0, 0, 0
+Trans = none   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+[State -2, ゲージ枠表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 2
+anim = 7500
+ID = 7500
+postype = right
+pos = -130-(Root,var(3)),232+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = 0.33,0.33
+bindtime = -1
+removetime = 2
+sprpriority = 6
+ontop = 1
+shadow = 0, 0, 0
+Trans = none   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+[State -2, 気合文字表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 2
+Trigger1 = (Root,fvar(1)) > 0 
+anim = 7200
+ID = 7500
+postype = right
+pos = -118-(Root,var(3)),221+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = 0.07,0.07
+bindtime = -1
+removetime = 2
+sprpriority = 7
+ontop = 1
+shadow = 0, 0, 0
+Trans = none   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+[State -2, 根性文字表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 2
+Trigger1 = (Root,fvar(0)) > 0 
+anim = 7300
+ID = 7500
+postype = right
+pos = -118-(Root,var(3)),233+(Root,var(4))
+facing = 1
+vfacing= 1
+scale = 0.07,0.07
+bindtime = -1
+removetime = 2
+sprpriority = 7
+ontop = 1
+shadow = 0, 0, 0
+Trans = none ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+[State -2, 根性カウント表示]
+type = Explod
+Trigger1 = RoundState = 2
+Trigger1 = TeamSide = 2
+anim = (7600+Root,var(40))
+ID = 7600
+postype = right
+pos = -55-(Root,var(5)),30+(Root,var(6))
+facing = 1
+vfacing= 1
+scale = 0.1,0.1
+bindtime = -1
+removetime = 2
+sprpriority = 7
+ontop = 1
+shadow = 0, 0, 0
+Trans = add1 ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+;-------------------------------------------------
+;すごいラッシュ用収束
+;-------------------------------------------------
+[State , タイムフラグ用1]
+type = Explod
+Trigger1 = (Root,stateno = 3600)
+Trigger1 = (Root,AnimElemTime (18) = 0)
+anim = 7
+ID = 3605
+postype = P1
+pos = ceil(-60*Const(size.xscale)),ceil(-130*Const(size.yscale))
+facing = 1
+vfacing= 1
+scale = Const(size.xscale),Const(size.yscale)
+bindtime = -1
+removetime = 21
+removeongethit = 1
+sprpriority = 7
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+ignorehitpause	= 1 
+supermovetime = 999999999999
+pausemovetime = 999999999999
+persistent= 1
+
+[State , タイムフラグ用2]
+type = Explod
+Trigger1 = (Root,stateno = 3600)
+Trigger1 = (Root,AnimElemTime (18) = 0)
+anim = 7
+ID = 3605
+postype = P1
+pos = ceil(-60*Const(size.xscale)),ceil(-130*Const(size.yscale))
+facing = 1
+vfacing= 1
+scale = Const(size.xscale),Const(size.yscale)
+bindtime = -1
+removetime = 14
+removeongethit = 1
+sprpriority = 7
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+ignorehitpause	= 1 
+supermovetime = 999999999999
+pausemovetime = 999999999999
+persistent= 1
+
+[State , タイムフラグ用3]
+type = Explod
+Trigger1 = (Root,stateno = 3600)
+Trigger1 = (Root,AnimElemTime (18) = 0)
+anim = 7
+ID = 3605
+postype = P1
+pos = ceil(-60*Const(size.xscale)),ceil(-130*Const(size.yscale))
+facing = 1
+vfacing= 1
+scale = Const(size.xscale),Const(size.yscale)
+bindtime = -1
+removetime = 7
+removeongethit = 1
+sprpriority = 7
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+ignorehitpause	= 1 
+supermovetime = 999999999999
+pausemovetime = 999999999999
+persistent= 1
+
+[State , 収束EFメイン2]
+type = Explod
+Trigger1 = (Root,stateno = 3600)
+Trigger1 = (Root,AnimElemTime (18) = 0)
+anim = 6011
+ID = 3601
+postype = P1
+pos = ceil(-60*Const(size.xscale)),ceil(-130*Const(size.yscale))
+facing = 1
+vfacing= 1
+scale = Const(size.xscale),Const(size.yscale)
+bindtime = -1
+removetime = 30
+removeongethit = 1
+sprpriority = 7
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+ignorehitpause	= 1 
+supermovetime = 999999999999
+pausemovetime = 999999999999
+persistent= 1
+
+[State , 収束EFメイン2]
+type = Explod
+Trigger1 = (Root,stateno = 3600)
+Trigger1 = (Root,AnimElemTime (18) >= 0)
+Trigger1 = (Root,AnimElemTime (28) < 0)
+Trigger1 = (numexplod(3605) = 2)
+Trigger1 = (numexplod(3602) = 0)
+anim = 6011
+ID = 3602
+postype = P1
+pos = ceil(-60*Const(size.xscale)),ceil(-130*Const(size.yscale))
+facing = 1
+vfacing= -1
+scale = Const(size.xscale),Const(size.yscale)
+bindtime = -1
+removetime = 30
+removeongethit = 1
+sprpriority = 7
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+ignorehitpause	= 1 
+supermovetime = 999999999999
+pausemovetime = 999999999999
+persistent= 1
+
+[State , 収束EFメイン2]
+type = Explod
+Trigger1 = (Root,stateno = 3600)
+Trigger1 = (Root,AnimElemTime (18) >= 0)
+Trigger1 = (Root,AnimElemTime (28) < 0)
+Trigger1 = (numexplod(3605) = 1)
+Trigger1 = (numexplod(3603) = 0)
+anim = 6011
+ID = 3603
+postype = P1
+pos = ceil(-60*Const(size.xscale)),ceil(-130*Const(size.yscale))
+facing = -1
+vfacing= -1
+scale = Const(size.xscale),Const(size.yscale)
+bindtime = -1
+removetime = 30
+removeongethit = 1
+sprpriority = 7
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+ignorehitpause	= 1 
+supermovetime = 999999999999
+pausemovetime = 999999999999
+persistent= 1
+
+[State , 収束EFメイン2]
+type = Explod
+Trigger1 = (Root,stateno = 3600)
+Trigger1 = (Root,AnimElemTime (18) >= 0)
+Trigger1 = (Root,AnimElemTime (28) < 0)
+Trigger1 = (numexplod(3605) = 0)
+Trigger1 = (numexplod(3604) = 0)
+anim = 6011
+ID = 3604
+postype = P1
+pos = ceil(-60*Const(size.xscale)),ceil(-130*Const(size.yscale))
+facing = -1
+vfacing= 1
+scale = Const(size.xscale),Const(size.yscale)
+bindtime = -1
+removetime = 30
+removeongethit = 1
+sprpriority = 7
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+ignorehitpause	= 1 
+supermovetime = 999999999999
+pausemovetime = 999999999999
+persistent= 1
+
+;[シールド系処理]-----------------------------------------------------------
+[State 7  保険用変数セット]
+type = VarSet
+trigger1 = Root,var(2) = 0
+fvar(0) = Root,life
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+
+[State 7  シールド用変数セット]
+type = ParentVarSet
+triggerall = Root,var(59) = 0;★AIスイッチ
+triggerall = Root,fvar(1) > 0
+triggerall = Root,fvar(0) > 0
+triggerall = Root,fvar(2) != 0
+triggerall = (Root,movetype = A)||(Root,movetype = I)
+triggerall = Root,stateno != [900,950]
+trigger1 = Root,command = "z"
+var(2) = 5 
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+
+[State 7  シールド用変数セット];念のためセーフティ
+type = ParentVarSet
+triggerall = (Root,movetype = H)
+trigger1 = Root,var(2) != 0
+var(2) = 0 
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+
+[State 7  シールド用変数補充]
+type = ParentVaradd
+triggerall = Root,var(59) = 0;★AIスイッチ
+triggerall = Root,stateno != [900,950]
+triggerall = Root,fvar(1) > 0
+triggerall = Root,fvar(0) > 0
+triggerall = Root,var(2) != 0
+triggerall = Root,var(2) <= 3
+triggerall = (Root,movetype = A)||(Root,movetype = I)
+trigger1 = Root,command = "hold_z"
+var(2) = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+
+
+[State 7  シールド成功時根性消費]
+type = ParentVaradd
+triggerall = Root,stateno != [900,950]
+triggerall = Root,var(2) > 0
+triggerall =(Root,movetype = A)||(Root,movetype = I)
+trigger1 = time = 0
+fvar(0) = -10/(1+(numexplod(7))/5)
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 0
+
+[State 7  根性枯渇]
+type = ParentVaradd
+triggerall = Root,stateno != [900,950]
+triggerall = Root,var(2) > 0
+triggerall =(Root,movetype = A)||(Root,movetype = I)
+trigger1 = time = 0
+trigger1 = Root,fvar(0) < 0
+fvar(0) = -(Root,fvar(3))
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 0
+
+[State 7 シールド成功時EF]
+type = Explod
+triggerall = Root,stateno != [900,950]
+triggerall = anim = 8
+triggerall =(Root,movetype = A)||(Root,movetype = I)
+trigger1 = time = 0
+anim = 9
+ID = 7
+postype = P1
+pos = ceil(125*Const(size.xscale)),ceil(-125*Const(size.yscale))
+facing = 1
+vfacing= 1
+scale = 0.7*Const(size.xscale),0.7*Const(size.yscale)
+bindtime = -1
+removetime = 30
+sprpriority = 7
+ontop = 1
+shadow = 0, 0, 0
+Trans = add   ;Add ,None, Add1, Sub, AddAlpha
+ownpal = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 0
+
+[State 195, 音を鳴らす]
+type = PlaySnd
+triggerall = Root,stateno != [900,950]
+triggerall = anim = 8
+triggerall =(Root,movetype = A)||(Root,movetype = I)
+trigger1 = time = 0
+channel = 4
+value = 4, 3
+persistent= 0
+
+[State 7, シールド用アニメ]
+type = ChangeAnim
+Trigger1 = anim != 8
+Trigger1 = Root,var(2) != 0
+value = 8
+elem = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+[State 7, アニメ戻し]
+type = ChangeAnim
+Trigger1 = anim != 7
+Trigger1 = Root,var(2) = 0
+value = 7
+elem = 1
+supermovetime = 999999999999
+pausemovetime = 999999999999
+ignorehitpause	= 1 
+persistent= 1
+
+[State 1000,]
+type = ReversalDef
+trigger1 = time >= 15
+reversal.attr = SCA,AA,AT
+pausetime = 0,15
+sparkno = -1
+parkxy = 0,0
+hitsound = 5,3
+numhits = 0
+p1stateno = 7
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1
+persistent= 1
+
+[State 7  シールド用変数カウントダウン]
+type = ParentVaradd
+triggerall = Root,stateno != [900,950]
+triggerall =(Root,movetype = A)||(Root,movetype = I)
+trigger1 = Root,var(2) > 0
+trigger1 = Root,HitPauseTime = 0
+var(2) = -1
+
+[State 7  シールド用変数念のためリセット]
+type = ParentVarset
+trigger1 = Root,var(2) < 0
+trigger2 = Root,stateno = [900,950]
+trigger3 = Root,var(59) != 0;★AIスイッチ
+var(2) = 0
+
+[State 7  シールド中noKOフラグ]
+type = AssertSpecial
+trigger1 = Root,numExplod(5) != 0
+flag = noko
+
+;--------------------------------------------------------------
+[State -2, 上段打ち払い用ヘルパー発生]
+type = Helper
+trigger1 = numhelper(1400)=0
+trigger1 = root,stateno = 1400
+trigger1 = root,AnimElemTime (9) < 0
+helpertype = normal
+name = "pry-hi"
+ID = 1400
+pos = 0,0
+postype = p1
+facing = 1
+stateno = 1405
+keyctrl = 0
+ownpal = 1
+supermovetime = 999999999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999999999
+
+[State -2, 下段打ち払い用ヘルパー発生]
+type = Helper
+trigger1 = numhelper(1410)=0
+trigger1 = root,stateno = 1400
+trigger1 = root,AnimElemTime (9) < 0
+helpertype = normal
+name = "pry-low"
+ID = 1410
+pos = 0,0
+postype = p1
+facing = 1
+stateno = 1410
+keyctrl = 0
+ownpal = 1
+supermovetime = 999999999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999999999
+
+;--------------------------------------------------------------
+[State -2, 振り向き制御用ヘルパー発生]
+type = Helper
+trigger1 = numhelper(1230)=0
+trigger1 = root,stateno = 1230
+trigger1 = root,AnimElemTime (7) < 0
+helpertype = player
+name = "decoi"
+ID = 1230
+pos = 0,0
+postype = p1
+facing = 1
+stateno = 1235
+keyctrl = 0
+ownpal = 1
+supermovetime = 999999999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999999999
+
+;--------------------------------------------------------------
+[State -2, 掻き消し用ヘルパー発生]
+type = Helper
+triggerall = numhelper(1855)=0
+trigger1 = root,stateno = 1850
+trigger1 = root, numProjID(1850) != 0
+trigger2 = root,stateno = 2450
+trigger2 = root, anim = 2450
+helpertype = normal
+name = "Proj-erases"
+ID = 1855
+pos = 0,0
+postype = p1
+facing = 1
+stateno = 1855
+keyctrl = 0
+ownpal = 1
+supermovetime = 999999999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999999999
+
+;--------------------------------------------------------------
+[State -2, 掻き消し用ヘルパー発生]
+type = Helper
+triggerall = numhelper(1463)=0
+trigger1 = root,stateno = 1455
+trigger1 = root, animelemtime(18) >= 0
+trigger2 = root,stateno = 1450
+trigger2 = root, animelemtime(18) >= 0
+helpertype = normal
+name = "Proj-erases"
+ID = 1463
+pos = 0,0
+postype = p1
+facing = 1
+stateno = 1456
+keyctrl = 0
+ownpal = 1
+supermovetime = 999999999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999999999
+
+
+;[試合後消える]-----------------------------------------------------------
+[State 7  DestroySelf]
+type = DestroySelf
+triggerall = ishelper 
+trigger1 = roundno = 4
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause	= 1  
+
+
+;========================================================================================
+[Statedef 1235];デコイ用ヘルパー
+type    = A
+movetype= A
+physics = N
+anim = 7
+velset = 0,0
+ctrl = 0
+;[基本的な設定]-----------------------------------------------------------
+[State 7];親と同じ方向向く
+type = Turn
+trigger1 = root,AnimElemTime (7) < 0
+trigger1 = Root,Facing != Facing
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause	= 1
+
+[State 7];親と同じ位置へ
+Type = posset 
+trigger1 = root,AnimElemTime (7) < 0
+x = (Root,pos x) 
+y = (Root,pos y)  
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1
+
+[State 200, ヒット定義]
+type = HitDef
+trigger1 = 1
+attr = S, NA ;立ち通常打撃（Standing, Normal Attack）
+damage = 20, 0
+animtype = Light
+guardflag = MA
+hitflag = MAF
+priority = 3, Hit
+pausetime = 12, 12
+sparkno = -1
+guard.sparkno = -1
+sparkxy = -10, ceil(-178*Const(size.yscale))
+hitsound = s1,0
+guardsound = s1,10
+ground.type = High
+ground.slidetime = 5
+ground.hittime  = 16
+guard.ctrltime = 16
+ground.velocity = -4
+airguard.velocity = -1.9,-.8
+air.type = High
+air.velocity = -1.4,-3
+air.hittime = 12
+fall.recovertime = 12
+kill = (numexplod(5) = 0)
+ID = 200
+
+[State 7]
+type = NotHitBy
+trigger1 = 1
+value = ,AA,AT
+time=999
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999  
+ignorehitpause = 1
+persistent= 1
+
+[State 7]
+type = HitOverride
+trigger1 = 1
+slot = 0
+attr = SCA, AA,AP,AT
+stateno = 1235
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1 
+
+[State 7  DestroySelf]
+type = DestroySelf
+triggerall = ishelper 
+trigger1 = roundstate >= 3
+trigger2 = root,stateno != [1230,1255]
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause	= 1    
+
+;========================================================================================
+[Statedef 1405];上段打ち払い用壁
+type    = A
+movetype= A
+physics = N
+anim = 1410
+velset = 0,0
+ctrl = 0
+;[基本的な設定]-----------------------------------------------------------
+[State 7];親と同じ方向向く
+type = Turn
+trigger1 = Root,Facing != Facing
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause	= 1
+
+[State 7];親と同じ位置へ
+Type = posset 
+Trigger1 = 1
+x = (Root,pos x) 
+y = (Root,pos y)  
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1
+
+[State 7]
+type = NotHitBy
+trigger1 = 1
+value = ,AA,AT
+time=999
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999  
+ignorehitpause = 1
+persistent= 1
+
+[State 7]
+type = HitOverride
+trigger1 = 1
+slot = 0
+attr = SCA, AA,AP,AT
+stateno = 1405
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1 
+
+[State 1000,]
+type = ReversalDef
+trigger1 = 1
+reversal.attr = SCA,AA,AP
+pausetime = 0,0
+sparkno = -1
+parkxy = 0,0
+hitsound = -1
+numhits = 0
+p1stateno = 1405
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1
+persistent= 1
+
+[State 1400, 飛び道具掻き消し成功フラグ];HitDefに飛び道具専用のパラメータを加えたようなものが「Projectile」
+type = Projectile
+trigger1 = time = 0
+Trigger1 = root,numProjID(1400) != 0
+attr = S, ST 
+damage = 0,0 
+getpower = 0,0
+animtype =  Medium
+pausetime = 0,5
+;-----------------------------------Projectile専用のパラメータ
+offset = 0,0                ;飛び道具を発射する位置（Ｘ軸,Ｙ軸）
+velocity = (Root,statetype=A)*(Root,vel X),(Root,statetype=A)*(Root,vel Y) 
+;velocity = 0,0                 ;飛び道具の移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0                  ;飛び道具の加速度(float)（Ｘ軸,Ｙ軸）
+projID = 1405                  ;飛び道具のＩＤナンバー（NumProjIDなどで判断）
+projanim = 7                ;飛び道具のアニメ（アクションナンバー）
+projhitanim = -1             ;飛び道具がヒットした時のアニメ（アクションナンバー）
+projremanim = -1             ;飛び道具が消える時のアニメ（アクションナンバー）
+projscale = Const(size.xscale),Const(size.yscale)               ;飛び道具の大きさ（Ｘ軸,Ｙ軸）※現在２倍
+projshadow = 0,0,0             ;飛び道具の影の色合い（赤,緑,青）※現在影無し
+projhits = 1            ;飛び道具のヒット数（２以上なら多段ヒットになる）
+projmisstime = 1               ;飛び道具の連続でヒットしない間隔　※projhitsが２以上の時のみ
+projpriority = 1          ;飛び道具の攻撃優先度・相手のProjectileよりも高いと消しながら進む
+projremovetime = 1            ;飛び道具の消えるまでの時間（フレーム）※-1なら当たるか画面外に出るまで消えない
+;-----------------------------------これ以外にまだまだある。docsフォルダ参照。
+hitflag = MAFP
+guardflag = MA
+numhits = 0
+priority = 3
+sparkno = -1
+sparkxy = 0,0
+guard.sparkno = -1
+hitsound   = s1,2
+guardsound = s1,11
+ground.type = high
+ground.slidetime = 24
+ground.hittime  = 20
+ground.velocity = 0
+air.velocity = 0
+ID = 1400
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause	= 1
+persistent= 0
+
+[State 1400, 飛び道具掻き消し用上段];HitDefに飛び道具専用のパラメータを加えたようなものが「Projectile」
+type = Projectile
+trigger1 = 1;time = 0
+;trigger1 = root,numProjID(1400) = 0
+attr = S, ST 
+damage = 0,0 
+getpower = 0,0
+animtype =  Medium
+pausetime = 0,15
+;-----------------------------------Projectile専用のパラメータ
+offset = 0,0                ;飛び道具を発射する位置（Ｘ軸,Ｙ軸）
+velocity = (Root,statetype=A)*(Root,vel X),(Root,statetype=A)*(Root,vel Y) 
+;velocity = 0,0               ;飛び道具の移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0                  ;飛び道具の加速度(float)（Ｘ軸,Ｙ軸）
+projID = 1400                  ;飛び道具のＩＤナンバー（NumProjIDなどで判断）
+projanim = 1410  +(time = 0)   ;飛び道具のアニメ（アクションナンバー）
+projhitanim = -1             ;飛び道具がヒットした時のアニメ（アクションナンバー）
+projremanim = -1             ;飛び道具が消える時のアニメ（アクションナンバー）
+projscale = Const(size.xscale),Const(size.yscale)               ;飛び道具の大きさ（Ｘ軸,Ｙ軸）※現在２倍
+projshadow = 0,0,0             ;飛び道具の影の色合い（赤,緑,青）※現在影無し
+projhits = 1            ;飛び道具のヒット数（２以上なら多段ヒットになる）
+projmisstime = 1               ;飛び道具の連続でヒットしない間隔　※projhitsが２以上の時のみ
+projpriority = 1          ;飛び道具の攻撃優先度・相手のProjectileよりも高いと消しながら進む
+projremovetime = 1            ;飛び道具の消えるまでの時間（フレーム）※-1なら当たるか画面外に出るまで消えない
+;-----------------------------------これ以外にまだまだある。docsフォルダ参照。
+hitflag = MAFP
+guardflag = MA
+numhits = 0
+priority = 3
+sparkno = -1
+sparkxy = 0,0
+guard.sparkno = -1
+hitsound   = -1;s1,2
+guardsound = -1;s1,11
+ground.type = High
+ground.slidetime = 24
+ground.hittime  = 20
+air.hittime  = 120
+ground.velocity = -5.5,-5*(Root,statetype = A)
+air.velocity = -5.5,-5-3*(Root,statetype = A)
+air.fall = 1
+fall.recover = 0
+ID = 1400
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+persistent= 1
+
+[State 7  DestroySelf]
+type = DestroySelf
+triggerall = ishelper 
+trigger1 = roundstate >= 3
+trigger2 = root,stateno != 1400
+trigger3 = root,stateno = 1400
+trigger3 = root,AnimElemTime (9) >= 0
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause	= 1   
+
+;========================================================================================
+[Statedef 1410];下段打ち払い用壁
+type    = C
+movetype= A
+physics = N
+anim = 1410
+velset = 0,0
+ctrl = 0
+;[基本的な設定]-----------------------------------------------------------
+[State 7];親と同じ方向向く
+type = Turn
+trigger1 = Root,Facing != Facing
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause	= 1
+
+[State 7];親と同じ位置へ
+Type = posset 
+Trigger1 = 1
+x = (Root,pos x) 
+y = (Root,pos y)  + ceil(70*Const(size.yscale)) 
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1
+
+[State 7]
+type = NotHitBy
+trigger1 = 1
+value = ,AA,AT
+time=999
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999  
+ignorehitpause = 1
+persistent= 1
+
+[State 7]
+type = HitOverride
+trigger1 = 1
+slot = 0
+attr = SCA, AA,AP,AT
+stateno = 1410
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1 
+
+[State 1000,]
+type = ReversalDef
+trigger1 = 1
+reversal.attr = SCA,AA,AP 
+pausetime = 0,0
+sparkno = -1
+parkxy = 0,0
+hitsound = -1
+numhits = 0
+p1stateno = 1410
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1
+persistent= 1
+
+[State 1400, 飛び道具掻き消し成功フラグ];HitDefに飛び道具専用のパラメータを加えたようなものが「Projectile」
+type = Projectile
+trigger1 = time = 0
+Trigger1 = root,numProjID(1410) != 0
+attr = S, ST 
+damage = 0,0 
+getpower = 0,0
+animtype =  Medium
+pausetime = 0,5
+;-----------------------------------Projectile専用のパラメータ
+offset = 0,0                ;飛び道具を発射する位置（Ｘ軸,Ｙ軸）
+velocity = (Root,statetype=A)*(Root,vel X),(Root,statetype=A)*(Root,vel Y) 
+;velocity = 0,0                ;飛び道具の移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0                  ;飛び道具の加速度(float)（Ｘ軸,Ｙ軸）
+projID = 1415                  ;飛び道具のＩＤナンバー（NumProjIDなどで判断）
+projanim = 7                ;飛び道具のアニメ（アクションナンバー）
+projhitanim = -1             ;飛び道具がヒットした時のアニメ（アクションナンバー）
+projremanim = -1             ;飛び道具が消える時のアニメ（アクションナンバー）
+projscale = Const(size.xscale),Const(size.yscale)               ;飛び道具の大きさ（Ｘ軸,Ｙ軸）※現在２倍
+projshadow = 0,0,0             ;飛び道具の影の色合い（赤,緑,青）※現在影無し
+projhits = 1            ;飛び道具のヒット数（２以上なら多段ヒットになる）
+projmisstime = 1               ;飛び道具の連続でヒットしない間隔　※projhitsが２以上の時のみ
+projpriority = 1          ;飛び道具の攻撃優先度・相手のProjectileよりも高いと消しながら進む
+projremovetime = 1            ;飛び道具の消えるまでの時間（フレーム）※-1なら当たるか画面外に出るまで消えない
+;-----------------------------------これ以外にまだまだある。docsフォルダ参照。
+hitflag = MAFP
+guardflag = MA
+numhits = 0
+priority = 3
+sparkno = -1
+sparkxy = 0,0
+guard.sparkno = -1
+hitsound   = s1,2
+guardsound = s1,11
+ground.type = high
+ground.slidetime = 24
+ground.hittime  = 20
+ground.velocity = 0
+air.velocity = 0
+ID = 1400
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause	= 1
+persistent= 0
+
+[State 1400, 飛び道具掻き消し用上段];HitDefに飛び道具専用のパラメータを加えたようなものが「Projectile」
+type = Projectile
+trigger1 = 1
+attr = S, ST 
+damage = 0,0 
+getpower = 0,0
+animtype =  Medium
+pausetime = 0,15
+;-----------------------------------Projectile専用のパラメータ
+offset = 0,0                ;飛び道具を発射する位置（Ｘ軸,Ｙ軸）
+velocity = (Root,statetype=A)*(Root,vel X),(Root,statetype=A)*(Root,vel Y) 
+;velocity = 0,0                 ;飛び道具の移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0                  ;飛び道具の加速度(float)（Ｘ軸,Ｙ軸）
+projID = 1410                  ;飛び道具のＩＤナンバー（NumProjIDなどで判断）
+projanim = 1410 +(time = 0)               ;飛び道具のアニメ（アクションナンバー）
+projhitanim = -1             ;飛び道具がヒットした時のアニメ（アクションナンバー）
+projremanim = -1             ;飛び道具が消える時のアニメ（アクションナンバー）
+projscale = Const(size.xscale),Const(size.yscale)               ;飛び道具の大きさ（Ｘ軸,Ｙ軸）※現在２倍
+projshadow = 0,0,0             ;飛び道具の影の色合い（赤,緑,青）※現在影無し
+projhits = 1            ;飛び道具のヒット数（２以上なら多段ヒットになる）
+projmisstime = 1               ;飛び道具の連続でヒットしない間隔　※projhitsが２以上の時のみ
+projpriority = 1          ;飛び道具の攻撃優先度・相手のProjectileよりも高いと消しながら進む
+projremovetime = 1             ;飛び道具の消えるまでの時間（フレーム）※-1なら当たるか画面外に出るまで消えない
+;-----------------------------------これ以外にまだまだある。docsフォルダ参照。
+hitflag = MAFP
+guardflag = MA
+numhits = 0
+priority = 3
+sparkno = -1
+sparkxy = 0,0
+guard.sparkno = -1
+hitsound   = -1;s1,2
+guardsound = -1;s1,11
+ground.type = High
+ground.slidetime = 24
+ground.hittime  = 20
+air.hittime  = 120
+ground.velocity = -5.5,-5*(Root,statetype = A)
+air.velocity = -5.5,-5-3*(Root,statetype = A)
+air.fall = 1
+fall.recover = 0
+ID = 1400
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+persistent= 1
+
+
+
+[State 7  DestroySelf]
+type = DestroySelf
+triggerall = ishelper 
+trigger1 = roundstate >= 3
+trigger2 = root,stateno != 1400
+trigger3 = root,stateno = 1400
+trigger3 = root,AnimElemTime (9) >= 0
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause	= 1  
+
+;========================================================================================
+[Statedef 1456];掻き消し用ヘルパー
+type    = A
+movetype= I
+physics = N
+anim = 1463
+velset = 0,0
+ctrl = 0
+;[基本的な設定]-----------------------------------------------------------
+[State 7];親と同じ方向向く
+type = Turn
+trigger1 = Root,Facing != Facing
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause	= 1
+
+[State 7];親と同じ位置へ
+Type = posset 
+trigger1 = 1
+x = (Root,pos x) 
+y = (Root,pos y)  
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1
+
+[state velset]
+type = statetypeset
+trigger1 = time%2 = 0
+statetype = S
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1
+
+[state velset]
+type = statetypeset
+trigger1 = time%2 = 1
+statetype = C
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1
+
+[State 7]
+type = NotHitBy
+trigger1 = 1
+value = ,AA,AT
+time=999
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999  
+ignorehitpause = 1
+persistent= 1
+
+[State 7]
+type = HitOverride
+trigger1 = 1
+slot = 0
+attr = SCA,AA,AP,AT
+stateno = 1856
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1 
+
+[State 7  DestroySelf]
+type = DestroySelf
+triggerall = ishelper 
+trigger1 = roundstate >= 3
+trigger2 = (root,stateno != 1450)&&(root,stateno != 1455)
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause	= 1 
+
+;========================================================================================
+[Statedef 1855];掻き消し用ヘルパー
+type    = A
+movetype= I
+physics = N
+anim = 1489
+velset = 0,0
+ctrl = 0
+;[基本的な設定]-----------------------------------------------------------
+[State 7];親と同じ方向向く
+type = Turn
+trigger1 = root,AnimElemTime (7) < 0
+trigger1 = Root,Facing != Facing
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause	= 1
+
+[State 7];親と同じ位置へ
+Type = posset 
+trigger1 = root,AnimElemTime (7) < 0
+x = (Root,pos x) 
+y = (Root,pos y)  
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1
+
+[state velset]
+type = statetypeset
+trigger1 = time%3 = 0
+statetype = S
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1
+
+[state velset]
+type = statetypeset
+trigger1 = time%3 = 1
+statetype = A
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1
+
+[state velset]
+type = statetypeset
+trigger1 = time%3 = 2
+statetype = C
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1
+
+[State 7]
+type = HitOverride
+trigger1 = 1
+slot = 0
+attr = SCA, AA,AP,AT
+stateno = 1856
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause = 1 
+
+[State 7  DestroySelf]
+type = DestroySelf
+triggerall = ishelper 
+trigger1 = roundstate >= 3
+trigger2 = (root,anim != 1480)&&(root,anim != 2450)
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+ignorehitpause	= 1 
+
+;-----------------------------------------------------------
+[Statedef 1856];掻き消し用ヘルパー消え
+type    = A
+movetype= I
+physics = N
+anim = 7
+velset = 0,0
+ctrl = 0
+
+[State 7  DestroySelf]
+type = DestroySelf
+triggerall = ishelper 
+trigger1 = time >= 2
+supermovetime = 999999999999999999999999999999999999999
+pausemovetime = 999999999999999999999999999999999999999
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------

@@ -1,0 +1,670 @@
+﻿
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------必殺技
+; お怒りボンバー小
+
+[Statedef 1000]
+type    = S
+movetype= A
+physics = S
+juggle  = 4
+velset = 0,0
+poweradd= 10 -(Var(13)*1000)
+anim = 1000
+ctrl = 0
+sprpriority = 2
+
+[State 1000, 1]
+type = PlaySnd
+trigger1 = AnimElem = 2
+value = 1000, 0
+
+[State 1000, 2]
+type = Helper       ;Helperを飛び道具として使う
+trigger1 = AnimElem = 2       ;飛び道具発射
+helpertype = normal
+name = "tama1"       ;任意の名前
+ID = 1010
+stateno = 1010       ;飛び道具のステートナンバー
+pos = 55,-85       ;出現座標
+postype = p1       ;出現座標の基準(プレイヤー1)
+supermovetime = 0       ;暗転した際に動けなくなる時間
+pausemovetime = 0       ;停止した際に動けなくなる時間
+OwnPal = 1 ;独自パレット
+
+[State 1000, StateTypeSet]
+type = StateTypeSet
+trigger1 = time > 13
+movetype = I
+
+[State 1000, 残像発生]
+type = AfterImage
+trigger1 = Var(13) = 1
+trigger1 = time = 0
+time = 50
+
+[State 1000, 4]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; お怒りボンバー小飛び道具
+[Statedef 1010]
+type = A
+movetype = A
+velset = 0,0       ;速度(根元で少しとどまる)
+physics = N       ;摩擦、重力を無視
+juggle  = 4       ;本体とは別
+anim = 1010
+ctrl = 0
+sprpriority = 3
+
+[State 1010,1]
+type = velset       ;速度の変更
+trigger1 = time = 2
+x = 6
+
+[State 1010,3]
+type = HitDef                    ;攻撃の設定
+trigger1 = AnimElem = 1          ;トリガー、アニメ何枚目
+attr = A, SP                     ;技の属性(ヘルパーは画面端の押し戻しが適用されるので空中属性に)
+damage = 53*(64-((Root,Var(4))))/64, 13 ;ダメージ(ヒット,ガード)
+animtype = Medium                ;くらい属性(ダウンの有無は別項目)
+guardflag = MA                   ;ガード属性
+hitflag = MAFDP                    ;ヒットする状態の指定(省略時MAF)
+priority = 4, Hit                ;相打ちの優先順位
+pausetime = 0, 0                 ;硬直時間(相手,自分)(ヒットストップ中に飛び道具が消えたままなので短く)
+sparkno = S9999                  ;Spark anim no (空の値を指定)
+ground.type = high               ;くらい動作のアニメを指定
+ground.slidetime = 24            ;摩擦を無視する時間
+ground.hittime  = 24             ;のけぞり時間
+ground.velocity = (Root,fVar(1)) ;地上で攻撃を受けた時、相手が飛んでいく速度
+air.hittime = 30
+air.velocity = -4+((Root,Var(13))*8),-8 ;(ガーキャン時ふっとび速度を増加)
+guard.hittime = 24             ;ガード硬直(のけぞりと別に設定できる)
+guard.velocity = (Root,fVar(1))  ;ガード後退速度
+fall = (Root,Var(13))            ;ダウン(ガーキャン時1が適用される)
+getpower = 20,20                 ;p1ゲージ追加増加量
+givepower = 30,30                ;p2ゲージ増加量
+
+[State 1010,5]
+type = hitoverride               ;攻撃を食らった時に任意のステートへ
+trigger1 = 1
+attr = SCA, NT, ST, HT, NA, SA, HA,NP,SP,HP
+stateno = 1030                   ;消滅用のステート
+time = 1
+IgnoreHitPause = 1
+
+[State 1010,6]
+type = changestate
+trigger1 = movecontact = 1         ;飛び道具が相手に触れた時
+trigger2 = frontedgebodydist < -50 ;正面の画面端を25ドット通り過ぎた時
+value = 1030                     ;消滅用のステート
+IgnoreHitPause = 1
+
+[State 1010, 7]               ;飛び道具のみをくらう事を許可
+type = HitBy
+trigger1 = 1
+value = SCA,AP
+
+[State 1010,影を消す]
+Type = AssertSpecial
+Trigger1 = 1
+Flag = NoShadow
+IgnoreHitPause = 1
+
+;---------------------------------------------------------------------------
+; お怒りボンバー小飛び道具消滅
+[Statedef 1030]
+type = A
+movetype = I
+velset = 0,0
+pos = 49 -84       ;出現座標
+physics = N
+anim = 1030
+ctrl = 0
+sprpriority = 3
+
+[State 1030, PlaySnd]
+type = PlaySnd
+trigger1 = AnimElem = 1
+trigger1 = p2movetype = H && p2stateno != [120,153]
+trigger1 = frontedgebodydist > -50
+value = f5, 2
+
+[State 1030, PlaySnd]
+type = PlaySnd
+trigger1 = AnimElem = 1
+trigger1 = p2movetype = H && p2stateno = [120,153]
+trigger1 = frontedgebodydist > -50
+value = f6, 0
+
+[State 1030]
+type = destroyself
+trigger1 = animtime = 0
+
+[State 1030,影を消す]
+Type = AssertSpecial
+Trigger1 = 1
+Flag = NoShadow
+IgnoreHitPause = 1
+
+[State 1030, NotHitBy] ;無敵
+type = NotHitBy
+trigger1 = 1
+value = SCA, NT, ST, HT, NA, SA, HA,NP,SP,HP
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+; お怒りボンバー大
+
+[Statedef 1005]
+type    = S
+movetype= A
+physics = S
+juggle  = 4
+velset = 0,0
+poweradd= 10 -(Var(13)*1000)
+anim = 1000
+ctrl = 0
+sprpriority = 2
+
+[State 1005, 1]
+type = PlaySnd
+trigger1 = AnimElem = 2
+value = 1000, 0
+
+[State 1005, 2]
+type = Helper       ;Helperを飛び道具として使う
+trigger1 = AnimElem = 2       ;飛び道具発射
+helpertype = normal
+name = "tama2"       ;任意の名前
+ID = 1015
+stateno = 1015       ;飛び道具のステートナンバー
+pos = 55,-85       ;出現座標
+postype = p1       ;出現座標の基準(プレイヤー1)
+supermovetime = 0       ;暗転した際に動けなくなる時間
+pausemovetime = 0       ;停止した際に動けなくなる時間
+OwnPal = 1 ;独自パレット
+
+[State 1005, StateTypeSet]
+type = StateTypeSet
+trigger1 = time > 13
+movetype = I
+
+[State 1005, 残像発生]
+type = AfterImage
+trigger1 = Var(13) = 1
+trigger1 = time = 0
+time = 50
+
+[State 1005, 4]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; お怒りボンバー大飛び道具
+[Statedef 1015]
+type = A
+movetype = A
+velset = 0,0       ;速度(根元で少しとどまる)
+physics = N       ;摩擦、重力を無視
+juggle  = 4       ;本体とは別
+anim = 1010
+ctrl = 0
+sprpriority = 3
+
+[State 1015,1]
+type = velset       ;速度の変更
+trigger1 = time = 2
+x = 10
+
+[State 1015,3]
+type = HitDef                    ;攻撃の設定
+trigger1 = AnimElem = 1          ;トリガー、アニメ何枚目
+attr = A, SP                     ;技の属性(ヘルパーは画面端の押し戻しが適用されるので空中属性に)
+damage = 53*(64-((Root,Var(4))))/64, 13 ;ダメージ(ヒット,ガード)
+animtype = Medium                ;くらい属性(ダウンの有無は別項目)
+guardflag = MA                   ;ガード属性
+hitflag = MAFDP                    ;ヒットする状態の指定(省略時MAF)
+priority = 4, Hit                ;相打ちの優先順位
+pausetime = 0, 0                 ;硬直時間(相手,自分)(ヒットストップ中に飛び道具が消えたままなので短く)
+sparkno = S9999                  ;Spark anim no (空の値を指定)
+ground.type = high               ;くらい動作のアニメを指定
+ground.slidetime = 24            ;摩擦を無視する時間
+ground.hittime  = 24             ;のけぞり時間
+ground.velocity = (Root,fVar(1)) ;地上で攻撃を受けた時、相手が飛んでいく速度
+air.hittime = 30
+air.velocity = -4+((Root,Var(13))*8),-8 ;(ガーキャン時ふっとび速度を増加)
+guard.hittime = 24             ;ガード硬直(のけぞりと別に設定できる)
+guard.velocity = (Root,fVar(1))  ;ガード後退速度
+fall = (Root,Var(13))            ;ダウン(ガーキャン時1が適用される)
+getpower = 20,20                 ;p1ゲージ追加増加量
+givepower = 30,30                ;p2ゲージ増加量
+
+[State 1015,5]
+type = hitoverride               ;攻撃を食らった時に任意のステートへ
+trigger1 = 1
+attr = SCA, NT, ST, HT, NA, SA, HA,NP,SP,HP
+stateno = 1030                   ;消滅用のステート
+time = 1
+IgnoreHitPause = 1
+
+[State 1015,6]
+type = changestate
+trigger1 = movecontact = 1         ;飛び道具が相手に触れた時
+trigger2 = frontedgebodydist < -50 ;正面の画面端を25ドット通り過ぎた時
+value = 1030
+IgnoreHitPause = 1
+
+[State 1015, 7]               ;飛び道具のみをくらう事を許可
+type = HitBy
+trigger1 = 1
+value = SCA,AP
+
+[State 1015,影を消す]
+Type = AssertSpecial
+Trigger1 = 1
+Flag = NoShadow
+IgnoreHitPause = 1
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+; 昇龍パンチ小 - move forwards
+
+[Statedef 1050]
+type    = A
+movetype= A
+physics = N
+juggle  = 0
+poweradd= 30 -(Var(13)*1000)
+velset = 0,0
+anim = 1050
+ctrl = 0
+sprpriority = 0
+
+[State 1050, 2] ;無敵
+type = NotHitBy
+trigger1 = AnimElem = 1
+value = SCA, NT, ST, HT, NA, SA, HA,NP,SP,HP
+time = 6
+
+[State 1050, posadd]
+type = posadd
+trigger1 = AnimElem = 3
+x = 32
+
+[State 1050, 残像発生]
+type = AfterImage
+trigger1 = Var(13) = 1
+trigger1 = time = 0
+time = 12
+
+[State 1050, 5]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 1051
+
+;------------------
+; 昇龍パンチ小 - jump
+
+[Statedef 1051]
+type    = A
+movetype= A
+physics = A
+juggle  = 4
+velset = 0,-1
+anim = 1051
+
+[State 1051, move]
+type = velset
+trigger1 = time = 2
+y = -12
+
+[State 1051,1] ;攻撃
+type = HitDef                    ;攻撃の設定
+trigger1 = AnimElem = 1          ;トリガー、アニメ何枚目
+attr = A, SA                     ;技の属性
+damage = 83-(var(10)*3), 21      ;ダメージ(ヒット,ガード)
+animtype = up                    ;くらい属性(ダウンの有無は別項目)
+guardflag = M                    ;ガード属性
+hitflag = MAF                    ;ヒットする状態の指定(省略時MAF)
+priority = 4, Hit                ;相打ちの優先順位
+pausetime = 12, 12               ;硬直時間(相手,自分)ヒットストップ
+sparkno = 1                      ;Spark anim no (Def: set above)
+sparkxy = -10, -130              ;ヒットスパークの表示位置(-10,-高さ)
+hitsound = 5, 2
+guardsound = 6, 0
+ground.type = High               ;くらい動作のアニメを指定
+ground.slidetime = 23
+ground.hittime  = 40             ;重要。短いと反撃し放題。
+air.hittime = 40
+ground.velocity = -4,-16
+air.velocity = -4,-16
+guard.hittime = 23             ;ガード硬直(のけぞりと別に設定できる)
+guard.velocity = -12             ;ガード後退速度(地上転倒なので設定)
+fall = 1                         ;ダウン
+getpower = 30,30                 ;p1ゲージ追加増加量
+givepower = 30,15                ;p2ゲージ増加量
+
+[State 1051, StateTypeSet]
+type = StateTypeSet
+trigger1 = AnimElem = 2
+movetype = I
+
+[State 1051, 4] ;次の着地ステートへ
+type = ChangeState
+trigger1 = Vel Y > 0 && Pos Y >= -5
+value = 1052
+
+[State 1051, 6]
+type = PlaySnd
+trigger1 = Time = 0
+value = 100, 0
+
+;------------------
+; 昇龍パンチ小 - land
+
+[Statedef 1052]
+type    = S
+movetype= I   ;待機状態(技後の隙)
+physics = S
+anim = 1052
+sprpriority = 1
+velset = 0,0
+
+[State 1052, 1] ;Reset y-position to ground level
+type = PosSet
+trigger1 = Time = 0
+y = 0
+
+[State 1052, 2] ;Play a sound for landing
+type = PlaySnd
+trigger1 = Time = 0
+value = 40, 0
+
+[State 1052, 5]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+; 昇龍パンチ大 - move forwards
+
+[Statedef 1060]
+type    = A
+movetype= A
+physics = N
+juggle  = 0
+poweradd= 30 -(Var(13)*1000)
+velset = 0,0
+anim = 1060
+ctrl = 0
+sprpriority = 2
+
+[State 1060, 2] ;無敵
+type = NotHitBy
+trigger1 = AnimElem = 1
+value = SCA, NT, ST, HT, NA, SA, HA,NP,SP,HP
+time = 6
+
+[State 1060, posadd]
+type = posadd
+trigger1 = AnimElem = 3
+x = 52
+
+[State 1060, 残像発生]
+type = AfterImage
+trigger1 = Var(13) = 1
+trigger1 = time = 0
+time = 12
+
+[State 1060, 5]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 1061
+
+;------------------
+; 昇龍パンチ大 - jump
+
+[Statedef 1061]
+type    = A
+movetype= A
+physics = A
+juggle  = 4
+velset = 0,-1
+anim = 1061
+
+[State 1061, move]
+type = velset
+trigger1 = time = 2
+y = -16
+
+[State 1061,1] ;攻撃
+type = HitDef                    ;攻撃の設定
+trigger1 = AnimElem = 1          ;トリガー、アニメ何枚目
+attr = A, SA                     ;技の属性
+damage = 105-(var(10)*3), 26     ;ダメージ(ヒット,ガード)
+animtype = up                    ;くらい属性(ダウンの有無は別項目)
+guardflag = M                    ;ガード属性
+hitflag = MAF                    ;ヒットする状態の指定(省略時MAF)
+priority = 4, Hit                ;相打ちの優先順位
+pausetime = 12, 12                 ;硬直時間(相手,自分)ヒットストップ
+sparkno = 1                      ;Spark anim no (Def: set above)
+sparkxy = -10, -120              ;ヒットスパークの表示位置(-10,-高さ)
+hitsound = 5, 2
+guardsound = 6, 0
+ground.type = High               ;くらい動作のアニメを指定
+ground.slidetime = 23
+ground.hittime  = 45             ;重要。短いと反撃し放題。
+air.hittime = 45
+ground.velocity = -4,-18
+air.velocity = -4,-18
+guard.hittime = 23             ;ガード硬直(のけぞりと別に設定できる)
+guard.velocity = -12             ;ガード後退速度(地上転倒なので設定)
+fall = 1                         ;ダウン
+getpower = 30,30                 ;p1ゲージ追加増加量
+givepower = 30,15                ;p2ゲージ増加量
+
+[State 1052, StateTypeSet]
+type = StateTypeSet
+trigger1 = AnimElem = 2
+movetype = I
+
+[State 1061, 3] ;次の着地ステートへ
+type = ChangeState
+trigger1 = Vel Y > 0 && Pos Y >= -10
+value = 1062
+
+[State 1061, 6]
+type = PlaySnd
+trigger1 = Time = 0
+value = 100, 0
+
+;------------------
+; 昇龍パンチ大 - land
+
+[Statedef 1062]
+type    = S
+movetype= I   ;待機状態(技後の隙)
+physics = S
+anim = 1052
+sprpriority = 1
+velset = 0,0
+
+[State 1062, 1] ;Reset y-position to ground level
+type = PosSet
+trigger1 = Time = 0
+y = 0
+
+[State 1062, 2] ;Play a sound for landing
+type = PlaySnd
+trigger1 = Time = 0
+value = 40, 0
+
+[State 1062, 5]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+; ターボ・ロボコンパンチ小
+
+[Statedef 1100]
+type    = S
+movetype= A
+physics = N
+juggle  = 4
+poweradd= 30 -(Var(13)*1000)
+anim = 1100
+ctrl = 0
+sprpriority = 2
+
+[State 1100, 1]
+type = PlaySnd
+trigger1 = AnimElem = 2
+value = 100, 1
+
+[State 1100, move]
+type = velset
+trigger1 = AnimElem = 1
+x = 5
+
+[State 1100, move]
+type = velset
+trigger1 = AnimElem = 7
+x = 0
+
+[State 1100,1] ;攻撃
+type = HitDef                    ;攻撃の設定
+trigger1 = AnimElem = 2          ;トリガー、アニメ何枚目
+trigger2 = AnimElem = 3
+trigger3 = AnimElem = 4
+trigger4 = AnimElem = 5
+trigger5 = AnimElem = 6
+triggerall = var(2) <9
+attr = S, SA                     ;技の属性
+damage = 32, 8                   ;ダメージ(ヒット,ガード)
+animtype = Medium                ;くらい属性(ダウンの有無は別項目)
+guardflag = M                    ;ガード属性
+hitflag = MAF                    ;ヒットする状態の指定(省略時MAF)
+priority = 4, Hit                ;相打ちの優先順位
+pausetime = 8, 8                 ;硬直時間(相手,自分)ヒットストップ
+sparkno = 1                      ;Spark anim no (Def: set above)
+sparkxy = -10, -110              ;ヒットスパークの表示位置(-10,-高さ)
+hitsound = 5, 2
+guardsound = 6, 0
+ground.type = High               ;くらい動作のアニメを指定
+ground.slidetime = 20
+ground.hittime  = 20             ;重要。短いと反撃し放題。
+air.hittime = 50
+ground.velocity = -5
+air.velocity = -4,-6
+guard.hittime = 20             ;ガード硬直(のけぞりと別に設定できる)
+guard.velocity = -12             ;ガード後退速度(地上転倒なので設定)
+fall = (var(11))                 ;ダウン
+getpower = 35,35                 ;p1ゲージ追加増加量
+givepower = 30,15                ;p2ゲージ増加量
+
+[State 1100, StateTypeSet]
+type = StateTypeSet
+trigger1 = AnimElem = 7
+movetype = I
+
+[State 1100, 残像発生]
+type = AfterImage
+trigger1 = Var(13) = 1
+trigger1 = time = 0
+time = 50
+
+[State 1100, 4]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; ターボ・ロボコンパンチ大
+
+[Statedef 1105]
+type    = S
+movetype= A
+physics = N
+juggle  = 4
+poweradd= 30 -(Var(13)*1000)
+anim = 1110
+ctrl = 0
+sprpriority = 2
+
+[State 1105, 1]
+type = PlaySnd
+trigger1 = AnimElem = 2
+value = 100, 1
+
+[State 1105, move]
+type = velset
+trigger1 = AnimElem = 1
+x = 10
+
+[State 1105, move]
+type = velset
+trigger1 = AnimElem = 7
+x = 0
+
+[State 1105,1] ;攻撃
+type = HitDef                    ;攻撃の設定
+trigger1 = AnimElem = 2          ;トリガー、アニメ何枚目
+trigger2 = AnimElem = 3
+trigger3 = AnimElem = 4
+trigger4 = AnimElem = 5
+trigger5 = AnimElem = 6
+triggerall = var(2) <9
+attr = S, SA                     ;技の属性
+damage = 38, 10                  ;ダメージ(ヒット,ガード)
+animtype = Medium                ;くらい属性(ダウンの有無は別項目)
+guardflag = M                    ;ガード属性
+hitflag = MAF                    ;ヒットする状態の指定(省略時MAF)
+priority = 4, Hit                ;相打ちの優先順位
+pausetime = 8, 8                 ;硬直時間(相手,自分)ヒットストップ
+sparkno = 1                      ;Spark anim no (Def: set above)
+sparkxy = -10, -110              ;ヒットスパークの表示位置(-10,-高さ)
+hitsound = 5, 2
+guardsound = 6, 0
+ground.type = High               ;くらい動作のアニメを指定
+ground.slidetime = 20
+ground.hittime  = 20             ;重要。短いと反撃し放題。
+air.hittime = 50
+ground.velocity = -10
+air.velocity = -4,-6
+guard.hittime = 20             ;ガード硬直(のけぞりと別に設定できる)
+guard.velocity = -12             ;ガード後退速度(地上転倒なので設定)
+fall = (var(11))                 ;ダウン
+getpower = 35,35                 ;p1ゲージ追加増加量
+givepower = 30,15                ;p2ゲージ増加量
+
+[State 1100, StateTypeSet]
+type = StateTypeSet
+trigger1 = AnimElem = 7
+movetype = I
+
+[State 1100, 残像発生]
+type = AfterImage
+trigger1 = Var(13) = 1
+trigger1 = time = 0
+time = 50
+
+[State 1105, 4]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------

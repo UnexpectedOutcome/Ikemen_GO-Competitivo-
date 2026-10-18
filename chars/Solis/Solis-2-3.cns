@@ -1,0 +1,853 @@
+
+;-----------------------------------------------------------------------------
+[Statedef -2];常時監視ステート(相手に行動を制御されても関係無く常に実行される)
+;-----------------------------------------------------------------------------
+;---OPTION--------------------------------------------------------------------
+
+;空中ガード
+[State -2, AirGuard]
+type = varset
+Trigger1 = 1
+var(13) = 1	; 1:ON  0:OFF
+
+;アブソリュートビートヒット後攻撃力補正スイッチ
+[State -2, AirGuard]
+type = varset
+Trigger1 = 1
+var(14) = 1	; 1:ON  0:OFF
+
+;-----------------------------------------------------------------------------
+;-----------------------------------------------------------------------------
+;空中ガード不可
+
+[State -2, AssertSpecial]
+Type = AssertSpecial
+Trigger1 = var(13) = 0
+flag = NoAirGuard
+
+;-----------------------------------------------------------------------------
+
+[State -2, リセット]
+type = varset
+trigger1 = var(4) != 0
+trigger1 = P2MoveType != H
+var(4) = 0
+
+;-----------------------------------------------------------------------------
+;攻撃力変更
+
+[state -2, varset]
+type = varset
+trigger1 = ((P2Life*100)/LifeMax) < 30
+var(12) = 2
+ignorehitpause = 1
+
+[state -2, varset]
+type = varset
+trigger1 = ((P2Life*100)/LifeMax) = [30,75] 
+var(12) = 1
+ignorehitpause = 1
+
+[state -2, varset]
+type = varset
+trigger1 = ((P2Life*100)/LifeMax) > 75
+var(12) = 0
+ignorehitpause = 1
+
+[State -2, 1]
+type = AttackMulSet
+trigger1 = Var(12) = 0
+trigger1 = Var(4) = 0
+ignorehitpause = 1
+value = 1
+
+[State -2, 2]
+type = AttackMulSet
+trigger1 = Var(12) = 1
+trigger1 = Var(4) = 0
+ignorehitpause = 2
+value = 1.8
+
+[State -2, 2]
+type = AttackMulSet
+trigger1 = Var(12) = 2
+trigger1 = Var(4) = 0
+ignorehitpause = 2
+value = 0.7
+
+;アブソリュートビートヒット後(30%減)
+[State -2, 1]
+type = AttackMulSet
+trigger1 = Var(12) = 0
+trigger1 = Var(4) = 1
+ignorehitpause = 1
+value = 0.7
+
+[State -2, 2]
+type = AttackMulSet
+trigger1 = Var(12) = 1
+trigger1 = Var(4) = 1
+ignorehitpause = 2
+value = 1.26
+
+[State -2, 2]
+type = AttackMulSet
+trigger1 = Var(12) = 2
+trigger1 = Var(4) = 1
+ignorehitpause = 2
+value = 0.49
+
+[State -2, 攻撃力変更]
+type = varset
+trigger1 = Var(12) = 0
+trigger1 = Var(4) = 0
+fvar(0) = 100.0;(%) 
+ignorehitpause = 1
+
+[State -2, 攻撃力変更]
+type = varset
+trigger1 = Var(12) = 1
+trigger1 = Var(4) = 0
+fvar(0) = 180.0;(%) 
+ignorehitpause = 1
+
+[State -2, 攻撃力変更]
+type = varset
+trigger1 = Var(12) = 2
+trigger1 = Var(4) = 0
+fvar(0) = 70.0;(%) 
+ignorehitpause = 1
+
+;アブソリュートビートヒット後
+[State -2, 攻撃力変更]
+type = varset
+trigger1 = Var(12) = 0
+trigger1 = Var(4) = 1
+fvar(0) = 70.0;(%) 
+ignorehitpause = 1
+
+[State -2, 攻撃力変更]
+type = varset
+trigger1 = Var(12) = 1
+trigger1 = Var(4) = 1
+fvar(0) = 126.0;(%) 
+ignorehitpause = 1
+
+[State -2, 攻撃力変更]
+type = varset
+trigger1 = Var(12) = 2
+trigger1 = Var(4) = 1
+fvar(0) = 49.0;(%) 
+ignorehitpause = 1
+
+;-----------------------------------------------------------------------------
+; ゲージ
+
+[state -2]
+type = varset
+trigger1 = floor(0.001 * power) > Var(32)
+var(31) = 1
+
+[state -2];イントロ時の爆発回避
+type = varset
+trigger1 = var(31) != 0
+trigger1 = StateNo = 190
+var(33) = 1
+
+[state -2]
+type = varset
+trigger1 = 1
+var(32) = floor(0.001 * power)
+
+[state -2, varset]
+type = varset
+trigger1 = var(33) != 0
+trigger1 = var(31) = 0
+trigger1 = roundstate = 2
+var(33) = 0
+
+;-----------------------------------------------------------------------------
+; TNTチャージ
+
+[State -2]
+type = VarSet
+triggerall = var(6) > 0
+trigger1 = command != "hold_a"
+trigger2 = command = "hold_x" && command = "hold_y"
+var(6) = 0
+
+[State -2]
+type = VarSet
+triggerall = var(6) > 0
+trigger1 = command != "hold_b"
+var(6) = 0
+
+[State -2]
+type = VarSet
+triggerall = var(8) > 0
+trigger1 = command != "hold_x"
+trigger2 = command = "hold_a" && command = "hold_b"
+var(8) = 0
+
+[State -2]
+type = VarSet
+triggerall = var(8) > 0
+trigger1 = command != "hold_y"
+var(8) = 0
+
+[State -2]
+type = VarAdd
+trigger1 = command = "hold_a" && command = "hold_b"
+trigger1 = command != "hold_x" && command != "hold_y"
+var(6) = 1
+
+[State -2]
+type = VarAdd
+trigger1 = command = "hold_x" && command = "hold_y"
+trigger1 = command != "hold_a" && command != "hold_b"
+var(8) = 1
+
+
+[State -2]
+type = VarSet
+trigger1 = var(7) != 1 && var(6) = [100,249]
+trigger2 = var(7) != 2 && var(6) = [250,399]
+trigger3 = var(7) != 3 && var(6) = [400,649]
+trigger4 = var(7) != 4 && var(6) >= 650
+var(7) = 1 + (var(6) > 249) + (var(6) > 399) + (var(6) > 649)
+
+[State -2]
+type = VarSet
+trigger1 = var(9) != 1 && var(8) = [100,249]
+trigger2 = var(9) != 2 && var(8) = [250,399]
+trigger3 = var(9) != 3 && var(8) = [400,649]
+trigger4 = var(9) != 4 && var(8) >= 650
+var(9) = 1 + (var(8) > 249) + (var(8) > 399) + (var(8) > 649)
+
+
+;-----------------------------------------------------------------------------
+;電撃やられ
+
+[State -2, varset]
+type = VarSet
+triggerall = var(10) = 0
+trigger1 = anim = 7696
+trigger2 = anim = 7697
+trigger3 = anim = 9010
+trigger4 = anim = 9011
+trigger5 = anim = 9012
+trigger6 = anim = 9015
+var(10) = 1
+
+[State -2, varset]
+type = VarSet
+triggerall = var(10) = 1
+trigger1 = stateno = 5120
+trigger1 = AnimTime = 0
+trigger2 = stateno = [0,20]  ;立ち～歩きステートでもリセット
+var(10) = 0
+
+;---------------------------------
+;電撃やられ7696
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 7696
+trigger1 = Time = 1
+trigger2 = Time = 9
+trigger3 = Time = 17
+trigger4 = Time = 25
+trigger5 = Time = 33
+trigger6 = Time = 41
+trigger7 = Time = 49
+trigger8 = Time = 57
+trigger9 = Time = 65
+trigger10 = Time = 73
+trigger11 = Time = 81
+trigger12 = Time = 89
+trigger13 = Time = 97
+trigger14 = Time = 95
+trigger15 = Time = 103
+time = 2
+add = 120, 0, 250
+;mul = 120, 0, 250
+invertall = 1
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 7696
+trigger1 = Time = 3
+trigger2 = Time = 11
+trigger3 = Time = 19
+trigger4 = Time = 27
+trigger5 = Time = 35
+trigger6 = Time = 43
+trigger7 = Time = 51
+trigger8 = Time = 59
+trigger9 = Time = 67
+trigger10 = Time = 75
+trigger11 = Time = 83
+trigger12 = Time = 91
+trigger13 = Time = 99
+trigger14 = Time = 107
+trigger15 = Time = 115
+time = 2
+add = 120, 0, 250
+;mul = 120, 0, 250
+invertall = 0
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 7696
+trigger1 = Time = 5
+trigger2 = Time = 13
+trigger3 = Time = 21
+trigger4 = Time = 29
+trigger5 = Time = 37
+trigger6 = Time = 45
+trigger7 = Time = 53
+trigger8 = Time = 61
+trigger9 = Time = 69
+trigger10 = Time = 77
+trigger11 = Time = 85
+trigger12 = Time = 93
+trigger13 = Time = 101
+trigger14 = Time = 109
+trigger15 = Time = 117
+time = 2
+mul = 0, 0, 0
+invertall = 0
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 7696
+trigger1 = Time = 7
+trigger2 = Time = 15
+trigger3 = Time = 23
+trigger4 = Time = 31
+trigger5 = Time = 39
+trigger6 = Time = 47
+trigger7 = Time = 55
+trigger8 = Time = 63
+trigger9 = Time = 71
+trigger10 = Time = 79
+trigger11 = Time = 87
+trigger12 = Time = 95
+trigger13 = Time = 103
+trigger14 = Time = 111
+trigger15 = Time = 119
+time = 2
+add = 250, 250, 250
+mul = 250, 250, 250
+invertall = 0
+
+;---------------------------------
+;電撃やられ9010
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 9010
+trigger1 = Time = 1
+trigger2 = Time = 9
+trigger3 = Time = 17
+trigger4 = Time = 25
+trigger5 = Time = 33
+trigger6 = Time = 41
+trigger7 = Time = 49
+trigger8 = Time = 57
+trigger9 = Time = 65
+trigger10 = Time = 73
+trigger11 = Time = 81
+trigger12 = Time = 89
+trigger13 = Time = 97
+trigger14 = Time = 95
+trigger15 = Time = 103
+time = 2
+add = 150, 150, 150
+mul = 120, 0, 250
+invertall = 1
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 9010
+trigger1 = Time = 3
+trigger2 = Time = 11
+trigger3 = Time = 19
+trigger4 = Time = 27
+trigger5 = Time = 35
+trigger6 = Time = 43
+trigger7 = Time = 51
+trigger8 = Time = 59
+trigger9 = Time = 67
+trigger10 = Time = 75
+trigger11 = Time = 83
+trigger12 = Time = 91
+trigger13 = Time = 99
+trigger14 = Time = 107
+trigger15 = Time = 115
+time = 2
+add = 150, 150, 150
+mul = 120, 0, 250
+invertall = 0
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 9010
+trigger1 = Time = 5
+trigger2 = Time = 13
+trigger3 = Time = 21
+trigger4 = Time = 29
+trigger5 = Time = 37
+trigger6 = Time = 45
+trigger7 = Time = 53
+trigger8 = Time = 61
+trigger9 = Time = 69
+trigger10 = Time = 77
+trigger11 = Time = 85
+trigger12 = Time = 93
+trigger13 = Time = 101
+trigger14 = Time = 109
+trigger15 = Time = 117
+time = 2
+mul = 0, 0, 0
+invertall = 0
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 9010
+trigger1 = Time = 7
+trigger2 = Time = 15
+trigger3 = Time = 23
+trigger4 = Time = 31
+trigger5 = Time = 39
+trigger6 = Time = 47
+trigger7 = Time = 55
+trigger8 = Time = 63
+trigger9 = Time = 71
+trigger10 = Time = 79
+trigger11 = Time = 87
+trigger12 = Time = 95
+trigger13 = Time = 103
+trigger14 = Time = 111
+trigger15 = Time = 119
+time = 2
+add = 250, 250, 250
+mul = 250, 250, 250
+invertall = 0
+
+;---------------------------------
+;電撃やられ9011
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 9011
+trigger1 = Time = 1
+trigger2 = Time = 9
+trigger3 = Time = 17
+trigger4 = Time = 25
+trigger5 = Time = 33
+trigger6 = Time = 41
+trigger7 = Time = 49
+trigger8 = Time = 57
+trigger9 = Time = 65
+trigger10 = Time = 73
+trigger11 = Time = 81
+trigger12 = Time = 89
+trigger13 = Time = 97
+trigger14 = Time = 95
+trigger15 = Time = 103
+time = 2
+add = 150, 150, 150
+mul = 120, 0, 250
+invertall = 1
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 9011
+trigger1 = Time = 3
+trigger2 = Time = 11
+trigger3 = Time = 19
+trigger4 = Time = 27
+trigger5 = Time = 35
+trigger6 = Time = 43
+trigger7 = Time = 51
+trigger8 = Time = 59
+trigger9 = Time = 67
+trigger10 = Time = 75
+trigger11 = Time = 83
+trigger12 = Time = 91
+trigger13 = Time = 99
+trigger14 = Time = 107
+trigger15 = Time = 115
+time = 2
+add = 150, 150, 150
+mul = 120, 0, 250
+invertall = 0
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 9011
+trigger1 = Time = 5
+trigger2 = Time = 13
+trigger3 = Time = 21
+trigger4 = Time = 29
+trigger5 = Time = 37
+trigger6 = Time = 45
+trigger7 = Time = 53
+trigger8 = Time = 61
+trigger9 = Time = 69
+trigger10 = Time = 77
+trigger11 = Time = 85
+trigger12 = Time = 93
+trigger13 = Time = 101
+trigger14 = Time = 109
+trigger15 = Time = 117
+time = 2
+mul = 0, 0, 0
+invertall = 0
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 9011
+trigger1 = Time = 7
+trigger2 = Time = 15
+trigger3 = Time = 23
+trigger4 = Time = 31
+trigger5 = Time = 39
+trigger6 = Time = 47
+trigger7 = Time = 55
+trigger8 = Time = 63
+trigger9 = Time = 71
+trigger10 = Time = 79
+trigger11 = Time = 87
+trigger12 = Time = 95
+trigger13 = Time = 103
+trigger14 = Time = 111
+trigger15 = Time = 119
+time = 2
+add = 250, 250, 250
+mul = 250, 250, 250
+invertall = 0
+
+;---------------------------------
+;電撃やられ9012
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 9012
+trigger1 = Time = 1
+trigger2 = Time = 9
+trigger3 = Time = 17
+trigger4 = Time = 25
+trigger5 = Time = 33
+trigger6 = Time = 41
+trigger7 = Time = 49
+trigger8 = Time = 57
+trigger9 = Time = 65
+trigger10 = Time = 73
+trigger11 = Time = 81
+trigger12 = Time = 89
+trigger13 = Time = 97
+trigger14 = Time = 95
+trigger15 = Time = 103
+time = 2
+add = 150, 150, 150
+mul = 120, 0, 250
+invertall = 1
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 9012
+trigger1 = Time = 3
+trigger2 = Time = 11
+trigger3 = Time = 19
+trigger4 = Time = 27
+trigger5 = Time = 35
+trigger6 = Time = 43
+trigger7 = Time = 51
+trigger8 = Time = 59
+trigger9 = Time = 67
+trigger10 = Time = 75
+trigger11 = Time = 83
+trigger12 = Time = 91
+trigger13 = Time = 99
+trigger14 = Time = 107
+trigger15 = Time = 115
+time = 2
+add = 150, 150, 150
+mul = 120, 0, 250
+invertall = 0
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 9012
+trigger1 = Time = 5
+trigger2 = Time = 13
+trigger3 = Time = 21
+trigger4 = Time = 29
+trigger5 = Time = 37
+trigger6 = Time = 45
+trigger7 = Time = 53
+trigger8 = Time = 61
+trigger9 = Time = 69
+trigger10 = Time = 77
+trigger11 = Time = 85
+trigger12 = Time = 93
+trigger13 = Time = 101
+trigger14 = Time = 109
+trigger15 = Time = 117
+time = 2
+mul = 0, 0, 0
+invertall = 0
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 9012
+trigger1 = Time = 7
+trigger2 = Time = 15
+trigger3 = Time = 23
+trigger4 = Time = 31
+trigger5 = Time = 39
+trigger6 = Time = 47
+trigger7 = Time = 55
+trigger8 = Time = 63
+trigger9 = Time = 71
+trigger10 = Time = 79
+trigger11 = Time = 87
+trigger12 = Time = 95
+trigger13 = Time = 103
+trigger14 = Time = 111
+trigger15 = Time = 119
+time = 2
+add = 250, 250, 250
+mul = 250, 250, 250
+invertall = 0
+
+;---------------------------------
+;燃焼やられ7697
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 7697
+trigger1 = Time = 1
+trigger2 = Time = 5
+trigger3 = Time = 9
+trigger4 = Time = 13
+trigger5 = Time = 17
+trigger6 = Time = 21
+trigger7 = Time = 25
+trigger8 = Time = 29
+trigger9 = Time = 33
+trigger10 = Time = 37
+trigger11 = Time = 41
+trigger12 = Time = 45
+trigger13 = Time = 49
+trigger14 = Time = 53
+trigger15 = Time = 57
+trigger16 = Time = 61
+trigger17 = Time = 65
+trigger18 = Time = 69
+trigger19 = Time = 73
+trigger20 = Time = 77
+trigger21 = Time = 81
+trigger22 = Time = 85
+trigger23 = Time = 89
+trigger24 = Time = 93
+trigger25 = Time = 97
+time = 2
+add = 250, 90, 0
+mul = 150, 150, 150
+invertall = 1
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 7697
+trigger1 = Time = 3
+trigger2 = Time = 7
+trigger3 = Time = 11
+trigger4 = Time = 15
+trigger5 = Time = 19
+trigger6 = Time = 23
+trigger7 = Time = 27
+trigger8 = Time = 31
+trigger9 = Time = 35
+trigger10 = Time = 39
+trigger11 = Time = 43
+trigger12 = Time = 47
+trigger13 = Time = 51
+trigger14 = Time = 55
+trigger15 = Time = 59
+trigger16 = Time = 63
+trigger17 = Time = 67
+trigger18 = Time = 71
+trigger19 = Time = 75
+trigger20 = Time = 79
+trigger21 = Time = 83
+trigger22 = Time = 87
+trigger23 = Time = 91
+trigger24 = Time = 95
+trigger25 = Time = 99
+time = 2
+add = 150, 150, 150
+mul = 250, 90, 0
+invertall = 0
+
+;---------------------------------
+;燃焼やられ9015
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 9015
+trigger1 = Time = 1
+trigger2 = Time = 5
+trigger3 = Time = 9
+trigger4 = Time = 13
+trigger5 = Time = 17
+trigger6 = Time = 21
+trigger7 = Time = 25
+trigger8 = Time = 29
+trigger9 = Time = 33
+trigger10 = Time = 37
+trigger11 = Time = 41
+trigger12 = Time = 45
+trigger13 = Time = 49
+trigger14 = Time = 53
+trigger15 = Time = 57
+trigger16 = Time = 61
+trigger17 = Time = 65
+trigger18 = Time = 69
+trigger19 = Time = 73
+trigger20 = Time = 77
+trigger21 = Time = 81
+trigger22 = Time = 85
+trigger23 = Time = 89
+trigger24 = Time = 93
+trigger25 = Time = 97
+time = 2
+add = 150, 150, 150
+mul = 250, 90, 0
+invertall = 1
+
+[State -2, 色の変更]
+type = PalFX
+triggerall = anim = 9015
+trigger1 = Time = 3
+trigger2 = Time = 7
+trigger3 = Time = 11
+trigger4 = Time = 15
+trigger5 = Time = 19
+trigger6 = Time = 23
+trigger7 = Time = 27
+trigger8 = Time = 31
+trigger9 = Time = 35
+trigger10 = Time = 39
+trigger11 = Time = 43
+trigger12 = Time = 47
+trigger13 = Time = 51
+trigger14 = Time = 55
+trigger15 = Time = 59
+trigger16 = Time = 63
+trigger17 = Time = 67
+trigger18 = Time = 71
+trigger19 = Time = 75
+trigger20 = Time = 79
+trigger21 = Time = 83
+trigger22 = Time = 87
+trigger23 = Time = 91
+trigger24 = Time = 95
+trigger25 = Time = 99
+time = 2
+add = 150, 150, 150
+mul = 250, 90, 0
+invertall = 0
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+
+;パワー溜めステートで表示されたエフェクトを消す制御をしてます
+[State -2, エフェクトを消す]
+type = RemoveExplod
+triggerall = NumExplod(702) > 0 ;IDナンバー130のエフェクトの画面中の数が0よりも上、
+trigger1 = StateNo != 700       ;つまり１枚以上表示されている時
+trigger2 = MoveType != I
+ID = 702
+
+;---------------------------------------------------------------------------
+;StateNo 5900について
+;
+;5900番のステートは、2試合目以降のラウンドコール中に呼び出されます。
+;このステートでVarやFVarを初期化しています。
+;なのでTurn Modeでは、初登場でも2試合目なのでイントロがありません。
+
+[State -2, 二人目のイントロ]
+type = ChangeState             ;二人目でもイントロを作る
+value = 190                    ;イントロへ
+triggerall = RoundsExisted = 0 ;自分が初参戦時
+triggerall = TeamMode = Turns  ;ターンモード
+trigger1 = stateno = 5900      ;5900番
+
+[State -2, 勝利バグ解消]
+type = CtrlSet                 ;歩きバグ対策
+trigger1 = RoundState = 4      ;勝利ポーズ時
+trigger1 = Win && Ctrl = 1     ;動ける場合
+value = 0                      ;制御不能に
+
+;----------------------------------------------------------------------------
+;未完成な相手キャラによって、不具合が起きても自己解決するシステム(仮)
+
+[State -2, Y座標自己修復]
+type = PosSet
+triggerall = RoundState = 2
+trigger1 = stateno = [0,12]      ;立ち＆屈み時
+trigger1 = floor(Pos Y) = [-2,3] ;立ち位置が僅かにずれていたらすぐ修正
+y = 0
+
+[State -2, Y座標自動修正]
+type = PosAdd
+triggerall = RoundState = 2
+triggerall = Life < LifeMax  ;トレーニングでCtrl+Iを使うときに配慮
+trigger1 = stateno = [0,30]  ;歩きも含める
+trigger1 = floor(Pos Y) < -2 ;立ち位置が大きくずれていたら移動する
+y = 2
+
+[State -2, Y座標自動修正]
+type = PosAdd
+triggerall = RoundState = 2
+triggerall = Life < LifeMax
+trigger1 = stateno = [0,30]
+trigger1 = floor(Pos Y) > 2 ;同じく
+y = -2
+
+;----------------------------------------------------------------------------
+;♪
+;----------------------------------------------------------------------------
+
+;---------------------------------------------------------------------------------
+[Statedef -3];常時監視ステート(p2statenoなどで相手に行動を制御された時は実行しない)
+;---------------------------------------------------------------------------------
+;以下のいくつかの項目は、大部分のボイスを設定しています。
+
+[State -3, ダメージボイス1]
+type = PlaySnd
+triggerall = Time = 1
+triggerall = Alive && GameTime % 3 = 0
+trigger1 = stateno=5000 || stateno=5010 || stateno=5020 || stateno = 5080
+value = 6, 0
+channel = 0
+
+[State -3, ダメージボイス2]
+type = PlaySnd
+triggerall = Time = 1
+triggerall = Alive && GameTime % 3 = 0
+trigger1 = stateno=5050 || stateno=5070
+value = 6, 1
+channel = 0
+
+
+;--------------------------------------------------------------------------------------
+
+
+;この下、一行以上空ける事！
+
+
+

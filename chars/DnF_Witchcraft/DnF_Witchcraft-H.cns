@@ -1,0 +1,422 @@
+;教材用カンフーマンを元に製作しています。
+
+;===============================================================================
+; スペシャルスキル攻撃
+;===============================================================================
+
+;-------------------------------------------------------------------------------
+[Statedef 2000]; 箒スピン　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　２０秒
+;-------------------------------------------------------------------------------
+type = A
+movetype = A
+physics = N
+velset = vel x,vel y
+anim = 2000
+ctrl = 0
+poweradd = -1000
+
+[State 2000, -/CT]; 臨時無敵（クールタイム処理）
+type = NotHitBy
+trigger1 = Time = 0
+value = SCA
+time = 1
+
+[State 2000, -/CT]; 箒スピン：開始
+type = VarSet
+trigger1 = Time = 0
+var(45) = 1
+
+[State 2000, -/CT]; 箒スピン：スロット値セット
+type = VarSet
+trigger1 = Time = 0
+V = var(0)+1
+Value = 6450
+
+[State 2000, -/CT]; 箒スピン：アイコン表示
+type = Explod
+trigger1 = Time = 0 && !NumExplod(6450)
+anim = 6450
+ID = 6450
+pos = var(55)+IfElse(var(54)=1,19,106)+(15*var(0)*var(54)),var(56)-5
+postype = left
+scale = 0.5,0.5
+sprpriority = 7
+bindtime = 9999
+ownpal = 1
+supermovetime = 9999
+pausemovetime = 9999
+
+[State 2000, -1/Pos]; 座標固定
+type = PosFreeze
+trigger1 = 1
+
+[State 2000, 0/Pau]; 時間停止
+type = Pause
+trigger1 = Time = 0
+time = 30
+movetime = 30
+
+[State 2000, 1/Snd]; 発動音
+type = PlaySnd
+trigger1 = Time = 1
+value = s21,299
+
+[State 2000, 1/Snd]; ボイス
+type = PlaySnd
+trigger1 = Time = 1
+value = s20,200
+channel = 0
+
+[State 2000, F/CHs]; 回転パートへ
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 2005
+ctrl = 0
+
+;-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+[Statedef 2005]; 箒スピン／回転
+type = A
+movetype = A
+physics = N
+velset = vel x,2.5
+anim = 2005
+ctrl = 0
+
+[State 2005, -1/Vel]; 速度修正
+type = VelSet
+trigger1 = Vel X < 0
+X = -1*vel x
+
+[State 2005, 1/Hlp]; エフェクトヘルパー呼び出し
+type = Helper
+trigger1 = Time = 1
+name = "Spin"
+stateno = 12005
+ID = 12005
+size.xscale = 1
+size.yscale = 1
+postype = p1
+ownpal = 1
+pos = 0,-48
+supermovetime = 0
+pausemovetime = 0
+
+[State 2005, 2/Snd]; スイング音
+type = PlaySnd
+trigger1 = AnimElem = 2,0 || AnimElem = 4,0
+trigger2 = AnimElem = 6,0 || AnimElem = 8,0
+trigger3 = AnimElem = 10,0 || AnimElem = 12,0
+trigger4 = AnimElem = 14,0 || AnimElem = 16,0
+trigger5 = AnimElem = 18,0 || AnimElem = 20,0
+value = s30,200
+
+[State 2005, 2/Hit]; ヒット定義
+type = HitDef
+trigger1 = AnimElem = 2,0 || AnimElem = 4,0
+trigger2 = AnimElem = 6,0 || AnimElem = 8,0
+trigger3 = AnimElem = 10,0 || AnimElem = 12,0
+trigger4 = AnimElem = 14,0 || AnimElem = 16,0
+trigger5 = AnimElem = 18,0 || AnimElem = 20,0
+;- - - - - - - - - - - - - - - -
+attr = A,HA
+hitflag = HLAFD
+guardflag = HA
+priority = 4,Hit
+numhits = 1
+damage = Ceil((var(52)*0.98)*(fvar(39)*0.01))
+getpower = 0,0
+givepower = 0,0
+;- - - - - - - - - - - - - - - -
+animtype = hard
+ground.type = high
+air.fall = 1
+fall.recover = 0
+pausetime = 5,5
+guard.pausetime = 5,5
+ground.slidetime = 12
+ground.hittime = 25
+guard.ctrltime = 25
+ground.velocity = -3,IfElse((Enemy,StateNo=[5101,5110]),-0.5,0)
+air.velocity = -vel x,IfElse((Enemy,StateNo=[5101,5110]),-0.5,2)
+p2facing = 1
+;- - - - - - - - - - - - - - - -
+hitsound = s31,0
+guardsound = s31,999
+sparkno = s6000
+guard.sparkno = s6008+facing
+sparkxy = -20,-45
+
+[State 2005, 2/Uni]; ユニオンヒットフラグ
+type = VarSet
+trigger1 = MoveHit = 1 && NumEnemy
+var(13) = 3
+ignorehitpause = 1
+;persistent = 0
+
+[State 2005, 2/Uni]; ユニオンターゲット記憶
+type = VarSet
+trigger1 = MoveHit = 1 && NumEnemy
+var(14) = Target,ID
+ignorehitpause = 1
+;persistent = 0
+
+[State 2005, 2/Dmg]; 防御無視攻撃力のダメージ
+type = TargetLifeAdd
+trigger1 = MoveHit = 2
+value = -1*Ceil((var(53)*0.98)*0.01)
+absolute = 1
+
+[State 2005, F/CHs]; 空転パートへ
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 2010
+ctrl = 0
+
+[State 2005, F/CHs]; 激突パートへ
+type = ChangeState
+trigger1 = Pos Y >= 0
+value = 2015
+ctrl = 0
+
+;-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+[Statedef 2010]; 箒スピン／空転
+type = A
+movetype = A
+physics = N
+velset = vel x,vel y
+anim = 2010
+ctrl = 0
+
+[State 2010, 1/Snd]; ボイス
+type = PlaySnd
+trigger1 = Time = 1
+value = s20,201
+channel = 0
+
+[State 2010, 1/Hit]; ヒット定義
+type = HitDef
+trigger1 = Time = 1
+;- - - - - - - - - - - - - - - -
+attr = A,HA
+hitflag = HLAFD
+guardflag = HA
+priority = 4,Hit
+numhits = 1
+damage = Ceil((var(52)*0.98)*(fvar(39)*0.01))
+getpower = 0,0
+givepower = 0,0
+;- - - - - - - - - - - - - - - -
+animtype = hard
+ground.type = high
+air.fall = 1
+fall.recover = 0
+pausetime = 5,5
+guard.pausetime = 5,5
+ground.slidetime = 12
+ground.hittime = 25
+guard.ctrltime = 25
+ground.velocity = -3,IfElse((Enemy,StateNo=[5101,5110]),-0.5,0)
+air.velocity = -5,IfElse((Enemy,StateNo=[5101,5110]),-0.5,2)
+p2facing = 1
+;- - - - - - - - - - - - - - - -
+hitsound = s31,140
+guardsound = s31,999
+sparkno = s6000
+guard.sparkno = s6008+facing
+sparkxy = -20,-75
+
+[State 2010, 1/Uni]; ユニオンヒットフラグ
+type = VarSet
+trigger1 = MoveHit = 1 && NumEnemy
+var(13) = 3
+ignorehitpause = 1
+persistent = 0
+
+[State 2010, 1/Uni]; ユニオンターゲット記憶
+type = VarSet
+trigger1 = MoveHit = 1 && NumEnemy
+var(14) = Target,ID
+ignorehitpause = 1
+persistent = 0
+
+[State 2010, 1/Dmg]; 防御無視攻撃力のダメージ
+type = TargetLifeAdd
+trigger1 = MoveHit = 2
+value = -1*Ceil((var(53)*0.98)*0.01)
+absolute = 1
+
+[State 2010, F/CHs]; 激突パートへ
+type = ChangeState
+trigger1 = Pos Y >= 0
+value = 2015
+ctrl = 0
+
+;-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+[Statedef 2015]; 箒スピン／激突
+type = C
+movetype = A
+physics = N
+velset = 0,0
+anim = 2015
+ctrl = 0
+
+[State 2015, -1/Vel]; 速度指定
+type = VelSet
+trigger1 = 1
+X = IfElse(AnimElem=4,<0,2,0)
+
+[State 2015, 1/Snd]; ボイス
+type = PlaySnd
+trigger1 = Time = 1
+value = s20,202
+channel = 0
+
+[State 2015, 1/Hit]; ヒット定義
+type = HitDef
+trigger1 = Time = 1
+;- - - - - - - - - - - - - - - -
+attr = A,HA
+hitflag = HLAFD
+guardflag = L
+priority = 4,Hit
+numhits = 1
+damage = Ceil(1923*(fvar(39)*0.01))
+getpower = 0,0
+givepower = 0,0
+;- - - - - - - - - - - - - - - -
+animtype = hard
+ground.type = trip
+fall = 1
+fall.recover = 0
+pausetime = 5,8
+guard.pausetime = 5,5
+ground.slidetime = 12
+ground.hittime = 25
+guard.ctrltime = 25
+ground.velocity = -3,IfElse((Enemy,StateNo=[5101,5110]),-1,-4)
+air.velocity = -3,IfElse((Enemy,StateNo=[5101,5110]),-1,-4)
+;- - - - - - - - - - - - - - - -
+hitsound = s31,140
+guardsound = s31,999
+sparkno = s6000
+guard.sparkno = s6008+facing
+sparkxy = -20,-25
+
+[State 2015, 1/Uni]; ユニオンヒットフラグ
+type = VarSet
+trigger1 = MoveHit = 1 && NumEnemy
+var(13) = 3
+ignorehitpause = 1
+persistent = 0
+
+[State 2015, 1/Uni]; ユニオンターゲット記憶
+type = VarSet
+trigger1 = MoveHit = 1 && NumEnemy
+var(14) = Target,ID
+ignorehitpause = 1
+persistent = 0
+
+[State 2015, 1/EX1]; 衝撃波エフェクト
+type = Explod
+trigger1 = Time = 1
+anim = 7205
+ID = 7205
+postype = p1
+pos = 0,0
+scale = 1,1
+sprpriority = 0
+ownpal = 1
+removeongethit = 1
+removetime = 10
+bindtime = 1
+
+[State 2015, F/CHs]; 動作終了
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 5120
+ctrl = 0
+
+;-------------------------------------------------------------------------------
+[Statedef 2100]; 反重力マシーン　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　２０秒
+;-------------------------------------------------------------------------------
+type = S
+movetype = A
+physics = S
+velset = vel x,0
+anim = 2100
+ctrl = 0
+poweradd = -1000
+
+[State 2100, -/CT]; 臨時無敵（クールタイム処理）
+type = NotHitBy
+trigger1 = Time = 0
+value = SCA
+time = 1
+
+[State 2100, -/CT]; 反重力マシーン：開始
+type = VarSet
+trigger1 = Time = 0
+var(46) = 1
+
+[State 2100, -/CT]; 反重力マシーン：スロット値セット
+type = VarSet
+trigger1 = Time = 0
+V = var(0)+1
+Value = 6460
+
+[State 2100, -/CT]; 反重力マシーン：アイコン表示
+type = Explod
+trigger1 = Time = 0 && !NumExplod(6460)
+anim = 6460
+ID = 6460
+pos = var(55)+IfElse(var(54)=1,19,106)+(15*var(0)*var(54)),var(56)-5
+postype = left
+scale = 0.5,0.5
+sprpriority = 7
+bindtime = 9999
+ownpal = 1
+supermovetime = 9999
+pausemovetime = 9999
+
+[State 2100, 1/Snd]; ボイス／発動音
+type = PlaySnd
+trigger1 = Time = 1
+value = s20,210
+channel = 0
+
+[State 2100, 2/Pau]; 時間停止
+type = Pause
+trigger1 = AnimElem = 2,0
+time = 20
+movetime = 20
+
+[State 2100, 2/Hlp]; 反重力ヘルパー呼び出し
+type = Helper
+trigger1 = AnimElem = 2,0
+name = "AntiGravity"
+stateno = 12100
+ID = 12100
+size.xscale = 1
+size.yscale = 1
+postype = p1
+ownpal = 1
+pos = 50,0
+supermovetime = 30
+pausemovetime = 30
+
+[State 2100, F/CHs]; 動作終了
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+
+
+
+
+
+
+
+;
+
+;

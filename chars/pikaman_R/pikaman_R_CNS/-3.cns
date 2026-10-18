@@ -1,0 +1,1068 @@
+
+;---------------------------------------------------------------------------
+; ここは-2のステートを書いてください、ヘルパー関係です
+;---------------------------------------------------------------------------
+[Statedef -2]
+
+[State -2, デバック(変数確認)]
+Type = DisplayToClipBoard
+Trigger1 = 0
+Text = "MC=%d,fvar(30)=%f,var(56)=%d,P2X:%f,P2y :%f"
+Params = var(40),fvar(0),moveguarded,fvar(11),(P2dist X)
+IgnoreHitPause = 1
+
+;先行入力認識用ヘルパー暴走防止
+[state -3, ステートリセット]
+type = changestate
+trigger1 = ishelper(99999)
+value = 30050
+ignorehitpause = 1
+
+;---------------------------------------------------------
+
+[State -3];タッグ用生死判別
+Type = varset
+triggerall = !ishelper
+triggerall  = roundstate = 2
+Trigger1 = Numenemy >= 2
+var(53) = ifelse(Enemynear(0),alive,0,1)
+pausemovetime = 2147483647
+supermovetime = 2147483647
+IgnoreHitPause = 1
+
+;━━━━━━━━━━━━━━━━━━━━━━━━
+;━━━━━━━━━━━━━━━━━━━━━━━━
+;ダメージ処理
+;━━━━━━━━━━━━━━━━━━━━━━━━
+;━━━━━━━━━━━━━━━━━━━━━━━━
+
+[state ];基本ダメージ一括管理  通常攻撃
+type = Null
+triggerall = !ishelper
+;5A
+trigger1 = var(25) = 200
+trigger1 = var(10) := 30
+;5B
+trigger2 = var(25) = 240
+trigger2 = var(10) := 60
+;5C
+trigger3 = var(25) = 230
+trigger3 = var(10) := 90
+;2A
+trigger4 = var(25) = 400
+trigger4 = var(10) := 25
+;2B
+trigger5 = var(25) = 440
+trigger5 = var(10) := 55
+;2C
+trigger6 = var(25) = 430
+trigger6 = var(10) := 85
+;3B
+trigger7 = var(25) = 210
+trigger7 = var(10) := 70
+;6C
+trigger8 = var(25) = 226
+trigger8 = var(10) := 75+((var(3)>=40)*50)+((var(3)>=74)*250)
+;JA
+trigger9 = var(25) = 600
+trigger9 = var(10) := 40
+;JB
+trigger10= var(25) = 640
+trigger10= var(10) := 55
+;JC
+trigger11= var(25) = 630
+trigger11= var(10) := 80
+;J2C
+trigger12= var(25) = 666
+trigger12= var(10) := 105
+;厚生防御反撃/立ち
+trigger13= var(25) = [720,722]
+trigger13= var(10) := 50
+IgnoreHitPause = 1
+
+
+[state ];基本ダメージ一括管理  必殺攻撃
+type = Null
+triggerall = !ishelper
+;236A
+trigger1 = var(25) = 1000
+trigger1 = var(10) := 65
+;236B
+trigger2 = var(25) = 1001
+trigger2 = var(10) := 75
+;236C
+trigger3 = var(25) = 1002
+trigger3 = var(10) := 50
+
+;214ABC
+trigger4 = var(25) = [1100,1104]
+trigger4 = var(10) := 15
+;214A
+trigger5 = var(25) = 1110
+trigger5 = var(10) := 100
+;214B
+trigger6 = var(25) = 1111
+trigger6 = var(10) := 40
+;214C
+trigger7 = var(25) = 1112
+trigger7 = var(10) := 50+(var(26)>13)*80
+
+;22ABC
+trigger8 = var(25) = [1200,1203]
+trigger8 = var(10) := 15
+;214A
+trigger9 = var(25) = 1210
+trigger9 = var(10) := 80+(numtarget(1201)*40)+(numtarget(1202)*50)+(numtarget(1203)*120)
+
+;J236C
+trigger10 = var(25) = 1300
+trigger10 = var(10) := 85
+
+;ロケット
+trigger11 = var(25) = 3000
+trigger11 = var(10) := 100+(var(26)>8)*80
+
+;禊
+trigger12 = var(25) = 3100
+trigger12 = var(10) := 350
+
+;魔人拳
+trigger13 = var(25) = 3505
+trigger13 = var(10) := 700
+
+;ピカマンドライバー
+trigger14 = var(25) = 1410
+trigger14 = var(10) := 190+(numtarget(1401)*20)+(numtarget(1402)*40)+(numtarget(1403)*90)
+
+;236EX
+trigger15 = var(25) = 1003
+trigger15 = var(10) := 80
+
+;214EX
+trigger16 = var(25) = 1114
+trigger16 = var(10) := 160
+
+;━━━━━━━━━━━━━━━━━━━━━━━━
+;ダメージ補正値
+;━━━━━━━━━━━━━━━━━━━━━━━━
+
+[state -2, varリセット];補正リセット
+type = varset
+triggerall = !ishelper
+triggerall = fvar(10) < 1
+trigger1 = roundstate != 2
+trigger2 = !Numtarget && P2Movetype != H
+trigger3 = Numtarget
+trigger3 = target,ctrl = 1
+trigger4 = P2Movetype != H && Numenemy > 1
+fvar(10) = 1.0
+IgnoreHitPause = 1
+
+;1発に付き5％減
+;保障20％
+;超必殺技は保障40％
+;ネオマックスは保障50％
+
+[state -2, var増加]
+type = varadd
+triggerall = !ishelper
+triggerall = fvar(10) > 0
+triggerall = Roundstate = 2 && Alive
+triggerall = Numtarget
+triggerall = target,Movetype = H
+triggerall = (target,time = 0&&Movehit = 1) || Projhittime(0) = 1
+triggerall = (var(25) != [2000,2199])
+triggerall = (var(25) != [2500,3999])
+triggerall = var(25) != [800,840]
+trigger1 = target,stateno = 5000
+trigger2 = target,stateno = 5010
+trigger3 = target,stateno = 5020
+trigger4 = target,stateno = 5070
+trigger5 = target,stateno = 5080
+fvar(10) = -0.05
+IgnoreHitPause = 1
+
+;━━━━━━━初段補正━━━━━━━━━━━
+
+
+[state -2, varリセット];補正リセット
+type = varset
+triggerall = !ishelper
+triggerall = fvar(11) < 1
+trigger1 = roundstate != 2
+trigger2 = !Numtarget && P2Movetype != H
+trigger3 = Numtarget
+trigger3 = target,ctrl = 1
+trigger4 = P2Movetype != H && Numenemy > 1
+fvar(11) = 1.0
+IgnoreHitPause = 1
+
+[state -2, varセット]
+type = null
+triggerall = Roundstate = 2 && Alive && !ishelper
+triggerall = Numtarget && fvar(11) = 1
+triggerall = target,Movetype = H &&((target,time = 0&&Movehit = 1) || Projhittime(0) = 1)
+triggerall = target,stateno = 5000|| target,stateno = 5010|| target,stateno = 5020|| target,stateno = 5070|| target,stateno = 5080
+trigger1 = var(25) = 200 || var(25) = 400 || var(25) = 600 || var(25) = 720 || var(25) = 721 || var(25) = 722 || var(25) = 750 || var(25) = 430 
+trigger1 = fvar(11) := 0.5
+trigger2 = var(25) = 240 || var(25) = 440|| var(25) = 666 || var(25) = 630 || var(25) = 226|| (var(25) = [3000,3999])
+trigger2 = fvar(11) := 0.65
+trigger3 = var(25) = 210 || (var(25) = [1000,1399])
+trigger3 = fvar(11) := 0.7
+trigger4 = var(25) = 230
+trigger4 = fvar(11) := 0.75
+trigger5 = var(25) = 640
+trigger5 = fvar(11) := 0.6
+IgnoreHitPause = 1
+
+
+;━━━━━━━最終ダメージ式計算━━━━━━━━━━━
+
+[state ]
+type = varset
+triggerall = !ishelper
+trigger1 = alive
+var(12) = abs(floor(var(10)*fvar(10)*fvar(11)*(1+.2*(var(4)>0))))
+
+[state ];必殺技最低保障
+type = varset
+triggerall = !ishelper
+trigger1 = alive
+trigger1 = var(25) = [200,1999]
+trigger1 = var(12) < var(10) * 0.1
+var(12) = abs(floor(var(10)*0.1))
+
+[state ];超必殺技最低保障
+type = varset
+triggerall = !ishelper
+trigger1 = alive
+trigger1 = var(25) = [3000,3499]
+trigger1 = var(12) < var(10) * 0.3
+var(12) = abs(floor(var(10)*0.3))
+
+[state ];べオマックス最低保障
+type = varset
+triggerall = !ishelper
+trigger1 = alive
+trigger1 = var(25) = [3500,3999]
+trigger1 = var(12) < var(10) * 0.5
+var(12) = abs(floor(var(10)*0.5))
+
+[state ];最低保障
+type = varset
+triggerall = !ishelper
+trigger1 = var(12) < 4
+var(12) = 4
+
+[state ];ダメージ設定リセット
+type = varset
+triggerall = !ishelper
+trigger1 = alive
+trigger1 = Movetype = I
+var(10) = 0
+
+
+
+[state -2, varリセット];特殊ふっとび制限リセット
+type = varset
+triggerall = !ishelper
+triggerall = var(11)
+trigger1 = roundstate != 2
+trigger2 = !Numtarget && P2Movetype != H
+trigger3 = Numtarget
+trigger3 = target,ctrl = 1
+trigger4 = P2Movetype != H && Numenemy > 1
+var(11) = 0
+IgnoreHitPause = 1
+
+
+
+
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+;ヒットスパーク処理1P
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+;━━━━━━━━━━━━━━━━━━━━━━━
+;弱
+;━━━━━━━━━━━━━━━━━━━━━━━
+
+[State , 立ち/空中1P];5A
+type = Explod
+triggerall = NumEnemy
+triggerall = Enemy(0),time <= (teamside=2) && Enemy(0),Movetype = H
+triggerall = var(25) = 200
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(0),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(0),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+trigger4 = !Partner,numtarget
+anim = 10000+(Enemy(0),StateNo = [120,155])*10
+postype = P1
+pos = 40,-60
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+[State , 立ち/空中1P];JA
+type = Explod
+triggerall = NumEnemy
+triggerall = Enemy(0),time <= (teamside=2) && Enemy(0),Movetype = H
+triggerall = var(25) = 600
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(0),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(0),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+trigger4 = !Partner,numtarget
+anim = 10000+(Enemy(0),StateNo = [120,155])*10
+postype = P1
+pos = 10,-20
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+[State , しゃがみ1P];2A
+type = Explod
+triggerall = NumEnemy
+triggerall = Enemy(0),time <= (teamside=2) && Enemy(0),Movetype = H
+triggerall = var(25) = 400
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(0),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(0),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+anim = 10000+(Enemy(0),StateNo = [120,155])*10
+postype = P1
+pos = 40,-35
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+
+;━━━━━━━━━━━━━━━━━━━━━━━
+
+
+[State , 立ち/空中1P];5B,3B,5C,6C
+type = Explod
+triggerall = NumEnemy
+triggerall = Enemy(0),time <= (teamside=2) && Enemy(0),Movetype = H
+triggerall = var(25) = 210 || var(25) = 230 || var(25) = 240 || var(25) = 226 || var(25) = 640
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(0),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(0),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+trigger4 = !Partner,numtarget
+anim = 10001+(Enemy(0),StateNo = [120,155])*9
+postype = Left
+pos = Ceil(Enemy(0),ScreenPos X),Ceil(Enemy(0),ScreenPos Y)-60
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+
+[State , 立ち/空中1P];2B,2C
+type = Explod
+triggerall = NumEnemy
+triggerall = Enemy(0),time <= (teamside=2) && Enemy(0),Movetype = H
+triggerall = var(25) = 430 || var(25) = 440
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(0),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(0),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+trigger4 = !Partner,numtarget
+anim = 10001+(Enemy(0),StateNo = [120,155])*9
+postype = Left
+pos = Ceil(Enemy(0),ScreenPos X),Ceil(Enemy(0),ScreenPos Y)-30
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+;━━━━━━━━━━━━━━━━━━━━━━━
+
+
+[State , 立ち/空中1P];J2C,JC
+type = Explod
+triggerall = NumEnemy
+triggerall = Enemy(0),time <= (teamside=2) && Enemy(0),Movetype = H && Hitdefattr = SCA,AA,AP
+triggerall = var(25) = 630 || var(25) = 666 || (var(25) = [1000,1005]) || (var(25) = [1200,1205]) || (var(25) = [3000,3999]) || ((var(25) = 1102)&&(Enemy(0),StateNo = [120,155]))
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(0),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(0),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+trigger4 = !Partner,numtarget
+anim = 10002+(Enemy(0),StateNo = [120,155])*8
+postype = Left
+pos = Ceil(Enemy(0),ScreenPos X),Ceil(Enemy(0),ScreenPos Y)-60
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+
+
+[State , 立ち/空中1P];J2C,JC
+type = Explod
+triggerall = NumEnemy
+triggerall = Enemy(0),time <= (teamside=2) && Enemy(0),Movetype = H && var(25) != 1102 
+triggerall = (var(25) = [1100,1105])&&(Enemy(0),StateNo = [120,155])
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(0),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(0),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+trigger4 = !Partner,numtarget
+anim = 10010
+postype = Left
+pos = Ceil(Enemy(0),ScreenPos X),Ceil(Enemy(0),ScreenPos Y)-20
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+
+;━━━━━━━━━━━━━━━━━━━━━━━
+
+[State , 立ち/空中1P];カウンターヒットエフェクト
+type = Explod
+triggerall = NumEnemy
+triggerall = Enemy(0),time <= (teamside=2) && Enemy(0),Movetype = H && var(4) && Hitdefattr = SCA,AA,AP
+triggerall = var(25) = [200,3500]
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(0),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(0),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(0),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+trigger4 = !Partner,numtarget
+anim = 10003
+postype = Left
+pos = Ceil(Enemy(0),ScreenPos X),Ceil(Enemy(0),ScreenPos Y)-65
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+
+
+
+
+
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+;ヒットスパーク処理2P
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+;━━━━━━━━━━━━━━━━━━━━━━━
+;弱
+;━━━━━━━━━━━━━━━━━━━━━━━
+
+[State , 立ち/空中1P];5A
+type = Explod
+triggerall = NumEnemy > 1
+triggerall = Enemy(1),time <= (teamside=2) && Enemy(1),Movetype = H
+triggerall = var(25) = 200
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(1),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(1),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+trigger4 = !Partner,numtarget
+anim = 10000+(Enemy(1),StateNo = [120,155])*10
+postype = P1
+pos = 40,-60
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+[State , 立ち/空中1P];JA
+type = Explod
+triggerall = NumEnemy > 1
+triggerall = Enemy(1),time <= (teamside=2) && Enemy(1),Movetype = H
+triggerall = var(25) = 600
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(1),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(1),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+trigger4 = !Partner,numtarget
+anim = 10000+(Enemy(1),StateNo = [120,155])*10
+postype = P1
+pos = 10,-20
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+[State , しゃがみ1P];2A
+type = Explod
+triggerall = NumEnemy > 1
+triggerall = Enemy(1),time <= (teamside=2) && Enemy(1),Movetype = H
+triggerall = var(25) = 400
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(1),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(1),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+anim = 10000+(Enemy(1),StateNo = [120,155])*10
+postype = P1
+pos = 40,-35
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+
+;━━━━━━━━━━━━━━━━━━━━━━━
+
+
+[State , 立ち/空中1P];5B,3B,5C,6C
+type = Explod
+triggerall = NumEnemy > 1
+triggerall = Enemy(1),time <= (teamside=2) && Enemy(1),Movetype = H
+triggerall = var(25) = 210 || var(25) = 230 || var(25) = 240 || var(25) = 226 || var(25) = 640
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(1),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(1),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+trigger4 = !Partner,numtarget
+anim = 10001+(Enemy(1),StateNo = [120,155])*9
+postype = Left
+pos = Ceil(Enemy(1),ScreenPos X),Ceil(Enemy(1),ScreenPos Y)-60
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+
+[State , 立ち/空中1P];2B,2C
+type = Explod
+triggerall = NumEnemy > 1
+triggerall = Enemy(1),time <= (teamside=2) && Enemy(1),Movetype = H
+triggerall = var(25) = 430 || var(25) = 440
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(1),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(1),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+trigger4 = !Partner,numtarget
+anim = 10001+(Enemy(1),StateNo = [120,155])*9
+postype = Left
+pos = Ceil(Enemy(1),ScreenPos X),Ceil(Enemy(1),ScreenPos Y)-30
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+;━━━━━━━━━━━━━━━━━━━━━━━
+
+
+[State , 立ち/空中1P];J2C,JC
+type = Explod
+triggerall = NumEnemy > 1
+triggerall = Enemy(1),time <= (teamside=2) && Enemy(1),Movetype = H && Hitdefattr = SCA,AA,AP
+triggerall = var(25) = 630 || var(25) = 666 || (var(25) = [1000,1005]) || (var(25) = [1200,1205]) || (var(25) = [3000,3999]) || ((var(25) = 1102)&&(Enemy(1),StateNo = [120,155]))
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(1),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(1),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+trigger4 = !Partner,numtarget
+anim = 10002+(Enemy(1),StateNo = [120,155])*8
+postype = Left
+pos = Ceil(Enemy(1),ScreenPos X),Ceil(Enemy(1),ScreenPos Y)-60
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+
+
+[State , 立ち/空中1P];J2C,JC
+type = Explod
+triggerall = NumEnemy > 1
+triggerall = Enemy(1),time <= (teamside=2) && Enemy(1),Movetype = H && var(25) != 1102 
+triggerall = (var(25) = [1100,1105])&&(Enemy(1),StateNo = [120,155])
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(1),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(1),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+trigger4 = !Partner,numtarget
+anim = 10010
+postype = Left
+pos = Ceil(Enemy(1),ScreenPos X),Ceil(Enemy(1),ScreenPos Y)-20
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+
+;━━━━━━━━━━━━━━━━━━━━━━━
+
+[State , 立ち/空中1P];カウンターヒットエフェクト
+type = Explod
+triggerall = NumEnemy > 1
+triggerall = Enemy(1),time <= (teamside=2) && Enemy(1),Movetype = H && var(4) && Hitdefattr = SCA,AA,AP
+triggerall = var(25) = [200,3500]
+trigger1 = time = 0 && Movetype = H && NumEnemy = 1;相打ち用
+trigger2 = Enemy(1),time = 0 && Movecontact = 1 && Numtarget
+trigger2 = Enemy(1),ID = Target,ID || Numtarget > 1;通常ヒット
+trigger3 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && !Numpartner;アーマー用
+trigger4 = Enemy(1),time = 0 && Movecontact = 1 && !Numtarget && Numpartner;アーマー用タッグ
+trigger4 = !Partner,numtarget
+anim = 10003
+postype = Left
+pos = Ceil(Enemy(1),ScreenPos X),Ceil(Enemy(1),ScreenPos Y)-65
+random = 5,5
+scale = 0.5,0.5
+ontop = 1
+removetime = -2
+ownpal = 1
+bindtime = 1
+ignorehitpause = 1
+
+
+
+
+
+
+
+
+
+
+;==================================================
+;ダメージ
+
+[State -3, Landing Sound];Ａ1
+type = PlaySnd
+triggerall = var(17) = 1 && Random< 500
+trigger1 = stateno = 5000 || stateno = 5010 || stateno = 5020
+trigger1 = time = 0
+trigger2 = stateno = 5100
+trigger2 = time = 1
+value = 820, (random%5)
+channel = 3
+
+
+;バーストゲージ管理＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+
+[State -2, VarSet];自然回復
+Type = Varadd
+triggerall = !ishelper && alive && roundstate = 2
+Trigger1 = Var(40) < 5400
+IgnoreHitPause = 1
+V = 40
+Value = 1
+
+[State -2, VarSet];殴られたら伸びる
+Type = Varadd
+triggerall = !ishelper && alive && roundstate = 2
+Trigger1 = Var(40) < 5400 && time = 0
+IgnoreHitPause = 1
+V = 40
+Value = ceil(gethitvar(damage))
+
+[State -2, VarSet];止め保険
+Type = VarSet
+triggerall = !ishelper && alive && roundstate = 2
+trigger1 = Var(40) >= 5400
+IgnoreHitPause = 1
+V = 40
+Value = 5400
+
+[State -2, VarSet];OD中減少
+Type = Varadd
+triggerall = !ishelper && alive && roundstate = 2
+trigger1 = Var(41) = 1
+IgnoreHitPause = 1
+V = 40
+Value = -10
+
+[State 1020, Afterimage]
+type = AfterImageTime
+triggerall = !ishelper
+trigger1 = Var(41) = 1 && Var(40) > 0
+time = 2
+IgnoreHitPause = 1
+
+[State -2, VarSet];OD終了
+Type = Varset
+triggerall = !ishelper
+trigger1 = Var(41) = 1 && Var(40) < 0
+trigger2 = roundstate > 2 || !alive
+IgnoreHitPause = 1
+V = 41
+Value = 0
+
+
+;---------------------------------------------------------------------------
+; ここから下は-3のステートを書いてください、ここに書いたものはゲーム中
+; に条件が成立すればいつでも開始するステートです。
+;---------------------------------------------------------------------------
+
+
+[Statedef -3]
+
+;先行入力認識用ヘルパー暴走防止
+[state -3, ステートリセット]
+type = changestate
+trigger1 = ishelper(99999)
+value = 30050
+ignorehitpause = 1
+
+;先行入力認識用ヘルパー
+[state -3, 先行入力認識用ヘルパー]
+type = helper
+trigger1 = !numhelper(99999)
+trigger1 = !ishelper
+helpertype = normal
+name = "commandhelper"
+stateno = 30050
+ID = 99999
+postype = p1
+pos = 0,9999
+ownpal = 1
+keyctrl = 1
+pausemovetime = 2147483647
+supermovetime = 2147483647
+
+;━━━━━━━━━━━━━━━━━━━━━━━
+;ステータス監視
+;━━━━━━━━━━━━━━━━━━━━━━━
+
+[State ];ステート番号
+type = varset
+triggerall = !ishelper
+trigger1 = stateno = [0,4999]
+trigger1 = var(25) != stateno
+var(25) = stateno
+ignorehitpause = 1
+supermovetime = 2147483647
+pausemovetime = 2147483647
+
+[State ];アニメ番号
+type = varset
+triggerall = !ishelper
+trigger1 = stateno = [196,4999]
+trigger1 = var(26) != AnimElemNo(0)
+var(26) = AnimElemNo(0)
+ignorehitpause = 1
+supermovetime = 2147483647
+pausemovetime = 2147483647
+
+;━━━━━━━━━━━━━━━━━━━━━━━
+;裏周り関係補正
+;━━━━━━━━━━━━━━━━━━━━━━━
+
+[State ]
+type = width
+triggerall = Movetype != H && !ishelper && Enemynear(var(53)),backedgebodydist < 5 && P2bodydist X < 0 && vel x > 0
+trigger1 = P2Statetype != A && Statetype = A
+trigger2 = Numtarget && (P2Statetype = A||P2Statetype = L)
+edge = 5,0
+ignorehitpause = 1
+
+;━━━━━━━━━━━━━━━━━━━━━━━
+;起き上がりの無敵
+;━━━━━━━━━━━━━━━━━━━━━━━
+
+[State 5120, 2]
+type = varadd
+triggerall = !ishelper
+trigger1 = var(0) > 0
+var(0) = -1
+
+[State 5120, 5] ;Can't be thrown right after getting up
+type = HitBy
+trigger1 = var(0) > 0 && !ishelper
+value = SCA,AA,AP
+
+[State 5120, 6] ;Can't be hit right after getting up (short time)
+type = NotHitBy
+trigger1 = !ishelper && var(0) >= 7
+value = SCA
+
+[State 5120, 2];攻撃行動で無敵削除
+type = varset
+triggerall = !ishelper
+trigger1 = Movetype = A
+var(0) = 0
+
+;━━━━━━━━━━━━━━━━━━━━━━━
+;ヒットストップ無敵
+;━━━━━━━━━━━━━━━━━━━━━━━
+
+[State 5120, 6] ;
+type = NotHitBy
+trigger1 = var(5)
+trigger1 = HitPauseTime && !(MoveReversed)
+value = SCA
+time = 1
+ignorehitpause = 1
+
+
+
+
+
+
+
+;====================================================================================
+
+[State -3, Landing Sound];イントロ
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 191
+trigger1 = time=1
+value = 819, 17
+
+;=================================================
+;A系統
+
+[State -3, Landing Sound];Ａ1
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 200||stateno=400||stateno=600
+trigger1 = time=1
+value = 819, 14
+channel =0
+
+[State -3, Landing Sound];Ａ2
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 200||stateno=400||stateno=600
+trigger1 = time=1
+trigger1 = random=[334,666]
+value = 819, 15
+channel =0
+
+[State -3, Landing Sound];Ａ3
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 200||stateno=400||stateno=600
+trigger1 = time=1
+trigger1 = random=[667,999]
+value = 819, 16
+channel =0
+
+;==================================================
+;Ｂ系統
+
+[State -3, Landing Sound];B1
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 240||stateno=440||stateno=640
+trigger1 = time=1
+value = 819, 17
+channel =0
+
+[State -3, Landing Sound];B2
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 240||stateno=440||stateno=640
+trigger1 = time=1
+trigger1 = random=[334,666]
+value = 819, 18
+channel =0
+
+[State -3, Landing Sound];B3
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 240||stateno=440||stateno=640
+trigger1 = time=5
+trigger1 = random=[667,999]
+value = 819, 19
+channel =0
+
+;==================================================
+;C系統
+
+[State -3, Landing Sound];C1
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 230||stateno=430||stateno=630
+trigger1 = time=1
+value = 819, 25
+channel =0
+
+[State -3, Landing Sound];C2
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 230||stateno=430||stateno=630
+trigger1 = time=1
+trigger1 = random=[501,999]
+value = 819, 26
+channel =0
+
+;==================================================
+;6C
+
+[State -3, Landing Sound];C1
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 225
+trigger1 = time=1
+value = 819, 5
+channel =0
+
+[State -3, Landing Sound];C2
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 226
+trigger1 = time=1
+value = 819, 3
+channel =0
+
+;==================================================
+;空中２C
+
+[State -3, Landing Sound];C1
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 666
+trigger1 = time=1
+value = 819, 20
+channel =0
+
+;==================================================
+;空中投げ
+
+[State -3, Landing Sound];1
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 830
+trigger1 = time=1
+value = 819, 19
+channel =0
+
+[State -3, Landing Sound];1
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 835
+trigger1 = time>10
+trigger1 = pos y=-10
+value = 819, 25
+channel =0
+;==================================================
+;投げ
+
+[State -3, Landing Sound];1
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 810
+trigger1 = time=1
+value = 819, 23
+channel =0
+
+;==================================================
+;バースト
+
+[State -3, Landing Sound];1
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 1745
+trigger1 = time=1
+value = 819, 23
+channel =0
+
+;==================================================
+;ガードシフト
+
+[State -3, Landing Sound];1
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 1744
+trigger1 = time=1
+value = 819, 23
+channel =0
+
+;==================================================
+
+
+
+;==================================================
+;勝利
+
+[State -3, Landing Sound];Ａ1
+type = PlaySnd
+triggerall = var(17)=1
+trigger1 = stateno = 181 || stateno = 195
+trigger1 = time=1
+value = 819, 9
+channel =0
+
+
+
+
+
+
+
+[State -2, Helper];オーバースロー
+type = Pause
+triggerall = !ishelper && alive && roundstate = 2
+triggerall = Var(41) = 1
+triggerall = Numtarget && Movetype != H
+triggerall = target,movetype = H
+triggerall = target,stateno != [5100,5110]
+triggerall = Var(25) != 3000 || time > 30
+triggerall = Var(25) != 3100 || time > 30
+trigger1 = gametime%3 = 0
+time = 1
+movetime = 1

@@ -1,0 +1,894 @@
+
+;==============================================================================
+; 基本性能（Re.act版）・本体行動
+;==============================================================================
+
+; 190 : シールド
+; 905 : HEAT 強制開放
+; 915 : BLOOD HEAT
+; 965 : ゲージ溜め
+; 200 : 突き出し（仮称）
+; 210 : 振り下ろし（仮称）
+; 220 : 肩突き出し（仮称）
+; 230 : 引き寄せ（仮称）
+; 240 : エーテライト展開（仮称）
+; 1500 : エンドロール（ゲオメトリア）
+; 1510 : エンドロール（アーミラリ）
+; 1600 : ヘキサエチル・エーテライト
+; 2000 : トライヘルメス・ブラックランド
+; 2100 : アアト・セケトヘテペト
+; 2110 : アアト・セケトヘテペト（とどめ）
+
+; 1420 : オシリス・ヘキサエチル
+; 1430 : オシリス・エーテライト展開（仮称）
+; 2060 : オシリス・トライヘルメス
+; 2150 : オシリス・セケトヘテペト
+
+;==============================================================================
+; 前ダッシュ
+;==============================================================================
+; 開始
+;------------------------------------------------------------------------------
+[Statedef 100]
+type    = S
+physics = N
+anim    = 20012
+ctrl    = 0
+
+[State 100, Pos]
+type = PosSet
+trigger1 = 1
+y = 0
+
+[State 100, Speed]
+type = Velset
+trigger1 = Time >= 10
+x = const(Velocity.Run.fwd.x)
+y = 0
+
+[State 100, No Walk & No Turn]
+type = AssertSpecial
+trigger1 = 1
+flag = NoWalk
+flag2= NoAutoTurn
+ignorehitpause = 1
+
+
+[State 100, DashStop]
+type = ChangeState
+trigger1 = time > 30
+value = 0
+ctrl = 1
+
+;==============================================================================
+; バックステップ
+;==============================================================================
+[Statedef 105]
+type    = S
+physics = N
+anim    = 20012
+velset  = 0,0
+ctrl    = 0
+
+[State 100, Pos]
+type = PosSet
+trigger1 = 1
+y = 0
+
+[State 100, Speed]
+type = Velset
+trigger1 = Time >= 10
+x = const(Velocity.Run.back.x)
+y = 0
+
+[State 100, No Walk & No Turn]
+type = AssertSpecial
+trigger1 = 1
+flag = NoWalk
+flag2= NoAutoTurn
+ignorehitpause = 1
+
+
+[State 100, DashStop]
+type = ChangeState
+trigger1 = time > 30
+value = 0
+ctrl = 1
+
+;==============================================================================
+;　壁叩きつけ開始
+;==============================================================================
+[Statedef 208]
+Type     = A
+MoveType = H
+Physics  = N
+Ctrl     = 0
+VelSet   = 0,0
+
+[State 1522, Turn]
+type = Turn
+trigger1 = time = 0
+trigger1 = ((Facing)*(EnemyNear,Facing) = 1)
+
+[State -1, VelSet] 
+Type = VelSet
+Trigger1 = 1
+X = ifelse(HitShakeOver=0,0,-12)
+
+[State -1, PosSet] 
+Type = PosSet
+Trigger1 = Time = 0
+Trigger1 = Pos Y >= -15
+Y = -21
+
+[State -1, ChangeAnim2]
+Type = ChangeAnim2
+Trigger1 = Time = 0
+Value = 208
+
+[State -1, ScreenBound]
+Type = ScreenBound
+Trigger1 = 1
+Value = 1
+MoveCamera = 0,1
+
+[State 753, PlayerPush]
+type = PlayerPush
+trigger1 = 1
+value = 1
+IgnoreHitPause = 1
+
+
+[State -1, ChangeState]
+type = ChangeState
+TriggerAll = ((FrontEdgeDist <= 3) || (BackEdgeDist <= 3))
+Trigger1 = 1
+Value = 209
+
+;------------------------------------------------------------------------------
+;　終了
+;------------------------------------------------------------------------------
+[Statedef 209]
+Type     = A
+MoveType = H
+Physics  = N
+Ctrl     = 0
+VelSet   = 0,0
+
+[State -1, ChangeState]
+Type = SelfState
+TriggerAll = Vel Y > 0
+TriggerAll = Pos Y >= -20
+TriggerAll = Alive
+TriggerAll = CanRecover
+Trigger1 = Command = "recovery"
+Value = 5040
+
+[State -1, ChangeState]
+Type = SelfState
+TriggerAll = Vel Y > -1
+TriggerAll = Alive
+TriggerAll = CanRecover
+Trigger1 = Command = "recovery"
+Value = 5040
+
+[State -1, ChangeAnim2]
+Type = ChangeAnim
+Trigger1 = Time = 0
+Value = 5050
+
+[State -1, VelSet]
+Type = VelSet
+Trigger1 = Time = 0
+X = 0
+Y = 0
+
+[State -1, EnvShake]
+Type = EnvShake
+Trigger1 = Time = 0
+Time  = 10
+Ampl  = 5
+Freq  = 90
+
+[State -1, VelSet]
+Type = VelSet
+Trigger1 = Time = 2
+X = .5
+Y = -3
+
+[State -1, Gravity];VelAdd]
+Type = Gravity;VelAdd
+Trigger1 = Time >= 3
+;Y = 0.36
+
+[State -1, ScreenBound]
+Type = Null;ScreenBound
+Trigger1 = 1
+Value = 1
+MoveCamera = 0,1
+
+[State -1, SelfState]
+Type = SelfState
+Trigger1 = (Vel Y > 0) && (Pos Y >= 0)
+Value = 5100
+
+;==============================================================================
+;　BLOOD HEAT
+;==============================================================================
+[Statedef 910]
+Type     = S
+MoveType = A
+Physics  = S
+Anim     = 930
+Ctrl     = 0
+VelSet   = 0,0
+PowerAdd = 0
+
+[State 100, Pos]
+type = PosSet
+trigger1 = NumHelper(1010)
+trigger1 = 1
+x = Helper(1010),Pos X + Helper(1010),Facing*floor(- 92.617 * cos(0.017453292517*Helper(1010),fvar(1)-0.6629)+122)
+y = Helper(1010),Pos Y + floor(- 92.617 * sin(0.017453292517*Helper(1010),fvar(1)-0.6629))+56
+[State 100, Pos]
+type = PosSet
+trigger1 = NumHelper(1010) = 0
+trigger1 = 1
+x = Root,Pos X
+y = Root,Pos Y
+
+[State -1, EnvShake]
+Type = EnvShake
+Trigger1 = AnimElem = 6
+Time  = 10
+Ampl  = 4
+Freq  = 90
+
+[State -1, PlaySnd]
+Type = PlaySnd
+Trigger1 = AnimElem = 6
+Value = s2, 10
+IgnoreHitPause = 1
+Persistent = 0
+[State -1, PlaySnd]
+Type = PlaySnd
+Trigger1 = AnimElem = 6
+Value = s20, 24
+channel = 0
+IgnoreHitPause = 1
+Persistent = 0
+
+[State -1]
+Type     = Helper
+Trigger1 = animelem = 6
+Stateno  = 901
+ID       = 901
+Pos      = 0,-82
+PosType  = P1
+Ownpal   = 1
+Keyctrl  = 0
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+
+[State -1, PalFX]
+type = PalFX
+trigger1 = time > 11
+time = 1
+add = -6*animtime,-6*animtime,-6*animtime
+
+
+[State -1, NotHitBy]
+Type = NotHitBy
+Trigger1 = 1
+Value = SAC, NT, ST, HT ,NA, SA, HA ,NP, SP, HP
+Time = 1
+
+[State -1, ChangeState] 
+Type = ChangeState
+Trigger1 = AnimTime = 0
+Value = 1400
+
+;==============================================================================
+;　強制HEAT
+;==============================================================================
+[Statedef 900]
+Type     = S
+MoveType = I
+Physics  = S
+Anim     = 930
+Ctrl     = 0
+VelSet   = 0,0
+
+[State 100, Pos]
+type = PosSet
+trigger1 = NumHelper(1010)
+trigger1 = 1
+x = Helper(1010),Pos X + Helper(1010),Facing*floor(- 92.617 * cos(0.017453292517*Helper(1010),fvar(1)-0.6629)+122)
+y = Helper(1010),Pos Y + floor(- 92.617 * sin(0.017453292517*Helper(1010),fvar(1)-0.6629))+56
+[State 100, Pos]
+type = PosSet
+trigger1 = NumHelper(1010) = 0
+trigger1 = 1
+x = Root,Pos X
+y = Root,Pos Y
+
+[State -1, EnvShake]
+Type = EnvShake
+Trigger1 = AnimElem = 6
+Time  = 10
+Ampl  = 4
+Freq  = 90
+
+[State -1, PlaySnd]
+Type = PlaySnd
+Trigger1 = AnimElem = 6
+Value = s2, 10
+IgnoreHitPause = 1
+Persistent = 0
+
+[State -1]
+Type     = Helper
+Trigger1 = animelem = 5
+Stateno  = 901
+ID       = 901
+Pos      = 0,-82
+PosType  = P1
+Ownpal   = 1
+Keyctrl  = 0
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+
+[State -1, PalFX]
+type = PalFX
+trigger1 = time > 11
+time = 1
+add = -6*animtime,-6*animtime,-6*animtime
+
+[State -1, PlaySnd]
+Type = PlaySnd
+Trigger1 = AnimElem = 6
+Value = s20, 24
+channel = 0
+
+
+[State -1, NotHitBy]
+Type = NotHitBy
+Trigger1 = 1
+Value = SAC, NT, ST, HT ,NA, SA, HA ,NP, SP, HP
+Time = 1
+
+[State -1, ChangeState] 
+Type = ChangeState
+Trigger1 = AnimTime = 0
+Value = 1400
+
+;==============================================================================
+;　サーキットスパーク
+;==============================================================================
+[Statedef 951]
+Type     = A
+MoveType = A
+Physics  = A
+Anim     = 935
+Ctrl     = 0
+VelSet   = 0,0
+
+[State 100, Pos]
+type = PosSet
+trigger1 = NumHelper(1010)
+trigger1 = 1
+x = Helper(1010),Pos X + Helper(1010),Facing*floor(- 92.617 * cos(0.017453292517*Helper(1010),fvar(1)-0.6629)+122)
+y = Helper(1010),Pos Y + floor(- 92.617 * sin(0.017453292517*Helper(1010),fvar(1)-0.6629))+56
+[State 100, Pos]
+type = PosSet
+trigger1 = NumHelper(1010) = 0
+trigger1 = 1
+x = Root,Pos X
+y = Root,Pos Y
+
+[State -1, ChangeState] 
+Type = ChangeState
+Trigger1 = StateTime = 0
+Value = 950
+
+[Statedef 950]
+Type     = S
+MoveType = A
+Physics  = S
+Anim     = 930
+Ctrl     = 0
+VelSet   = 0,0
+
+[State 100, Pos]
+type = PosSet
+trigger1 = NumHelper(1010)
+trigger1 = 1
+x = Helper(1010),Pos X + Helper(1010),Facing*floor(- 92.617 * cos(0.017453292517*Helper(1010),fvar(1)-0.6629)+122)
+y = Helper(1010),Pos Y + floor(- 92.617 * sin(0.017453292517*Helper(1010),fvar(1)-0.6629))+56
+[State 100, Pos]
+type = PosSet
+trigger1 = NumHelper(1010) = 0
+trigger1 = 1
+x = Root,Pos X
+y = Root,Pos Y
+
+[State -1]
+Type = StateTypeSet
+Trigger1 = Time = 0
+Trigger1 = PrevStateNo = 951
+movetype = A
+statetype = A
+physics = N
+[State -1]
+Type = ChangeAnim
+Trigger1 = Time = 0
+Trigger1 = PrevStateNo = 951
+Value = 935
+
+
+[State -1]
+Type = NotHitBy
+Trigger1 = 1
+Value = SAC, NT, ST, HT ,NA, SA, HA ,NP, SP, HP
+Time = 1
+
+[State -1]
+Type = EnvShake
+Trigger1 = Time = 13
+Time = 10
+Ampl = 5
+Freq = 90
+
+[State -1, PlaySnd]
+Type = PlaySnd
+Trigger1 = AnimElem = 4
+Value = s2, 10
+IgnoreHitPause = 1
+Persistent = 0
+
+[State -1]
+Type = Explod
+Trigger1 = Time = 11
+Anim = 6012
+ID = 950
+Pos = 0,0
+PosType = P1
+scale = 1.2,1.2
+Ownpal = 1
+SprPriority = 5
+IgnoreHitPause = 1
+Persistent = 0
+SuperMoveTime = 9999
+PauseMoveTime = 9999
+
+[State -1, Hit]
+type = HitDef
+Trigger1 = Time = 0
+attr              = S, NA
+damage            = 10, 3
+animtype          = Hard
+getpower          = 0
+guardflag         = MAFD
+priority          = 4, Hit
+pausetime         = 0,0
+sparkno           = -1
+sparkxy           = 0,-35
+guard.sparkno     = s6005
+hitsound          = s1, 6
+guardsound        = s1, 10
+Ground.Type       = High
+Air.Type          = High
+ground.slidetime  = 10
+ground.hittime    = 10
+air.hitTime       = 20
+ground.velocity   = -2, -9.5
+airguard.velocity = -1, -4
+air.velocity      = -2, -9.5
+down.velocity     = -6,-2
+kill              = 0
+fall              = 1
+air.fall          = 1
+fall.recover      = ifelse(EnemyNear,MoveType=A,0,1)
+fall.recovertime  = 42
+ground.cornerpush.veloff = 0
+air.cornerpush.veloff    = 0
+down.cornerpush.veloff   = 0
+envshake.time = 15
+envshake.ampl = 5
+envshake.freq = 90
+
+[State -1, PalFX]
+type = PalFX
+trigger1 = time > 12
+trigger1 = time <= 27
+time = 1
+add = ceil(256*cos((statetime-12)*0.10472)),ceil(256*cos((statetime-12)*0.10472)),ceil(256*cos((statetime-12)*0.10472))
+[State -1, PalFX]
+type = BGPalFX
+trigger1 = time >= 0
+trigger1 = time <= 10
+time = 1
+add = 0,0,0
+mul = ceil(256-statetime*16.5),ceil(256-statetime*16.5),ceil(256-statetime*16.5)
+[State -1, PalFX]
+type = BGPalFX
+trigger1 = time > 10
+trigger1 = time <= 24
+time = 1
+add = 0,0,0
+mul = 86,86,86
+[State -1, PalFX]
+type = BGPalFX
+trigger1 = time > 24
+trigger1 = time <= 44
+time = 1
+add = 0,0,0
+mul = ceil(86+(statetime-24)*7.5),ceil(86+(statetime-24)*7.5),ceil(86+(statetime-24)*7.5)
+
+[State -1, PlaySnd]
+Type = PlaySnd
+Trigger1 = AnimElem = 4
+Value = s20, 6+random%2
+channel = 0
+
+[State -1]
+Type = MoveHitReset
+Trigger1 = MoveContact
+IgnoreHitPause = 1
+Persistent = 1
+
+[State -1]
+Type = StateTypeSet
+Trigger1 = animelem = 7
+Trigger1 = PrevStateNo = 951
+movetype = I
+physics = A
+
+[State -1, ChangeState] 
+Type = ChangeState
+Trigger1 = AnimTime = 0
+Value = 1400
+
+;==============================================================================
+;　ゲージ溜め
+;==============================================================================
+[Statedef 960]
+Type     = S
+MoveType = I
+Physics  = S
+Anim     = 960
+Ctrl     = 0
+VelSet   = 0,0
+
+[State 100, Pos]
+type = PosSet
+trigger1 = NumHelper(1010)
+trigger1 = 1
+x = Helper(1010),Pos X + Helper(1010),Facing*floor(- 92.617 * cos(0.017453292517*Helper(1010),fvar(1)-0.6629)+122)
+y = Helper(1010),Pos Y + floor(- 92.617 * sin(0.017453292517*Helper(1010),fvar(1)-0.6629))+56
+[State 100, Pos]
+type = PosSet
+trigger1 = NumHelper(1010) = 0
+trigger1 = 1
+x = Root,Pos X
+y = Root,Pos Y
+
+[State -1, Akaitsuki Voice]
+type = PlaySnd
+Trigger1 = AnimElem = 1 && Anim = 960
+value = s20,1
+channel = 0
+IgnoreHitPause = 1
+[State -1, PlaySnd]
+Type = PlaySnd
+Trigger1 = AnimElem = 4 && Anim = 960
+Value = s2, 12
+Persistent = 0
+
+[State -1]
+Type = Explod
+Trigger1 = AnimElem = 4 && Anim = 960
+Anim = 6012
+ID = 960
+Pos = 0,0
+PosType = P1
+scale = 1,1
+Ownpal = 1
+removetime = -1
+SprPriority = 5
+IgnoreHitPause = 1
+Persistent = 0
+removeongethit = 1
+bindtime = -1
+
+[State -1]
+Type = PowerAdd
+Trigger1 = Anim = 960
+Trigger1 = StateTime >= 7
+Value = 5+5*(statetime>=57)+5*(statetime>=107)+5*(statetime>=157)+5*(statetime>=207)+5*(statetime>=257)
+
+[State -1]
+Type = ChangeAnim
+TriggerAll = Anim = 960
+TriggerAll = StateTime >= 23
+Trigger1 = Root,Var(33) != 0 || (Power>= PowerMax && (TeamMode = Single || TeamMode = Turns))
+Trigger2 = TeamMode = Simul
+Trigger2 = ifelse(((Partner,ID)<ID),(Power>= PowerMax),Power>= (Partner,PowerMax))
+Trigger3 = Root,Command != "hold_x" && Root,Command != "hold_y" && Root,Var(59) = 0
+Trigger4 = Root,Var(59) != 0
+Trigger4 = RoundState != 2 || Root,P2BodyDist X <= 70 || Root,InGuardDist
+Trigger4 = Root,PalNo < 7 || Root,StateNo != [120,159]
+Value = 961
+
+[State -1]
+Type = RemoveExplod
+Trigger1 = AnimElem = 1 && Anim = 961
+ID = 960
+[State -1]
+Type = Explod
+Trigger1 = AnimElem = 1 && Anim = 961
+Anim = 6013
+ID = 960
+removetime = 6
+SprPriority = 5
+IgnoreHitPause = 1
+
+
+[State -1, ChangeState] 
+Type = ChangeState
+Trigger1 = Anim = 961
+Trigger1 = AnimTime = 0
+Value = 1400
+
+;==============================================================================
+;　シールド発動
+;==============================================================================
+[Statedef 160]
+type = S
+ctrl = 0
+anim = 20012
+velset = 0,0
+
+[State -1, ChangeState]
+Type = ChangeState
+Trigger1 = NumHelper(1800)
+Trigger1 = Helper(1800),StateNo = 1802 && Helper(1800),MoveContact
+Trigger1 = Var(33) < 0
+Value = 2100
+
+[State -1,]
+type = ChangeState
+trigger1 = StateTime > 19
+value = 0
+Ctrl = 1
+
+;==============================================================================
+;　強制解放発動
+;==============================================================================
+[Statedef 905]
+type = S
+ctrl = 0
+anim = 20012
+velset = 0,0
+
+
+[State -1,]
+type = ChangeState
+trigger1 = StateTime > 40
+value = 0
+Ctrl = 1
+
+;==============================================================================
+;　BLOOD HEAT発動
+;==============================================================================
+[Statedef 915]
+type = S
+ctrl = 0
+anim = 20012
+velset = 0,0
+
+
+[State -1,]
+type = ChangeState
+trigger1 = StateTime > 40
+value = 0
+Ctrl = 1
+
+;==============================================================================
+;　ゲージ溜め
+;==============================================================================
+[Statedef 965]
+type = S
+ctrl = 0
+anim = 20012
+velset = 0,0
+
+
+[State -1,]
+type = ChangeState
+TriggerAll = StateTime >= 23
+Trigger1 = NumHelper(1400) = 0
+Trigger2 = NumHelper(1400)
+Trigger2 = Helper(1400),StateNo != 960
+value = 0
+Ctrl = 1
+
+;==============================================================================
+;　突き出し（仮称）
+;==============================================================================
+[Statedef 200]
+type = S
+ctrl = 0
+anim = 20012
+velset = 0,0
+
+
+[State -1,]
+type = ChangeState
+trigger1 = StateTime > 37
+value = 0
+Ctrl = 1
+
+;==============================================================================
+;　振り下ろし（仮称）
+;==============================================================================
+[Statedef 210]
+type = S
+ctrl = 0
+anim = 20012
+velset = 0,0
+
+[State -1,]
+type = ChangeState
+trigger1 = StateTime > 56
+value = 0
+Ctrl = 1
+
+;==============================================================================
+;　肩突き出し（仮称）
+;==============================================================================
+[Statedef 220]
+type = S
+ctrl = 0
+anim = 20012
+velset = 0,0
+
+[State -1,]
+type = ChangeState
+trigger1 = StateTime > 47
+value = 0
+Ctrl = 1
+
+;==============================================================================
+;　引き寄せ（仮称）
+;==============================================================================
+[Statedef 230]
+type = S
+ctrl = 0
+anim = 20012
+velset = 0,0
+
+[State -1,]
+type = ChangeState
+trigger1 = StateTime > 28
+value = 0
+Ctrl = 1
+
+;==============================================================================
+;　エーテライト展開（仮称）
+;==============================================================================
+[Statedef 240]
+type = S
+ctrl = 0
+anim = 20012
+velset = 0,0
+
+[State -1,]
+type = ChangeState
+trigger1 = StateTime > 56
+value = 0
+Ctrl = 1
+
+;==============================================================================
+;　エンドロール（ゲオメトリア）
+;==============================================================================
+[Statedef 1500]
+type = S
+ctrl = 0
+anim = 20012
+velset = 0,0
+
+[State -1,]
+type = ChangeState
+trigger1 = StateTime > 89
+value = 0
+Ctrl = 1
+
+;==============================================================================
+;　エンドロール（アーミラリ）
+;==============================================================================
+[Statedef 1510]
+type = S
+ctrl = 0
+anim = 20012
+velset = 0,0
+
+[State -1,]
+type = ChangeState
+trigger1 = StateTime > 89
+value = 0
+Ctrl = 1
+
+;==============================================================================
+;　ヘキサエチル・エーテライト
+;==============================================================================
+[Statedef 1600]
+type = S
+ctrl = 0
+anim = 20012
+velset = 0,0
+
+[State -1]
+Type = PosAdd
+Trigger1 = StateTime = [12,13]
+X = 3
+
+[State -1,]
+type = ChangeState
+trigger1 = StateTime > 84
+value = 0
+Ctrl = 1
+
+;==============================================================================
+;　トライヘルメス・ブラックランド
+;==============================================================================
+[Statedef 2000]
+type = S
+ctrl = 0
+anim = 20012
+velset = 0,0
+
+[State -1, VarSet]
+Type = VarSet
+Trigger1 = time = 0
+V = 24
+Value = ifelse(var(33)<=-1,1,0)
+
+[State -1,]
+type = ChangeState
+trigger1 = StateTime > 220
+value = 0
+Ctrl = 1
+
+;==============================================================================
+;　アアル・セケトヘテペト
+;==============================================================================
+[Statedef 2100]
+type = S
+ctrl = 0
+anim = 20012
+velset = 0,0
+
+[State -1,]
+type = ChangeState
+trigger1 = StateTime > 160
+value = 0
+Ctrl = 1
+
+;==============================================================================
+;　アアル・セケトヘテペト（とどめ）
+;==============================================================================
+[Statedef 2110]
+type = S
+ctrl = 0
+anim = 20012
+velset = 0,0
+
+[State -1,]
+type = ChangeState
+trigger1 = StateTime > 160
+trigger1 = NumHelper(2161) = 0
+value = 0
+Ctrl = 1

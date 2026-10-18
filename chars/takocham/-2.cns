@@ -1,0 +1,563 @@
+;---------------------------------------------------------------------------
+; ■常時監視ステート（－２）■
+;---------------------------------------------------------------------------
+
+[Statedef -2] 
+
+;===========================================================================
+; 変数セットアップ
+;===========================================================================
+[State -2, 移動起き上がり用]
+type = VarSet
+trigger1 = (StateNo != 10002)
+v = 36
+value = 0
+IgnoreHitPause = 1
+
+[State -2, 2段ジャンプ]
+type = VarSet
+trigger1 = (pos y = 0)
+v = 22
+value = 0
+IgnoreHitPause = 1
+
+[State -2, プレイヤー判定]
+type = VarSet
+triggerall = (NumPartner) && (var(33) != 1)
+trigger1 = ID < (Partner,ID) 
+v = 33
+value = 0
+IgnoreHitPause = 1
+
+[State -2, プレイヤー判定]
+type = VarSet
+triggerall = (NumPartner)
+trigger1 = ID > (Partner,ID) 
+v = 33
+value = 1
+IgnoreHitPause = 1
+
+[State -2, 「立ち」か「しゃがみ」を判断]
+type = VarSet
+triggerall = (RoundState > 1)
+trigger1 = (StateNo = [120,131])
+trigger2 = (StateNo = [150,153])
+v = 37
+value = ifelse((StateType=C),1,0)
+IgnoreHitPause = 1
+
+[State -2, フラグリセット]
+type = VarSet
+trigger1 = (StateNo != 50) && (StateNo != 10003)
+v = 54
+value = 0
+IgnoreHitPause = 1
+
+[State -2, フラグリセット]
+type = VarSet
+trigger1 = (StateNo != 50)
+trigger2 = (StateNo = 50) && (command != "holdfwd" || command != "holdback")
+v = 55
+value = 0
+IgnoreHitPause = 1
+
+[State -2, キーを前方か後方に]
+type = VarSet
+trigger1 = (var(54) = 1) && (StateNo = 50)
+v = 55
+value = (command="holdfwd")-(command="holdback")
+IgnoreHitPause = 1
+
+[State -2, カウンターヒット];リセット
+type = VarSet
+triggerall = (NumEnemy != 0)
+triggerall = (var(35) <= 0)
+trigger1 = (P2MoveType = I)
+trigger2 = (EnemyNear,GetHitVar(Guarded))
+trigger3 = (EnemyNear,GetHitVar(HitCount) > 1)
+v = 14
+value = 0
+IgnoreHitPause = 1
+
+[State -2, カウンターヒット]
+type = VarSet
+triggerall = (NumEnemy != 0)
+triggerall = (var(35) <= 0)
+trigger1 = (P2MoveType = A) && (StateNo != [700,701])
+v = 14
+value = 1
+IgnoreHitPause = 1
+
+[State -2, ファーストアタック];リセット
+type = VarSet
+trigger1 = (RoundState < 2)
+v = 15
+value = 0
+IgnoreHitPause = 1
+
+[State -2, ファーストアタック]
+type = VarSet
+trigger1 = (var(15) > 2)
+v = 15
+value = 3
+IgnoreHitPause = 1
+
+[State -2, ファーストアタック]
+type = VarAdd
+triggerall = (var(15) < 3)
+triggerall = (NumEnemy != 0)
+triggerall = !(NumPartner)
+triggerall = (RoundState = 2)
+triggerall = !(MoveReversed) || !(EnemyNear,MoveReversed)
+trigger1 = (EnemyNear,MoveType = H) && (EnemyNear,StateNo != [0,199])
+trigger2 = (MoveType = H) && (StateNo != [0,199])
+v = 15
+value = 1
+IgnoreHitPause = 1
+
+[State -2, ファーストアタック]
+type = VarAdd
+triggerall = (var(15) < 3)
+triggerall = (NumEnemy != 0)
+triggerall = (NumPartner)
+triggerall = (RoundState = 2)
+triggerall = !(MoveReversed) || !(EnemyNear,MoveReversed)
+trigger1 = (EnemyNear,MoveType = H) && (EnemyNear,StateNo != [0,199])
+trigger2 = (MoveType = H) && (StateNo != [0,199])
+trigger3 = (Partner,MoveType = H) && (Partner,StateNo != [0,199])
+v = 15
+value = 1
+IgnoreHitPause = 1
+
+[State -2, リセット];立ちと空中
+type = VarSet
+trigger1 = (var(56) <= 0)
+trigger2 = (MoveType != I)
+trigger3 = (var(56) <= 10) && (command = "blocking-001")
+trigger4 = (StateType = C)
+v = 56
+value = 0
+IgnoreHitPause = 1
+
+[State -2, 前に入力]
+type = VarSet
+trigger1 = (command = "blocking-000")
+v = 56
+value = 16
+IgnoreHitPause = 1
+
+[State -2, 効果時間減少]
+type = VarAdd
+trigger1 = (var(56) > 0)
+v = 56
+value = -1
+IgnoreHitPause = 1
+
+[State -2, リセット];しゃがみ
+type = VarSet
+trigger1 = (var(57) <= 0)
+trigger2 = (MoveType != I)
+trigger3 = (var(57) <= 10) && (command = "blocking-003")
+trigger4 = (StateType = A)
+v = 57
+value = 0
+IgnoreHitPause = 1
+
+[State -2, 下に入力]
+type = VarSet
+trigger1 = (command = "blocking-002")
+v = 57
+value = 16
+IgnoreHitPause = 1
+
+[State -2, 効果時間減少]
+type = VarAdd
+trigger1 = (var(57) > 0)
+v = 57
+value = -1
+IgnoreHitPause = 1
+
+[State -2, 汎用ランダム]
+type = VarRandom
+trigger1 = 1
+v = 28
+range = 1,120
+IgnoreHitPause = 1
+
+;---------------------------------------------------
+;コンボダメージ補正
+[State -2, Attack_Down]
+type = VarSet
+triggerall = fvar(15) > 0
+trigger1 = !numtarget
+fvar(15) = 0
+
+[State -2, VarAdd]
+type = VarAdd
+triggerall = MoveHit
+trigger1 = stateno = 420
+trigger2 = stateno = 1100
+trigger3 = stateno = 1110
+trigger4 = stateno = 1120
+trigger5 = stateno = 801
+trigger6 = stateno = 910
+trigger7 = stateno = 1410
+trigger8 = stateno = [1330,1350]
+trigger9 = numtarget(3100) || numtarget(3101) || numtarget(3102) || numtarget(3103)
+fvar(15) = 1.0
+ignorehitpause = 1
+
+[State -2, VarAdd]
+type = VarAdd
+triggerall = MoveHit
+trigger1 = stateno = 200
+trigger2 = stateno = 210
+trigger3 = stateno = 400
+trigger4 = stateno = 410
+trigger5 = stateno = 600
+trigger6 = stateno = 610
+fvar(15) = 0.7
+ignorehitpause = 1
+
+[State -2, VarAdd]
+type = VarAdd
+triggerall = MoveHit
+trigger1 = stateno = 220
+trigger2 = stateno = 500
+trigger3 = stateno = 620
+trigger4 = stateno = [1000,1020]
+fvar(15) = 0.9
+ignorehitpause = 1
+
+[State -2, Attack_Down]
+type = VarSet
+trigger1 = !fvar(15)
+fvar(25) = 1.0
+
+[State -2, Attack_Down]
+type = VarSet
+trigger1 = 1
+fvar(0) = ifelse((1.0-(fvar(15)*0.095))<0.15,0.15,(1.0-(fvar(15)*0.095)))
+ignorehitpause = 1
+
+;--------------------------------------------------
+
+;ヒットスパーク
+[State -2, 弱]
+type = VarRandom
+trigger1 = 1
+v = 43
+range = 4200,4203
+IgnoreHitPause = 1
+
+[State -2, 強]
+type = VarRandom
+trigger1 = 1
+v = 44
+range = 4204,4207
+IgnoreHitPause = 1
+
+[State -2, 必殺技]
+type = VarRandom
+trigger1 = 1
+v = 45
+range = 4208,4211
+IgnoreHitPause = 1
+
+;[State -2, スーパーアーツ]
+;type = VarRandom
+;trigger1 = 1
+;v = 46
+;range = 4212,4215
+;IgnoreHitPause = 1
+
+[State -2, スーパーアーマー用]
+type = ChangeAnim
+trigger1 = (PrevStateNo = [1007,1008]) && (StateNo = 5030) && (Time = [0,1])
+value = 5030
+supermovetime = 99999999
+pausemovetime = 99999999
+IgnoreHitPause = 1
+Persistent = 0
+
+[State -2, 負け起き上がり用]
+type = ChangeAnim
+triggerall = (NumEnemy) && (!MatchOver) && (RoundState = 4)
+trigger1 = (Anim != 20003) && (StateNo = 5150) && (Time >= 50)
+value = 20003
+Persistent = 0
+
+[State -2, 食らい上書き]
+type = HitOverRide
+triggerall = (var(35) <= 0)
+triggerall = (StateNo < 200)
+triggerall = (MoveType = I)
+trigger1 = (StateType = S) && (var(56) > 0)
+time = 2
+attr = SA, AA,AP
+stateno = 701
+IgnoreHitPause = 1
+
+[State -2, 食らい上書き]
+type = HitOverRide
+triggerall = (var(35) <= 0)
+triggerall = (StateNo < 200)
+triggerall = (MoveType = I)
+trigger1 = (StateType != A)
+trigger1 = (StateNo = 0) || (StateNo = [10,12])
+trigger1 = (var(57) > 0)
+time = 2
+attr = C, AA,AP
+stateno = 701
+IgnoreHitPause = 1
+
+[State -2, 食らい上書き]
+type = HitOverRide
+triggerall = (var(35) <= 0)
+triggerall = (StateNo < 200)
+triggerall = (MoveType = I)
+trigger1 = (StateType = A) && (var(56) > 0)
+time = 2
+attr = SCA, AA,AP
+stateno = 701
+IgnoreHitPause = 1
+
+[State -2, 無敵]
+type = NotHitBy
+trigger1 = (RoundState != 2)
+value = SCA
+time = 10
+supermovetime = 99999999
+pausemovetime = 99999999
+IgnoreHitPause = 1
+
+[State -2, スクロール]
+type = ScreenBound
+triggerall = (Life <= 0) || (!Alive) || (Lose)
+trigger1 = (StateNo = 5150) && (RoundState = 4);（※）
+value = 0
+MoveCamera = 0,0
+IgnoreHitPause = 1
+
+[State -2, 残像表示時間]
+type = AfterImageTime
+trigger1 = (StateNo = [800,899]) && (MoveType = H)
+trigger2 = (PrevStateNo = [1000,4999]) && (MoveType = H)
+trigger3 = (PrevStateNo >= 6000) && (MoveType = H)
+trigger4 = (var(35) = 2) && (fvar(12) <= 0)
+trigger5 = (RoundState > 3);（※）
+time = 0
+IgnoreHitPause = 1
+
+[State -2, 攻撃力乗算]
+type = AttackMulSet
+trigger1 = 1
+value = ifelse(var(14)>0,1.3,1)
+IgnoreHitPause = 1
+Persistent = 1
+
+[State -2, 防御力乗算]
+type = DefenceMulSet
+trigger1 = (Life <= 500)
+value = 0.8
+IgnoreHitPause = 1
+
+[State -2, 防御力乗算]
+type = DefenceMulSet
+trigger1 = (Life <= 200)
+value = 0.5
+IgnoreHitPause = 1
+
+[State -2, 防御力減算]
+type = DefenceMulSet
+trigger1 = (StateNo = [1300,1320])
+value = 1.5
+IgnoreHitPause = 1
+
+;[State -2, パワーゲージ]
+;type = PowerSet
+;triggerall = (NumEnemy != 0)
+;triggerall = (NumTarget != 0)
+;triggerall = (var(15) = 1)
+;triggerall = !(MoveReversed)
+;trigger1 = (MoveHit) || (ProjHit = 1,<2) || (EnemyNear,GetHitVar(IsBound))
+;value = floor(Power+1000)
+;supermovetime = 99999999
+;pausemovetime = 99999999
+;IgnoreHitPause = 1
+
+[State -2, コントロール]
+type = CtrlSet
+trigger1 = (PrevStateNo = 1008) && (StateNo = 0)
+value = 1
+IgnoreHitPause = 1
+
+[State -2, スーパージャンプ用]
+type = VelAdd
+triggerall = (var(54) = 1) && (var(55) != 0)
+trigger1 = (StateNo = 50) && (Time > 0)
+x = var(55)*0.08
+IgnoreHitPause = 1
+
+[State -2, スーパージャンプ用]
+type = Turn
+triggerall = (var(54) = 1)
+trigger1 = (StateNo = 50) && (P2Dist X < 0)
+
+[State -2, 崩れＫＯ]
+type = ChangeState
+trigger1 = (PrevStateNo = [120,131]) || (PrevStateNo = [150,153])
+trigger1 = (StateNo = 5000) || (StateNo = 5010)
+trigger1 = (!Alive) || (Life <= 0) || (Lose)
+value = 10004
+IgnoreHitPause = 1
+
+;---------------------------------------------------------------------------
+[State -2, くらいポーズの声] 
+type = VarSet
+triggerall = time = 1
+trigger1 = stateno = 5000
+trigger2 = stateno = 5020
+trigger3 = stateno = 5035
+trigger4 = stateno = 5070
+trigger5 = stateno = 5081
+trigger6 = stateno = 5010
+v = 4
+value = 1
+
+[State -2, くらいポーズの声]
+type = VarAdd
+trigger1 = var(4) = 1
+v = 5
+value = 1
+
+[State -2, くらいポーズの声]
+type = VarSet
+trigger1 = time = 2
+trigger1 = var(5) = 4
+v = 5 
+value = 0 
+
+[State -2, くらいポーズの声];１
+type = PlaySnd
+trigger1 = var(4) = 1
+trigger1 = var(5) = 1
+value = 1,7
+
+[State -2, くらいポーズの声];２
+type = PlaySnd
+trigger1 = var(4) = 1
+trigger1 = var(5) = 2
+value = 1,8
+
+[State -2,くらいポーズの声];３
+type = PlaySnd
+trigger1 = var(4) = 1
+trigger1 = var(5) = 3
+value = 1,9
+
+[State -2,くらいポーズの声];４
+type = PlaySnd
+trigger1 = var(4) = 1
+trigger1 = var(5) = 4
+value = 1,10
+
+[State -2,くらいポーズの声]
+type = VarSet
+trigger1 = var(4) = 1
+v = 4
+value =0 
+
+;---------------------------------------------------------------------------
+; ヘルパー
+;---------------------------------------------------------------------------
+[State -2, ヘルパーを出す];ゲージ類
+type = Helper
+triggerall = (RoundState < 3) && (NumEnemy != 0)
+trigger1 = (NumHelper(30000) = 0)
+name = "Sub-Gauge"
+stateno = 30000
+ID = 30000
+pos = 0,100
+keyctrl = 0
+postype = p1
+ownpal = 1
+IgnoreHitPause = 1
+Persistent = 0
+
+[State -2, ヘルパーを出す];アナウンス表示
+type = Helper
+triggerall = (NumEnemy != 0)
+triggerall = (NumHelper(31000) = 0)
+triggerall = (StateNo != [700,701])
+trigger1 = (var(14) = 1) && (var(35) <= 0)
+trigger1 = (MoveHit) || (ProjHit = 1,<2)
+trigger2 = (var(15) = [1,2]) && (EnemyNear,MoveType = H)
+trigger2 = (MoveHit) || (ProjHit = 1,<2)
+trigger3 = (var(15) = [1,2]) && (EnemyNear,MoveType = H)
+trigger3 = (EnemyNear,GetHitVar(IsBound))
+name = "Announce"
+stateno = 31000
+ID = 31000
+pos = 0,1000
+keyctrl = 0
+postype = p1
+supermovetime = 99999999
+pausemovetime = 99999999
+ownpal = 1
+IgnoreHitPause = 1
+
+;===========================================================================
+;---------------------------------------------------------------------------
+; クリップボード
+;---------------------------------------------------------------------------
+[State -2, クリップボード]
+type = DisplayToClipboard
+trigger1 = 1
+text = "AI=%d, Button=%d, Player=%d, Blocking=%d,%d \n"
+params = var(0),var(53),var(33),var(56),var(57)
+IgnoreHitPause = 1
+
+[State -2, クリップボード（追加専用）]
+type = AppendToClipboard
+trigger1 = 1
+text = "BG=%d, O.C.=%d, Tengu=%d, Denjin=%d,%d"
+params = var(18),var(35),var(34),var(25),var(26)
+IgnoreHitPause = 1
+
+;---------------------------------------------------------------------------
+;[State -2, クリップボード]
+;type = DisplayToClipboard
+;trigger1 = 1
+;text = "Position X=%d,Y=%d, Velocity X=%f,Y=%f \n"
+;params = floor(Pos X),floor(Pos Y),(Vel X),(Vel Y)
+;
+;[State -2, クリップボード（追加専用）]
+;type = AppendToClipboard
+;trigger1 = 1
+;text = "Distance X=%d,Y=%d, Body-Distance X=%d,Y=%d"
+;params = floor(P2Dist X),floor(P2Dist Y),floor(P2BodyDist X),floor(P2BodyDist Y)
+;
+;[State -2, クリップボード]
+;type = DisplayToClipboard
+;trigger1 = 1
+;text = "Screen-Position X=%d,Y=%d, Hit=%d,Guard=%d,Contact=%d \n"
+;params = floor(ScreenPos X),floor(ScreenPos Y),(MoveHit),(MoveGuarded),(MoveContact)
+;
+;[State -2, クリップボード（追加専用）]
+;type = AppendToClipboard
+;trigger1 = 1
+;text = "Front-Screen-Edge:Edge=%d,Body=%d, Back-Screen-Edge:Edge=%d,Body=%d"
+;params = floor(FrontEdgeDist),floor(FrontEdgeBodyDist),floor(BackEdgeDist),floor(BackEdgeBodyDist)
+;
+;[State -2, クリップボード（追加専用）]
+;type = AppendToClipboard
+;trigger1 = 1
+;text = "Recover=%d, Count=%d, Guard=%d"
+;params = GetHitVar(RecoverTime),GetHitVar(FallCount),GetHitVar(Guarded)
+;
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------

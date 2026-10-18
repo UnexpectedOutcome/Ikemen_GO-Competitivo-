@@ -1,0 +1,431 @@
+
+;---------------------------------------------------------------------------
+;基本データ部分
+[Data]
+life              = 1000  ;体力ゲージの最大値を決めます
+power             = 3000  ;パワーゲージ最大値（デフォルトは 3000 = Lv.3 になります・オプション）
+attack            = 70   ;攻撃力パーセンテージ（デフォルトは 100% になります）
+defence           = 100   ;防御力パーセンテージ（デフォルトは 100% になります）
+fall.defence_up   = 50    ;一時的に上昇するダウン時の防御力パーセンテージ
+liedown.time      = 60    ;倒れてから起き上がるまでの時間
+airjuggle         = 15    ;ジャグルポイント限界値　★１
+sparkno           = 2     ;デフォルトのヒットスパーク番号（fightfx.airか、キャラのairから呼び出す）
+guard.sparkno     = 40    ;デフォルトのガードスパーク番号（fightfx.airか、キャラのairから呼び出す）
+KO.echo           = 0     ;ＫＯ時の声にエコーを掛けるかどうか（0=しない・1=する）
+volume            = 255   ;キャラの音量　255が最高
+intpersistindex   = 20    ;Varを次のラウンドへ持ち越しが可能 (最小=0, 最大=59)  ★２
+floatpersistindex = 40    ;FVarを次のラウンドへ持ち越しが可能 (最小=0, 最大=39) ★２
+
+;---------------------------------------------------------------------------
+;サイズ設定
+[Size]
+xscale           = 0.5      ;キャラ画像の横のスケール
+yscale           = 0.5      ;キャラ画像の縦のスケール
+ground.back      = 15       ;キャラの幅（地上後方）
+ground.front     = 16       ;キャラの幅（地上前方）
+air.back         = 12       ;キャラの幅（空中後方）
+air.front        = 12       ;キャラの幅（空中前方）
+height           = 60       ;跳び越す相手のためのキャラの高さ
+attack.dist      = 160      ;攻撃を出した時に相手がガード体勢に入る最低の距離
+proj.attack.dist = 90       ;相手がガード体勢に入る発射物との最低の距離
+proj.doscale     = 0        ;xscaleとyscaleが発射物のスケールにも影響するかどうか（0=しない・1=する）
+head.pos         = 3, -105  ;BindToTargetの時に必要な頭の座標
+mid.pos          = 3, -70   ;BindToTargetの時に必要な体中心の座標
+shadowoffset     = 0        ;影の垂直方向の位置
+draw.offset      = 0,0      ;キャラ描画表示位置（Ｘ軸,Ｙ軸）
+
+;---------------------------------------------------------------------------
+;移動速度設定
+[Velocity]
+walk.fwd     = 3.0         ;前進歩行速度
+walk.back    = -2.8        ;後退歩行速度
+run.fwd      = 4.8,-4.8    ;前に走る時の速度（Ｘ軸,Ｙ軸）
+run.back     = -3.8,-4.8   ;後ろに走る時の速度（Ｘ軸,Ｙ軸）
+jump.neu     = 0,-9.0      ;垂直ジャンプ速度（Ｘ軸,Ｙ軸）
+jump.fwd     = 2.6         ;前ジャンプ速度
+jump.back    = -3.0        ;後ジャンプ速度
+
+;---------------------------------------------------------------------------
+;動作設定
+[Movement]
+airjump.num     = 0      ;空中ジャンプが出来る回数（オプション）
+airjump.height  = 37     ;空中ジャンプするために必要な最低限の高さ（オプション）
+yaccel          = .40    ;重力（垂直下降加速度）
+stand.friction  = .85    ;立ち状態の摩擦係数
+crouch.friction = .85    ;しゃがみ状態の摩擦係数
+
+;---------------------------------------------------------------------------
+; Varの使用状況
+; ここに自分が使ったvarをメモしておくといろいろと好都合です。
+
+; var(1)  - コンボ用
+; var(2)  - PalFX
+; var(3)  - Random
+; var(4)  - 攻撃力補正用
+; var(5)  - 相手の位置確認
+; var(6)  - 連打
+; var(7)  - シスターキックChangeState用
+; var(10) - イントロ
+; var(13) - 勝利演出移行条件選択
+
+; var(54) - AIヒット確認
+; var(55) - タッグ時の生死確認
+; var(56) - 裏溜め用VarSet
+; var(57) - 下溜め用VarSet
+; var(59) - AI
+
+; FVar(0) - AngleDraw
+; FVar(1) - 攻撃力補正用
+
+;---------------------------------------------------------------------------
+; 基本行動のステート
+;---------------------------------------------------------------------------
+; タイムオーバー時
+
+[Statedef 170]
+type = S
+ctrl = 0
+anim = 170
+velset = 0,0
+
+[State 170, 無敵]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;---------------------------------------------------------------------------
+; 勝利ポーズ
+
+[Statedef 180]
+type = A
+physics = N
+ctrl = 0
+anim = 181
+velset = 0,0
+
+[State 180, 無敵]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 180, ボイス]
+type = PlaySnd
+triggerall = Time = 1
+trigger1 = Alive
+value = 5,6
+channel = 0
+
+[State 180, Explod]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+anim = 1155
+ID = 1150
+scale = const(size.xscale)*1.5,const(size.yscale)*1.5
+pos = ceil(const(size.xscale)*-50),ceil(const(size.yscale)*-410)
+postype = p1
+bindtime = 9999999
+supermovetime = 9999999
+sprpriority = -1
+removetime = -2
+removeongethit = 1
+
+[state 180, VarRandom]
+type = VarRandom
+trigger1 = Time = 1
+trigger1 = matchover = 1
+V = 3
+Range = 0,3
+
+[state 180, AssertSpecial]
+type = AssertSpecial
+trigger1 = matchover = 1
+trigger1 = Time >= 0
+trigger1 = Time <= 150
+flag = RoundNotOver
+
+[state 180, 勝利演出]
+type = Changestate
+trigger1 = Time = 150
+trigger1 = Matchover = 1
+Trigger1 = ((TeamMode = single) || (TeamMode = turns)) || var(13) = 1
+value = 10000
+
+;---------------------------------------------------------------------------
+; 勝利演出
+
+[Statedef 10000]
+type = S
+ctrl = 0
+velset = 0,0
+
+[State 10000, AssertSpecial]
+type = AssertSpecial
+trigger1 = Time >= 0
+trigger1 = Time <= 400
+flag = RoundNotOver
+
+[State 10000, AssertSpecial]
+type = AssertSpecial
+trigger1 = Time >= 0
+trigger1 = Time <= 500
+flag = nobardisplay
+flag2 = globalnoshadow
+flag3 = noFG
+
+[State 10000, AssertSpecial]
+type = AssertSpecial
+trigger1 = Time >= 0
+trigger1 = time <= 500
+flag = nomusic
+flag2 = invisible
+
+[State 10000, 音を鳴らす]
+type = PlaySnd
+trigger1 = Var(3) = 0
+trigger1 = Time = 20
+value = 8, 0
+
+[State 10000, 音を鳴らす]
+type = PlaySnd
+trigger1 = Var(3) = 1
+trigger1 = Time = 20
+value = 8, 1
+
+[State 10000, 音を鳴らす]
+type = PlaySnd
+trigger1 = Var(3) = 2
+trigger1 = Time = 20
+value = 8, 2
+
+[State 10000, 音を鳴らす]
+type = PlaySnd
+trigger1 = Var(3) = 3
+trigger1 = Time = 20
+value = 8, 3
+
+[State 10000, Explod];世界は私のもの！
+type = Explod
+trigger1 = Var(3) = 0
+trigger1 = Time = 0
+anim = 10000
+pos = 0,0
+postype = left
+sprpriority = 7
+ownpal = 1
+removetime = -1
+ontop = 1
+
+[State 10000, Explod];世界征服の練習のもならない！
+type = Explod
+trigger1 = Var(3) = 1
+trigger1 = Time = 0
+anim = 10001
+pos = 0,0
+postype = left
+sprpriority = 7
+ownpal = 1
+removetime = -1
+ontop = 1
+
+[State 10000, Explod];ゴッ・プレス・ユー！
+type = Explod
+trigger1 = Var(3) = 2
+trigger1 = Time = 0
+anim = 10002
+pos = 0,0
+postype = left
+sprpriority = 7
+ownpal = 1
+removetime = -1
+ontop = 1
+
+[State 10000, Explod];弱くて話にならなかった！
+type = Explod
+trigger1 = Var(3) = 3
+trigger1 = Time = 0
+anim = 10003
+pos = 0,0
+postype = left
+sprpriority = 7
+ownpal = 1
+removetime = -1
+ontop = 1
+
+;---------------------------------------------------------------------------
+; イントロ
+
+[Statedef 190]
+type = A
+ctrl = 0
+physics  = N
+anim = 190
+velset = 0,0
+
+[State 190, 特殊効果]
+type = AssertSpecial
+trigger1 = 1
+flag = Intro
+
+[State 190, ScreenBound]
+type = ScreenBound
+trigger1 = 1
+value = 1
+movecamera = 0,0
+
+[State 190, ヘルパーを出す]
+type = Helper
+trigger1 = Time = 0
+name = "sorami"
+stateno = 10190
+ID = 10190
+pos = -100, -80
+
+[State 190, ChangeState]
+type = ChangeState
+trigger1 = Time > 0
+trigger1 = var(10) = 1
+value = 0
+
+[State 190, ふぁいとー]
+type = PlaySnd
+trigger1 = Time = 40
+value = 7,0
+
+;---------------------------------------------------------------------------
+; ヘルパー
+
+[Statedef 10190]
+type = A
+physics = N
+ctrl = 0
+anim = 10190
+velset = 5,0
+
+[State 10190, 速度加算] ;重力
+type = VelAdd
+trigger1 = 1
+y = .5
+
+[State 10190, ChangeState]
+type = ChangeState
+trigger1 = Vel Y > 0 && Pos Y >= 0
+value = 10191
+
+;---------------------------------------------------------------------------
+; ヘルパー
+
+[Statedef 10191]
+type = S
+physics = S
+ctrl = 0
+anim = 10191
+velset = 0,0
+
+[State 10191, 基準に位置を固定]
+type = BindToRoot
+trigger1 = 1
+time = 1
+facing = 1
+pos = ceil(const(size.xscale)*0),ceil(const(size.yscale)*0)
+
+[State 10191]
+type = PosSet
+trigger1 = Time = 0
+y = 0
+
+[State 10191, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 0
+value = 40, 0
+
+[State 10191, スプライト表示1];煙
+type = Explod
+trigger1 = Time = 0
+anim = 7020
+postype = p1
+pos = 20, 0
+vel = 0.5, -0.5
+scale = 1,1
+removetime = -2
+sprpriority = 4
+removeongethit = 0
+ownpal = 1
+
+[State 10191, スプライト表示1];煙
+type = Explod
+trigger1 = Time = 0
+anim = 7020
+postype = p1
+pos = -10, 0
+vel = -0.5, -0.5
+scale = 1,1
+removetime = -2
+sprpriority = 4
+removeongethit = 0
+ownpal = 1
+
+[State 10190, Parentvarset]
+type = Parentvarset
+trigger1 = Time = 99
+var(10) = 1
+
+[State 10191, 消滅]
+type = DestroySelf
+trigger1 = AnimTime = 0
+trigger2 = Parent,stateno != 190
+
+;---------------------------------------------------------------------------
+; 挑発
+
+[Statedef 195]
+type     = S
+movetype = I
+physics  = S
+anim     = 195
+velset   = 0,0
+ctrl     = 0
+sprpriority = 2
+facep2 = 1
+
+[State 195, ボイス]
+type = PlaySnd
+trigger1 = Time = 1
+value = 5,5
+channel = 0
+
+[State 195, Explod]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+anim = 1155
+ID = 1150
+scale = const(size.xscale)*1.5,const(size.yscale)*1.5
+pos = ceil(const(size.xscale)*-50),ceil(const(size.yscale)*-410)
+postype = p1
+bindtime = 9999999
+supermovetime = 9999999
+sprpriority = -1
+removetime = -2
+removeongethit = 1
+
+[State 195, パワーが溜まる]
+type = PowerAdd
+trigger1 = Time = 90
+value = 200
+
+[State 195, コントロール可否]
+type = CtrlSet
+trigger1 = Time = 150
+value = 1
+
+[State 195, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+
+;この下、一行以上空ける事！
+
+

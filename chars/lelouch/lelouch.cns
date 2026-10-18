@@ -1,0 +1,274 @@
+;===================================
+;　基本設定・基本動作・通常技 の設定
+;  ===================================
+[Data]
+life = 900          ;スタート時の体力総計
+attack = 100         ;攻撃力パーセンテージ （多いほど強くなります Def:100%）
+defence = 90        ;防御力パーセンテージ （多いほど強くなります Def:100%）
+fall.defence_up = 50 ;ダウン時に攻撃された時に一時的に上がる防御力のパーセンテージ
+liedown.time = 60    ;ダウンしてから起き上がるまでの時間
+airjuggle = 60       ;ジャグルポイント数
+sparkno = 2        ;ディフォルトのスパーク番号
+guard.sparkno = 40 ;ガード時のディフォルトスパーク番
+KO.echo = 0          ;1にするとKOされた時に声にエコーがかかります
+volume = 0           ;ボリュームオフセット (negative for softer)
+
+[Size]
+xscale = 1           ;水平方向の縮尺
+yscale = 1           ;垂直方向の縮尺
+ground.back = 15     ;キャラクターの幅（後方、地上）
+ground.front = 15     ;キャラクターの幅（前方、地上）
+air.back = 15        ;キャラクターの幅（後方、空中）
+air.front = 15       ;キャラクターの幅（前方、空中）
+z.width = 3          ;Player width (into and out)（現在使用されていないと思われます）
+height = 50	     ;キャラクターの高さ
+attack.width = 4,4   ;Default attack width: back, front（現在使用されていないと思われます）
+attack.dist = 160    ;攻撃時に相手がガード体勢に入る最低距離（最大320）
+proj.attack.dist = 90 ;相手がガード体勢に入る発射物との最低距離（最大320）
+proj.doscale = 0     ;xscale, yscaleの設定が発射物にも適用するかどうか（1で有効）
+head.pos = -5, -90   ;頭の大体の座標（BindToTarget使用時に必要です。）
+mid.pos = -5, -60    ;体中心の大体の座標（BindToTarget使用時に必要です。）
+shadowoffset = 0     ;影の垂直方向オフセット
+
+[Movement]
+airjump.num = 1      ;空中ジャンプの回数 （オプション）
+airjump.height = 35  ;空中ジャンプに必要な最低限の高さ （オプション）
+yaccel = .43         ;垂直方向にかかる加速度（重力）
+stand.friction = .85  ;立ち状態での摩擦係数
+crouch.friction = .82 ;しゃがみ状態での摩擦係数
+
+[Velocity]
+walk.fwd  = 1.2      ;前に歩く時の速度
+walk.back = -1     ;後ろに歩く時の速度
+run.fwd  =  6, 0 ;前に走る時の速度 (x, y) ホップさせる時はyを0以下にします
+run.back = -5, -3 ;後ろに走る時の速度 (x, y) 走らせる時はyを0にします
+jump.neu = 0,-9.1    ;ジャンプ時の垂直移動速度 (x, y)
+jump.back = -3.2    ;後ろにジャンプした時の水平移動速度
+jump.fwd = 3.2       ;前にジャンプした時の水平移動速度
+runjump.back = -2.55,-8.1 ;後ろに走りながらのジャンプ時の速度指定 (オプション)
+runjump.fwd = 4,-8.1      ;前に走りながらのジャンプ時の速度指定 (オプション)
+airjump.neu = 0,-8.1      ;空中ジャンプ時の垂直移動速度  (オプション)
+airjump.back = -3.55,-8.1 ;空中で後ろにジャンプした時の水平移動速度
+airjump.fwd = 3.5,-8.1    ;空中で前にジャンプした時の水平移動速度
+
+
+
+;-----------------------
+;敗北
+[Statedef 170]
+type = S
+ctrl = 0
+anim = 170
+velset = 0,0,0
+
+[State 170 , 1]
+type = NotHitBy
+trigger1 = Time >= 0
+value = SCA
+time = 1
+
+;-----------------------
+;---------------------------------------------------------------------------
+; 勝利ポーズ分岐
+; CNS レベル: 基本
+[Statedef 180]
+type = S
+
+[State 180, ステート変更]
+type = ChangeState
+trigger1 = Time = 0
+value = 181
+
+;---------------------------------------------------------------------------
+; 勝利ポーズ
+; CNS レベル: 基本
+[Statedef 181]
+type = S
+ctrl = 0
+anim = 181
+velset = 0,0
+
+[State 181, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem= 1
+value = s400,9
+
+[State 181, 無敵]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;-----------------------------------------------------------------
+;---------------------------------------------------------------------------
+; イントロ（試合開始直前のアクション）
+; CNS レベル: 基本
+[Statedef 191]
+type = S
+ctrl = 0
+anim = 190
+velset = 0,0
+
+[State 191, アニメ変更] ;画面フェードインの間だけアニメーションを繰り返し、止まっているように見せています
+type = ChangeAnim
+trigger1 = RoundState = 0
+value = 190
+
+[State 191, 特殊効果] ;「ROUND1, FIGHT!」のアナウンスが始まるまでは、このコントローラを使ってください
+type = AssertSpecial
+trigger1 = 1
+flag = Intro ;イントロの状態になります
+
+[State 191, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem= 2
+value = s400,8
+
+[State 191, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0 ;common1.cns参照
+
+;---------------------------------------------------------------------------
+; RUN_FWD
+[Statedef 100]
+type    = S
+physics = S
+anim = 100
+sprpriority = 1
+
+[State 100, 1]
+type = VelSet
+trigger1 = 1
+x = const(velocity.run.fwd.x)
+
+[State 100, 2] ;Prevent run from canceling into walk
+type = AssertSpecial
+trigger1 = 1
+flag = NoWalk
+
+[State 100, 3] ;Prevent from turning
+type = AssertSpecial
+trigger1 = 1
+flag = NoAutoTurn
+
+[State 100, 4]
+type = ChangeState
+trigger1 = command != "holdfwd"
+value = 0
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+; RUN_BACK
+[Statedef 105]
+type    = A
+physics = A
+ctrl = 0
+anim = 105
+sprpriority = 1
+
+[State 105, 1]
+type = VelSet
+trigger1 = Time = 0
+x = const(velocity.run.back.x)
+y = const(velocity.run.back.y)
+
+[State 105, 2]
+type = CtrlSet
+trigger1 = Time = 2
+value = 1
+
+[State 105, 3]
+type = ChangeState
+trigger1 = Vel Y > 0
+trigger1 = Pos Y >= 0
+value = 106
+
+;---------------------------------------------------------------
+; 空中ダッシュ
+[Statedef 110]
+type = A
+ctrl = 1
+physics = N
+anim = 110
+velset = 0,0
+
+[State 3560, Effect]
+type = Explod
+trigger1 = time = 0
+anim = 4100
+scale = 0.5,0.5
+postype = p1
+pos = 0,-30
+sprpriority = 4
+;supermove = 1
+ownpal = 1
+removeongethit = 1
+facing = 1
+
+[State 110]
+type = PlaySnd
+trigger1 = time = 0
+value = s0,2
+
+[State 115, 軸位置移動]
+type = velset
+trigger1 = time = 0
+x = 6
+
+[State 115, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 51
+ctrl = 1
+
+;-------------------------------------------------------------------------------------------------
+;---------------------------------------------------------------
+;空中バックダッシュ
+[Statedef 115]
+type = A
+ctrl = 1
+physics = N
+anim = 115
+velset = 0,0
+
+[State 3560, Effect]
+type = Explod
+trigger1 = time = 0
+anim = 4100
+scale = 0.5,0.5
+postype = p1
+pos = 0,-30
+sprpriority = 4
+;supermove = 1
+ownpal = 1
+removeongethit = 1
+facing = -1
+
+[State 110]
+type = PlaySnd
+trigger1 = time = 0
+value = s0,2
+
+[State 115, 軸位置移動]
+type = velset
+trigger1 = time = 0
+x = -6
+
+[State 115, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 51
+ctrl = 1
+
+;----------------------------------------------------------------
+;----------------------------------------------------------------
+[Statedef -3]
+
+[State -3, 音を鳴らす]
+type = PlaySnd
+triggerall = Time = 1
+trigger1 = stateno = 52  ;ジャンプ後の着地
+trigger2 = stateno = 105 ;バックステップ後の着地
+value = s0, 1
+;---------------------------------------------------------------------------

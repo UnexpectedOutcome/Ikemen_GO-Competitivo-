@@ -1,0 +1,263 @@
+;===========================================================================
+; 常時監視ステート（－２）
+;===========================================================================
+;---------------------------------------------------------------------------
+; 通常の食らい状態（Statedef 5000～5199間）でも、
+; 相手に（「P2StateNo」や「TargetState」等で）制御を奪われても、
+; 常に登録したステートコントローラが有効になります。
+; サブシステム等を制御する時に重宝するでしょう。
+;---------------------------------------------------------------------------
+[Statedef -2]
+;---------------------------------------------------------------------------
+;先行入力認識用ヘルパー暴走防止
+	[State -2, ステートリセット]
+		type			= ChangeState
+		trigger1		= IsHelper(99999)
+		value			= 99999
+		ignorehitpause	= 1
+
+;---------------------------------------------------------------------------
+	[State -2, ハイジャンプ判定]
+		type		= varadd
+		trigger1	= 1
+		trigger1	= var(3)>-100
+		v			= 3
+		value		= -1
+
+;---------------------------------------------------------------------------
+;ヒット数カウント
+	[State -2, ヒット数]
+		type		= VarAdd
+		trigger1	= MoveHit = 1
+		var(20)		= 1
+
+	[State -2, ヒット数初期化]
+		type		= VarSet
+		triggerall	= Var(20) != 0
+		trigger1	= P2MoveType != H
+		var(20)		= 0
+
+;---------------------------------------------------------------------------
+;空中ヒット数カウント
+	[State -2, ヒット数]
+		type		= VarAdd
+		trigger1	= MoveHit = 1
+		trigger1	= P2StateType = A
+		var(21)		= 1
+
+	[State -2, ヒット数初期化]
+		type		= VarSet
+		triggerall	= Var(21) != 0
+		trigger1	= P2MoveType != H
+		var(21)		= 0
+
+;---------------------------------------------------------------------------
+;コンボ補正
+	[State -2,コンボ補正1]
+		type		= VarSet
+		trigger1	= Var(20) >= 1
+		fVar(30)	= 0.9
+
+	[State -2,コンボ補正2]
+		type		= VarSet
+		trigger1	= Var(20) = 2
+		fVar(30)	= 0.7
+
+	[State -2,コンボ補正3]
+		type		= VarSet
+		trigger1	= Var(20) = 3
+		fVar(30)	= 0.5
+
+	[State -2,コンボ補正3]
+		type		= VarSet
+		trigger1	= Var(20) >= 4
+		fVar(30)	= 0.5 - (Var(20) * 0.05)
+
+	[State -2, コンボ補正下限]
+		type		= VarSet
+		trigger1	= FVar(30) < 0.2
+		fvar(30)	= 0.2
+
+	[State -2,コンボ補正リセット]
+		type		= VarSet
+		trigger1	= FVar(30) != 1
+		trigger1	= P2MoveType != H
+		fvar(30)	= 1
+
+;---------------------------------------------------------------------------
+;受身不能時間
+	[State -2,受身不能時間1]
+		type		= VarSet
+		trigger1	= Var(21) = 1
+		fVar(22)	= 4
+
+	[State -2,コンボ補正2]
+		type		= VarSet
+		trigger1	= Var(21) = 2
+		fVar(22)	= 5.2
+
+	[State -2,コンボ補正3]
+		type		= VarSet
+		trigger1	= Var(21) = 3
+		fVar(22)	= 6
+
+	[State -2,コンボ補正4]
+		type		= VarSet
+		trigger1	= Var(21) = 4
+		fVar(22)	= 6.8
+
+	[State -2,コンボ補正5]
+		type		= VarSet
+		trigger1	= Var(21) = 5
+		fVar(22)	= 7.2
+
+	[State -2,コンボ補正6]
+		type		= VarSet
+		trigger1	= Var(21) = 6
+		fVar(22)	= 7.6
+
+	[State -2,コンボ補正7]
+		type		= VarSet
+		trigger1	= Var(21) = 7
+		fVar(22)	= 8
+
+	[State -2,コンボ補正8]
+		type		= VarSet
+		trigger1	= Var(21) >= 8
+		fVar(22)	= 8.4
+
+	[State -2, 受身不能時間リセット]
+		type		= VarSet
+		triggerall	= FVar(22) != 0.4
+		trigger1	= P2MoveType != H
+		fVar(22)	= 0.4
+
+;---------------------------------------------------------------------------
+	[State -2,ジャンプパンチ回数初期化]
+		type		= VarSet
+		trigger1	= StateType != A
+		var(30)		= 0
+
+	[State -2, 打ち消しフラグ初期化]
+		type		= VarSet
+		trigger1	= StateNo != [240,241]
+		var(19)		= 0
+
+;---------------------------------------------------------------------------
+; ダメージボイス
+;---------------------------------------------------------------------------
+;やられボイス弱
+	[State -2]
+		type		= VarRandom
+		triggerall	= Alive = 1
+		triggerall	= Time = 1
+		trigger1	= StateNo = 5000
+		trigger2	= StateNo = 5010
+		v			= 13
+		Range		= 0,2
+
+	[State -2 ,2]
+		type		= PlaySnd
+		triggerall	= Alive = 1
+		triggerall	= Time = 1
+		triggerall	= Var(13) = [0,1]
+		trigger1	= StateNo = 5000
+		trigger1	= Anim = 5000 || Anim = 5010 || Anim = 5020
+		trigger2	= StateNo = 5010
+		trigger2	= Anim = 5000 || Anim = 5010 || Anim = 5020
+		value		= s5000, 0+(Random % 2)
+		channel		= 1
+
+;----------------------------------------------------------------------------------------------------
+;やられボイス中
+	[State -2]
+		type		= VarRandom
+		triggerall	= Alive = 1
+		triggerall	= Time = 1
+		triggerall	= GetHitVar(animtype)=1
+		trigger1	= StateNo = 5000
+		trigger2	= StateNo = 5010
+		v			= 13
+		Range		= 0,3
+
+	[State -2]
+		type		= PlaySnd
+		triggerall	= Alive = 1
+		triggerall	= Time = 1
+		triggerall	= Var(13) = [0,1]
+		trigger1	= StateNo = 5000
+		trigger1	= Anim    = 5001 || Anim    = 5011 || Anim    = 5021
+		trigger2	= StateNo = 5010
+		trigger2	= Anim    = 5001 || Anim    = 5011 || Anim    = 5021
+		value		= s5000, 0+(Random % 3)
+		channel		= 1
+
+;----------------------------------------------------------------------------------------------------
+;やられボイス大
+	[State -2]
+		type		= VarRandom
+		triggerall	= Alive = 1
+		triggerall	= Time = 1
+		triggerall	= GetHitVar(animtype)>1
+		trigger1	= StateNo = 5000
+		trigger2	= StateNo = 5010
+		V			= 13
+		Range		= 0,4
+
+	[State -2]
+		type		= PlaySnd
+		triggerall	= Alive = 1
+		triggerall	= Time = 1
+		triggerall	= Var(13) = [0,2]
+		trigger1	= StateNo = 5000
+		trigger1	= Anim   != [5000,5001] 
+		trigger1	= Anim   != [5010,5011]
+		trigger1	= Anim   != [5020,5021]
+		trigger2	= StateNo = 5010
+		trigger2	= Anim   != [5000,5001] 
+		trigger2	= Anim   != [5010,5011]
+		trigger2	= Anim   != [5020,5021]
+		value		= s5000, 2+(Random % 1)
+		channel		= 1
+
+;-----------------------------------------------------------------------------------------------
+;やられボイス空中
+	[State -2]
+		type			= VarRandom
+		triggerall		= Alive = 1
+		triggerall		= Time = 0
+		trigger1		= StateNo = 5020
+		V				= 13
+		Range			= 0,5
+		ignorehitpause	= 1
+
+	[State -2]
+		type		= PlaySnd
+		triggerall	= Alive = 1
+		triggerall	= Time = 1
+		triggerall	= Var(13) = [0,3]
+		trigger1	= StateNo = 5020
+		value		= s5000, 0+(Random % 2)
+		channel		= 1
+
+	[State -2]
+		type		= PlaySnd
+		triggerall	= Alive = 1
+		triggerall	= Time = 1
+		triggerall	= Var(13) = [4,5]
+		trigger1	= StateNo = 5020
+		value		= s5000, 3
+		channel		= 1
+
+;-----------------------------------------------------------------------------------------------
+; 崩れKO用処理
+	[State -2, 崩れKO]
+		type			= ChangeState
+		triggerall		= prevstateno != 5190
+		triggerall		= (!Alive) || (Life <= 0) || (Lose)
+		triggerall		= (StateNo = 5000) || (StateNo = 5010)
+		trigger1		= (PrevStateNo = [120,131]) || (PrevStateNo = [150,153])
+		trigger2		= enemy,hitdefattr = SC, NA
+		value			= 5190
+		IgnoreHitPause	= 1
+

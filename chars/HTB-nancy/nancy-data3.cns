@@ -1,0 +1,927 @@
+﻿;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;補助ヘルパー(先行入力等)
+
+[Statedef 10000]
+type = A
+movetype = I
+velset = 0,0       ;速度
+physics = N       ;摩擦、重力を無視
+anim = 10000
+
+[State 10000 透明化]
+type = assertspecial
+trigger1 = 1
+flag = invisible
+flag2 = noshadow
+
+[State 10000 無敵化]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;先行入力用ステート
+;コマンドが入力されたら、ヘルパー内の変数に一時保存。
+;もう一つの変数で、一時保存した条件が保持される時間を設定。先行入力解除時間でリセット。
+;本体cmdの各々の技の発動条件に、「二つの変数でコマンドが一時保存されてる間」を加えておく。
+
+;---------------------------------------------------------------------------
+;Var(0)にコマンドを一時保存。
+
+[State 10000,Cmd];スーパー飛躍キック
+type = VarSet
+trigger1 = !Var(0)
+trigger1 = Root,Command = "s_100kick"
+var(0) = 3000
+
+[State 10000,Cmd];昇龍パンチ
+type = VarSet
+trigger1 = !Var(0)
+trigger1 = Root,Command = "taiku_s"
+var(0) = 2050
+
+[State 10000,Cmd];ターボ・ロボコンパンチ
+type = VarSet
+trigger1 = !Var(0)
+trigger1 = Root,Command = "tosshin_s"
+var(0) = 2100
+
+[State 10000,Cmd];昇龍パンチ
+type = VarSet
+trigger1 = !Var(0)
+trigger1 = Root,Command = "taiku_y"
+var(0) = 1060
+
+[State 10000,Cmd];昇龍パンチ
+type = VarSet
+trigger1 = !Var(0)
+trigger1 = Root,Command = "taiku_x"
+var(0) = 1050
+
+;---------------------------------------------------------------------------
+;var(1)先行入力解除時間。
+
+[State 10000,必殺技入力受付]
+type = VarSet
+triggerall = !Var(1)
+trigger1 = Root,Command = "s_100kick"
+trigger2 = Root,Command = "taiku_s"
+trigger3 = Root,Command = "tosshin_s"
+trigger4 = Root,Command = "taiku_y"
+trigger5 = Root,Command = "taiku_x"
+var(1) = 10 ;先行入力解除時間
+
+;---------------------------------------------------------------------------
+;変数の処理。キャラごとの設定は不要。
+
+[State 10000,入力受付時間減算];セットされた受付時間を減算する
+type = VarAdd
+trigger1 = var(1) > 0
+var(1) = -1
+
+[State 10000,入力受付時間リセット];負数にならないようにリセット
+type = Varset
+trigger1 = var(1) < 0
+var(1) = 0
+
+[State 10000,入力受付リセット];受付時間リセットと同時に入力受付リセット
+type = Varset
+trigger1 = var(1) = 0
+var(0) = 0
+
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;AIめくりガード用ステート
+;ヘルパーのステート内で、本体から前後にずらした座標でInGuardDistに反応した場合にvarに代入。
+;後ろのは単純に、マイナス距離から判定。
+;前のは、相手から見て自分が後ろにいる時。振り向いた自分は、前側のヘルパーからガード反応を取得できる。
+
+[State 10000, Turn];振り向き
+Type = turn
+Trigger1 = Facing != root,Facing ;本体と異なる向きなら
+[State 10000, Posset in Root];座標Xを本体にあわせる
+Type = Posset
+Trigger1 = 1
+X = Root,Pos X
+
+[State 10000, Posadd 100];座標+100（本体から+100へずらす）
+Type = Posadd
+Trigger1 = 1
+X = 100
+[State 10000, Front GuardDist varset];前側のInGuardDistを代入
+Type = Varset
+var(40) = InGuardDist
+Trigger1 = 1
+
+[State 10000, Posadd -200];座標-200（本体から-100へずらす）
+Type = Posadd
+Trigger1 = 1
+X = -200
+[State 10000, Back GuardDist varset];後ろ側のInGuardDistを代入
+Type = Varset
+var(41) = InGuardDist
+Trigger1 = 1
+
+[State 10000, Posadd 100];座標+100（本体と同座標にもどす）
+Type = Posadd
+Trigger1 = 1
+X = 100
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------交代タッグ記述その1
+;===================================================================
+;交代モーション
+;===================================================================
+[Statedef 358000]
+type = S
+ctrl = 0
+velset = 0,0
+
+;ココ
+;交代モーションと台詞
+;10F以上は確保して下さい。長すぎると待機までが長引くのでほどほどに
+[state 358000,Anim変更]
+type = changeanim
+trigger1 = time = 0
+value = 1950;			モーション
+
+[State 358000, 交代ボイス]
+type = PlaySnd
+trigger1 = time = 1
+value = 12,7;			台詞
+
+
+[State 358000,カメラに追われないように]
+type = ScreenBound
+trigger1 = partner,stateno = 358003
+value = 0
+movecamera = 0,0
+
+[state 8000];待機時間
+type = varset
+trigger1 = partner,stateno = 358003
+sysfvar(4) = 60
+ignorehitpause = 1
+
+[state 8000,2];交代成立
+type = varset
+trigger1 = partner,stateno = 358003
+sysfvar(3) = 1
+ignorehitpause = 1
+
+[state 8000,2];交代成立後無敵◇
+type = nothitby
+trigger1 = partner,stateno = 358003 || time > 10
+value = SCA
+time = 999
+
+[state 358000,押し出し判定削除]
+type = playerpush
+trigger1 = partner,stateno = 358003
+value = 0
+
+[State 358000,ジャンプステートへ]
+type = Changestate
+trigger1 = animtime = 0 || time > 30
+value = 358001
+
+;===================================================================
+;後退ジャンプ中
+;===================================================================
+[Statedef 358001]
+type = S
+ctrl = 0
+anim = 40
+
+;ココ
+;ジャンプ音の指定
+[State 358000, ジャンプ音]
+type = PlaySnd
+trigger1 = anim = 40 && animtime = 0
+value = 0,1
+persistent = 0
+
+[State 358001,カメラに追われないように]
+type = ScreenBound
+trigger1 = 1
+value = 0
+movecamera = 0,0
+
+[State 358001,後方ジャンプ]
+type = ChangeAnim
+trigger1 = anim = 40 && animtime = 0
+value = 43
+
+[State 358001,ジャンプ速度]
+type = VelSet
+trigger1 = anim = 43
+x = -15
+Y = -5
+
+[state 8001,5];特殊交代の待機時間
+type = varset
+trigger1 = time = 0
+trigger1 = partner,sysfvar(3) = -2
+sysfvar(4) = 60*5
+
+[state 8001,5];ディレイドの待機時間
+type = varset
+trigger1 = time = 0
+trigger1 = partner,sysfvar(3) < -2
+sysfvar(4) = 60*2;◆
+
+[State 358001,待機ステートに移行]
+type = ChangeState
+trigger1 = backEdgeDist <= -40
+value = 358002
+
+;===================================================================
+;待機中
+;===================================================================
+[Statedef 358002]
+type = A
+ctrl = 0
+anim = 0
+movetype= I
+physics = S
+
+[state 8000];Attack消去
+type = removeexplod
+trigger1 = 1
+ID = 358002
+
+[state 8001];アシスト選択リセット
+type = varset
+trigger1 = sysfvar(3) != 0
+sysfvar(3) = 0
+
+[state 8002];待機時間0
+type = varset
+trigger1 = sysfvar(4) < 0
+sysfvar(4) = 0
+
+[state 8002];待機時間カウントダウン
+type = varadd
+trigger1 = sysfvar(4) > 0
+sysfvar(4) = -1
+
+[State 358002,カメラに追われないように]
+type = ScreenBound
+trigger1 = 1
+value = 0
+movecamera = 0,0
+
+[State 358002,透明化]
+type = AssertSpecial
+trigger1 = 1
+flag = noshadow
+flag2 = invisible
+
+[state 358002,無敵化]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[state 358002,押し出し判定削除]
+type = playerpush
+trigger1 = 1
+value = 0
+
+[State 358002, 黒ずみ]
+type = PalFX
+trigger1 = 1
+time = 1
+add = 0,0,0
+mul = 100, 100, 100
+
+[State -358002,待機中ライフ回復]
+type = LifeAdd
+trigger1 = sysfvar(4) = 0
+value = 1
+;↓の一行はコメントアウト部分も含めて一切変更しないでください。
+persistent = 3;回復;◇
+
+
+[State 358002,向き合わせ]
+type = Turn
+trigger1 = numpartner
+trigger1 = facing != partner,facing
+
+[State 358002,すごく後ろに移動]
+type = PosSet
+trigger1 = 1
+x = -10000*(facing)
+y = 0
+ignorehitpause = 1
+persistent = 1
+
+
+[State 358002,通常乱入]
+type = ChangeState
+triggerall = numpartner
+trigger1 = partner,stateno = 358000 && partner,time >= 10;	相方が後退モーション
+trigger2 = partner,alive = 0;								相方死亡
+trigger3 = win || losetime || DrawGame;						ラウンド終了
+trigger4 = ID < partner,ID && partner,stateno = 358002;		相方も待機ステート☆
+value = 358003
+
+
+[state 905900,AssistOK表示]
+type = Explod
+trigger1 = !numexplod(358001) && !numexplod(358002)
+trigger1 = sysfvar(4) = 0
+anim = F3580
+pos =  ifelse(teamside=1,80*2,173*2), 38*2
+postype = left
+facing = ifelse(teamside=1,1,1)
+bindtime = -1
+supermovetime = 9999999999999
+pausemovetime = 9999999999999
+scale = .5, .5
+ontop = 1
+removetime = 1
+ID = 358000
+
+[state 905900,残り時間黄帯]
+type = Explod
+trigger1 = !numexplod(358001) && !numexplod(358002)
+trigger1 = sysfvar(4) > 0
+anim = F3583
+pos =  ifelse(teamside=1,(139-ceil(sysfvar(4)*0.25))*2,180*2), 45*2
+postype = left
+facing = ifelse(teamside=1,1,1)
+bindtime = -1
+supermovetime = 9999999999999
+pausemovetime = 9999999999999
+scale = sysfvar(4)*0.25, .25
+ontop = 1
+removetime = 1
+ID = 358003
+
+[state 905900,残り時間黄帯_1P側の見栄え調整]
+type = Explod
+trigger1 = !numexplod(358001) && !numexplod(358002)
+trigger1 = sysfvar(4) > 0 && teamside=1
+anim = F3583
+pos =  138*2, 45*2
+postype = left
+facing = ifelse(teamside=1,1,1)
+bindtime = -1
+supermovetime = 9999999999999
+pausemovetime = 9999999999999
+scale = 2, .25
+ontop = 1
+removetime = 1
+ID = 358003
+
+;===特殊交代===============
+[state 8002,3];★
+type = varset
+sysfvar(3) = -2
+triggerall = numpartner
+triggerall = partner,alive && partner,stateno < 358000
+triggerall = partner,ctrl && power >= 500 || power >= 1000
+triggerall = sysfvar(4) <= 0
+;乱入条件。常時ステートへのAI記述と同等でOKです;ココ
+trigger1 = partner,command = "z" && partner,command = "holdback"
+Trigger1 = partner,Alive && partner,var(59) <1 ;P前衛
+trigger2 = command = "z" && command = "holdback"
+Trigger2 = Alive && var(59) <1 ;P後衛
+Trigger3 = Alive && var(59) > 0 && partner,Alive && partner,var(59) >0 ;AI
+trigger3 = Random < var(58) * 1   ;何も考えずに技を出す
+Trigger4 = Alive && var(59) > 0 && partner,Alive && partner,var(59) >0 ;AI
+Trigger4 = Life > 450 && partner,Life < 350
+trigger4 = Random < 10*var(59) && var(57)>0 ;レベルで確率を上げる
+Trigger5 = Alive && var(59) > 0 && partner,Alive && partner,var(59) >0 ;AI
+Trigger5 = Life > 300 && partner,Life < 200
+trigger5 = Random < 20*var(59) && var(57)>0 ;レベルで確率を上げる
+
+[state 8003];再突入F
+type = varset
+trigger1 = sysfvar(3) = -2
+sysfvar(4) = 60*5
+
+[State 358002,]
+type = ChangeState
+triggerall = numpartner
+trigger1 = partner,alive
+trigger1 = sysfvar(3) = -2
+value = 358003
+
+;===アシスト指定===============;ココ
+
+;---ディレイド指定-------
+[state 8002,1]
+type = varset
+triggerall = numpartner
+triggerall = partner,alive && partner,movetype != H;★
+triggerall = sysfvar(4) <= 0
+;乱入後に移行するステート番号(-を付けて下さい)
+sysfvar(3) = -3000
+;乱入条件。常時ステートへのAI記述と同等でOKです
+triggerAll = partner,HitDefAttr = SCA, HA, HT, HP
+triggerAll = power >= 1500
+trigger1 = partner,command = "c" && partner,command = "holdback"
+Trigger1 = partner,Alive && partner,var(59) <1 ;P前衛
+trigger2 = command = "c" && command = "holdback"
+Trigger2 = Alive && var(59) <1 ;P後衛
+Trigger3 = Alive && var(59) > 0 && partner,Alive && partner,var(59) >0 ;AI
+trigger3 = Random < var(58) * 1   ;何も考えずに技を出す
+Trigger4 = Alive && var(59) > 0 && partner,Alive && partner,var(59) >0 ;AI
+trigger4 = partner,P2StateType != A && partner,P2BodyDist X < 220   ;地上
+trigger4 = Random < 10*var(59) && var(57)>0 ;レベルで確率を上げる
+
+;---アシスト攻撃A-------☆
+[state 8002,1]
+type = varset
+triggerall = numpartner
+triggerall = partner,alive
+triggerall = sysfvar(4) <= 0
+triggerall = partner,movetype != H;◇
+;乱入後に移行するステート番号
+sysfvar(3) = 1000
+;乱入条件。常時ステートへのAI記述と同等でOKです
+trigger1 = partner,command = "c" && partner,command = "holdback"
+Trigger1 = partner,Alive && partner,var(59) <1 ;P前衛
+trigger2 = command = "c" && command = "holdback"
+Trigger2 = Alive && var(59) <1 ;P後衛
+Trigger3 = Alive && var(59) > 0 && partner,Alive && partner,var(59) >0 ;AI
+trigger3 = Random < var(58) * 1   ;何も考えずに技を出す
+
+[state 8003];再突入F
+type = varset
+triggerall = partner,movetype != H;◇
+trigger1 = sysfvar(3) = 1050
+sysfvar(4) = 60*2.5;乱入終了後(失敗含む)に再度乱入可能になるまでのF数
+
+;---アシスト攻撃B-------☆
+[state 8002,1]
+type = varset
+triggerall = numpartner
+triggerall = partner,alive
+triggerall = sysfvar(4) <= 0
+triggerall = partner,movetype != H;◇
+;乱入後に移行するステート番号
+sysfvar(3) = 1005 ;再突入Fの方にも書き換え必要箇所あり
+;乱入条件。常時ステートへのAI記述と同等でOKです
+trigger1 = partner,command = "c"
+Trigger1 = partner,Alive && partner,var(59) <1 ;P前衛
+trigger2 = command = "c"
+Trigger2 = Alive && var(59) <1 ;P後衛
+Trigger3 = Alive && var(59) > 0 && partner,Alive && partner,var(59) >0 ;AI
+trigger3 = Random < var(58) * 1   ;何も考えずに技を出す
+Trigger4 = Alive && var(59) > 0 && partner,Alive && partner,var(59) >0 ;AI
+trigger4 = partner,p2StateType != L && partner,P2BodyDist X <380  ;距離
+trigger4 = Random < 5*var(59) && var(57)>0 ;レベルで確率を上げる
+
+[state 8003];再突入F
+type = varset
+triggerall = partner,movetype != H;◇
+trigger1 = sysfvar(3) = 1060;上のステート番号とあわせる
+sysfvar(4) = 60*2.5;乱入終了後(失敗含む)に再度乱入可能になるまでのF数
+;-----------------------
+
+[State 358002,]
+type = ChangeState
+triggerall = numpartner
+trigger1 = partner,alive
+trigger1 = partner,movetype != H
+trigger1 = sysfvar(3) != 0
+value = 358004
+
+
+;===================================================================
+;通常突入
+;===================================================================
+[Statedef 358003]
+type = A
+ctrl = 1
+physics = A
+anim = 42
+
+[State 358003,突入初期位置]
+type = PosSet
+trigger1 = time = 0
+x = -170*(facing)
+y = -140
+
+[state 8003,2];特殊交代によるゲージ消費
+type = poweradd
+trigger1 = sysfvar(3) = -2
+trigger1 = time = 0
+value = -500-500*(partner,ctrl=0)
+
+[state 905900,Change表示]
+type = Explod
+trigger1 = time = 1
+anim = F3581
+pos =  ifelse(teamside=1,88,173), 40
+postype = left
+facing = ifelse(teamside=1,1,1)
+bindtime = -1
+supermovetime = 9999999999999
+pausemovetime = 9999999999999
+scale = .5, .5
+ontop = 1
+removetime = 30
+ID = 358001
+
+[State 358003,突入落下]
+type = VelSet
+trigger1 = anim = 42;time >=0
+x = 6
+Y = 10
+
+
+;===================================================================
+;アシスト突入
+;===================================================================
+[Statedef 358004]
+type = A
+ctrl = 0
+physics = N
+anim = 42
+
+[state 8004];ディレイドのゲージ余剰消費
+type = poweradd
+trigger1 = time = 0
+trigger1 = sysfvar(3) < -1
+value = -500
+
+[state 905900,AssistAttack表示]
+type = Explod
+trigger1 = time = 0
+anim = F3582
+pos =  ifelse(teamside=1,55,173), 40
+postype = left
+facing = ifelse(teamside=1,1,1)
+bindtime = -1
+supermovetime = 9999999999999
+pausemovetime = 9999999999999
+scale = .5, .5
+ontop = 1
+removetime = -1
+ID = 358002
+
+;ココ
+;乱入行動によって位置と速度調整をどうぞ
+[State 358003,突入初期位置]
+type = PosSet
+trigger1 = time = 0
+x = partner,pos x
+y = -140
+
+[State 358003,突入落下]
+type = VelSet
+trigger1 = anim = 42;time >=0
+x = 3
+Y = 10
+
+
+[State 358003,着地アニメ]
+type = changeanim
+trigger1 = pos y >= 0
+value = 47
+persistent = 0
+
+
+[State 358003,着地Vel]
+type = velset
+trigger1 = pos y >= 0
+x = 0
+y = 0
+
+[State 358003,着地Pos]
+type = posset
+trigger1 = pos y >= 0
+y = 0
+
+[State 358003,sfv3が0になった];◆
+type = ctrlset
+trigger1 = sysfvar(3) = 0
+value = 1
+
+[State 358003,攻撃ステートへ];☆
+type = changestate
+trigger1 = anim = 47 && animtime = 0
+value = floor(abs(sysfvar(3)))
+
+;===================================================================
+;---------------------------------------------------------------------------交代タッグ記述その1ここまで
+
+
+
+;---------------------------------------------------------------------------
+; Override common states (use same number to override) :
+;---------------------------------------------------------------------------
+
+;[Statedef -1]
+;KeyCtrl=1状態で自身のステート内常時。
+
+;---------------------------------------------------------------------------
+; States that are always executed (use statedef -2)常時監視ステート。
+; コンボ補正等を入れる場合はここに記入すると思われる。
+;---------------------------------------------------------------------------
+[Statedef -2]
+;---------------------------------------------------------------------------
+
+
+[State -2, 空中ガードスイッチ]
+Type = AssertSpecial ;宣言した物を無限に持続させる
+Trigger1 = 1
+Flag = NoAirGuard ;空中ガードをプレイヤーの操作から除外する(AIはAI用のトリガーで指定)
+
+;---------------------------------------------------------------------------
+
+
+[State -2, コンボ補正];ヒットの重みを取得
+type = VarSet
+trigger1 = p2movetype != H   ;変数をリセット
+var(3) = 0
+
+[State -2, コンボ補正]
+type = Varadd
+trigger1 = movehit
+trigger1 = enemynear(0),stateno = [5000,5099]
+var(3) = 1
+
+    [State -2,コンボ補正];計算式
+    Type = AttackMulSet     ;攻撃力設定
+    Trigger1 = var(3) < 49
+    Value = 1.00*(64-(var(3)))/64
+
+    [State -2,コンボ補正]
+    Type = AttackMulSet     ;攻撃力設定
+    Trigger1 = var(3) > 48
+    Value = 0.25
+
+[State -2, コンボ補正];飛び道具に渡す用
+type = VarSet
+trigger1 = p2movetype != H   ;変数をリセット
+var(4) = 0
+
+[State -2, コンボ補正];飛び道具に渡す用
+type = VarSet
+Trigger1 = var(3) < 49
+var(4) := (var(3))
+
+[State -2, コンボ補正]
+type = VarSet
+Trigger1 = var(3) > 48
+var(4) = 48
+
+[State -2, コンボ補正EX怒ったぞhit]
+type = Varadd
+trigger1 = Numhelper(2031) != 0
+var(3) = 2
+
+;---------------------------------------------------------------------------
+
+[State -2, 技が触れた(スカらせ、削り補正用)]
+type = VarSet
+trigger1 = movetype != A   ;変数をリセット
+trigger2 = stateno = 0
+trigger3 = stateno =440 && AnimElemTime(3) >= 1 && AnimElemTime(4) < 1
+trigger4 = stateno =440 && AnimElemTime(6) >= 1 && AnimElemTime(7) < 1
+trigger5 = stateno =440 && AnimElemTime(8) >= 1 && AnimElemTime(9) < 1
+trigger6 = stateno =1100 && AnimElemTime(1) >= 1 && AnimElemTime(2) < 1
+trigger7 = stateno =1105 && AnimElemTime(1) >= 1 && AnimElemTime(2) < 1
+var(2) = 0
+
+[State -2, 技が触れた(スカらせ、削り補正用)]
+type = VarSet
+triggerall = movecontact
+trigger1 = stateno =440 && AnimElemTime(3) >= 1 && AnimElemTime(11) < 1
+var(2) = 1
+
+;---------------------------------------------------------------------------
+
+[State -2, 技が触れた(スカらせ、削り補正用)];ロボコンパンチ用
+type = Varadd
+triggerall = movecontact
+trigger1 = stateno =1100 && AnimElemTime(2) >= 1 && AnimElemTime(7) < 1
+trigger2 = stateno =1105 && AnimElemTime(2) >= 1 && AnimElemTime(7) < 1
+trigger3 = stateno =2100 && AnimElemTime(4) >= 1 && AnimElemTime(7) < 1
+var(2) = 1
+
+[State -2, ロボコンパンチ転倒]
+type = VarSet
+trigger1 = movetype != A   ;変数をリセット
+trigger2 = stateno =1100 && AnimElemTime(1) >= 1 && AnimElemTime(2) < 1
+trigger3 = stateno =1105 && AnimElemTime(1) >= 1 && AnimElemTime(2) < 1
+trigger4 = stateno =2100 && AnimElemTime(1) >= 1 && AnimElemTime(4) < 1
+var(11) = 0
+
+[State -2, ロボコンパンチ転倒]
+type = VarSet
+triggerall = movecontact
+trigger1 = var(2) > 6
+var(11) = 1
+
+;---------------------------------------------------------------------------
+
+[State -2, 飛び道具のけぞり速度]
+type = VarSet
+trigger1 = movetype != A   ;変数をリセット
+trigger2 = stateno = 0
+fvar(1) = 0
+
+[State -2, 飛び道具のけぞり速度]
+type = VarSet
+trigger1 = movetype = A && P2BodyDist X < 560
+fvar(1) = -14* (800-(P2BodyDist X)) /800
+
+[State -2, 飛び道具のけぞり速度]
+type = VarSet
+trigger1 = movetype = A && P2BodyDist X > 559
+fvar(1) = -4.2
+
+;---------------------------------------------------------------------------
+
+[State -2, フレーム毎加算(時間で威力を変更)]
+type = VarSet
+trigger1 = movetype != A   ;変数をリセット
+trigger2 = stateno = 0
+var(10) = 0
+
+[State -2, フレーム毎加算(時間で威力を変更)]
+type = Varadd
+triggerall = var(10) < 11
+trigger1 = stateno =1051 && AnimElemTime(1) >= 0 && AnimElemTime(3) < 0
+trigger2 = stateno =1061 && AnimElemTime(1) >= 0 && AnimElemTime(3) < 0
+var(10) = 1
+
+;---------------------------------------------------------------------------
+[State -2, 自分くらい時(ヘルパー消滅用)]
+type = VarSet
+trigger1 = movetype != H   ;変数をリセット
+trigger2 = stateno = 0
+var(12) = 0
+
+[State -2, 自分くらい時(ヘルパー消滅用)]
+type = VarSet
+trigger1 = movetype = H
+var(12) = 1
+
+;---------------------------------------------------------------------------
+
+[State -2, ガーキャン必殺技用] ;変数をリセット
+type = VarSet
+trigger1 = stateno = [140,155]
+trigger1 = time > 10
+trigger2 = stateno != [1000,2999]
+trigger3 = movetype = I
+var(13) = 0
+
+[State -2, ガーキャン必殺技用]
+type = VarSet
+trigger1 = stateno = [140,155]
+trigger1 = time < 11
+var(13) = 1
+
+;---------------------------------------------------------------------------
+
+[State -2,リジェネーションモード];セットされた受付時間を減算する
+type = VarAdd
+trigger1 = var(15) > 0
+var(15) = -1
+
+[State -2,リジェネーションモード];負数にならないようにリセット
+type = Varset
+trigger1 = var(15) < 0
+var(15) = 0
+
+[State -2,リジェネーションモード]
+type = LifeAdd       ;ここで体力を増やす。
+trigger1 = var(15) > 0
+trigger1= (GameTime%6)=0 ;何フレームごとに回復するか
+value = 1
+
+;---------------------------------------------------------------------------
+
+[State -2, 補助ヘルパー発射]
+type = Helper       ;Helperをめくりガード判定用として使う
+TriggerAll = !NumHelper(10000) ;ヘルパーの有無を確認
+trigger1 = !Ishelper;自分がヘルパーではない時
+trigger1 = Alive;自分が生きている時
+trigger1 = RoundState < 3;イントロ～戦闘中
+helpertype = normal
+name = "mekuri"       ;任意の名前
+ID = 10000
+stateno = 10000       ;飛び道具のステートナンバー
+pos = 0,0       ;出現座標
+postype = p1       ;出現座標の基準(プレイヤー1)
+facing = 1        ;相手の方を向く
+keyctrl=0
+pausemovetime=2147483647
+supermovetime=2147483647
+ignorehitpause = 1
+
+;念のため関係無いステートに行かないように↓も付けておく
+[State -2, helper]
+type = changestate
+trigger1 = Ishelper(10000)
+trigger1 = !(stateno = 10000)
+value = 10000
+ignorehitpause = 1
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------交代タッグ記述その2
+;===================================================================
+[State -2, 1 デバッグ];☆
+type = null;DisplayToClipboard
+trigger1 = 1
+text = "1P_s2:%d 1P_s3:%d 1P_s4:%d 1P_Sno:%d \n"
+params = floor(sysfvar(2)),floor(sysfvar(3)),floor(sysfvar(4)),stateno
+ignorehitpause = 1
+
+[State -2, 1 デバッグ];☆
+type = null;AppendToClipboard
+trigger1 = numpartner
+text = "3P_s2:%d 3P_s3:%d 3P_s4:%d 3P_Sno:%d \n"
+params = floor(partner,sysfvar(2)),floor(partner,sysfvar(3)),floor(partner,sysfvar(4)),partner,stateno
+ignorehitpause = 1
+
+
+[state -3];開幕判定
+type = varset
+triggerall = numpartner
+triggerall = ID>partner,ID
+triggerall = roundstate < 2
+trigger1 = PalNo = 3 ;zボタン
+trigger2 = PalNo = 6 ;cボタン
+sysfvar(3) = -1
+
+[state -3];W前衛強制対処★
+type = varset
+triggerall = numpartner
+triggerall = ID>partner,ID
+triggerall = roundstate = 2 && alive && partner,alive
+triggerall = sysfvar(3) = 0 && stateno != [35800,358004]
+triggerall = partner,sysfvar(3) = 0 && partner,stateno != [358000,358004]
+trigger1 = PalNo = 3 ;zボタン
+trigger2 = PalNo = 6 ;cボタン
+sysfvar(3) = 1
+
+[State -2];3Pイントロ★
+type = ChangeState
+triggerall = !IsHelper
+triggerall = ctrl
+triggerall = numpartner
+triggerall = ID>partner,ID
+triggerall = sysfvar(3) = -1
+triggerall = roundstate = 2 && alive && partner,alive
+trigger1 = PalNo = 3 ;zボタン
+trigger2 = PalNo = 6 ;cボタン
+value = 358001
+ctrl = 0
+
+[state -2];3Pイントロ_無敵化
+type = NotHitBy
+triggerall = sysfvar(3) = -1
+trigger1 = PalNo = 3 ;zボタン
+trigger2 = PalNo = 6 ;cボタン
+value = SCA
+
+[State -2,交代ステートへ_妨害されてた場合★]
+type = ChangeState
+triggerall = !IsHelper
+triggerall = roundstate = 2
+triggerall = numpartner
+triggerall = partner,alive
+triggerall = statetype != A && ctrl
+trigger1 = sysfvar(3) > 0
+trigger2 = partner,sysfvar(3) < -1;	特殊交代
+value = 358001
+ctrl = 0
+
+[state -3]
+type = varset
+;死んだら解除☆
+trigger1 = alive = 0
+trigger1 = sysfvar(3) != 0
+;パートナーが倒されていたら解除
+trigger2 = partner,alive = 0
+trigger2 = sysfvar(3) != 0
+;パートナーが待機状態になったら解除
+trigger3 = partner,stateno = 358002
+trigger3 = sysfvar(3) != 0
+sysfvar(3) = 0
+
+[state -3,AssistAttack消去]
+type = removeExplod
+triggerall = numexplod(358002)
+trigger1 = movetype != A && stateno != 358004
+id = 358002
+
+[state -3,状況判定];☆
+type = varset
+trigger1 = 1
+sysfvar(2) = (sysfvar(3) > 0 || sysfvar(3) = -1 || partner,sysfvar(3) <= -2 || stateno = 358002)
+
+;---------------------------------------------------------------------------交代タッグ記述その2ここまで
+;[Statedef -3]は別ファイルでAIなどに使用。
+

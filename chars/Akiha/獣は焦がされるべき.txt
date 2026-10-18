@@ -1,0 +1,56 @@
+;==============================================================================;
+; 獣を焦がす対応
+;
+; 常時監視ステート (-1、-2、-3のどれか) に以下の記述を追加しておくと、
+; ウチの秋葉が出した獣を焦がすの設置に反応して体力・パワーが減ります。
+;
+; ※1 ウチの秋葉はvar(39)に獣を焦がすの設置ヘルパーの「Player ID」を
+;     格納するようにしたので、そのIDを元にPlayerIDリダイレクトで場所を取得、
+;     その前後85以内にいるときに処理をするようにしてください
+; ※2 下の記述ではsize.xscaleによる横幅変更に対応しようとしています。
+; ※3 var(39)の内容は、
+;     var(39) = -1      : 設置されていない
+;     var(39) >= 0      : ヘルパーの Player ID
+; ※4 変化量を調整したい場合は
+;     ・GameTime % 2 のトリガーを弄る (何Fおきに処理するか)
+;     ・valueの値を変更する           (一度にどれだけ変化するか)
+;     をすればよいです。
+; ※5 とりあえず設置ヘルパーの上にいるときになんらかの処理が出来ればいいので、
+;     トリガーとかは適当に調整してください。
+;==============================================================================;
+[State -2:          Life]
+type       = LifeAdd
+triggerall = !IsHelper                  ; 本体限定
+triggerall = RoundState = 2 && Alive    ; 試合中 かつ 生きている
+triggerall = StateType != A             ; 地上にいる
+triggerall = GameTime % 3 = 0           ; 3Fおきに処理
+triggerall = NumEnemy                   ; 敵がいる
+trigger1   = Enemy(0),AuthorName = "chikuchikugonzalez" && Enemy(0),Name = "Tohno Akiha"        ; 1P (or 2P) が秋葉
+trigger1   = Enemy(0),var(39) >= 0                                                              ; IDが格納されている (格納されていない場合は -1)
+trigger1   = PlayerIDExist(Enemy(0),var(39))                                                    ; 格納IDのキャラクター or Helperが存在する
+trigger1   = Abs(PlayerID(Enemy(0),var(39)),Pos X - Pos X) < (85 * PlayerID(Enemy(0),var(39)),const(size.xscale))       ; 相手の前後85以内
+trigger2   = NumEnemy > 1                                                                       ; 相手がタッグ
+trigger2   = Enemy(1),AuthorName = "chikuchikugonzalez" && Enemy(1),Name = "Tohno Akiha"        ; 3P (or 4P) が秋葉
+trigger2   = Enemy(1),var(39) >= 0                                                              ; IDが格納されている
+trigger2   = PlayerIDExist(Enemy(1),var(39))                                                    ; 格納IDのキャラクター or Helperが存在する
+trigger2   = Abs(PlayerID(Enemy(1),var(39)),Pos X - Pos X) < (85 * PlayerID(Enemy(1),var(39)),const(size.xscale))       ; 相手の前後85以内
+value      = -1
+kill       = 0
+
+[State -2:          Power]
+type       = PowerAdd
+triggerall = !IsHelper
+triggerall = RoundState = 2 && Alive
+triggerall = StateType != A
+triggerall = GameTime % 2 = 0
+triggerall = NumEnemy
+trigger1   = Enemy(0),AuthorName = "chikuchikugonzalez" && Enemy(0),Name = "Tohno Akiha"
+trigger1   = Enemy(0),var(39) >= 0
+trigger1   = PlayerIDExist(Enemy(0),var(39))
+trigger1   = Abs(PlayerID(Enemy(0),var(39)),Pos X - Pos X) < (85 * PlayerID(Enemy(0),var(39)),const(size.xscale))
+trigger2   = NumEnemy > 1
+trigger2   = Enemy(1),AuthorName = "chikuchikugonzalez" && Enemy(1),Name = "Tohno Akiha"
+trigger2   = Enemy(1),var(39) >= 0
+trigger2   = PlayerIDExist(Enemy(1),var(39))
+trigger2   = Abs(PlayerID(Enemy(1),var(39)),Pos X - Pos X) < (85 * PlayerID(Enemy(1),var(39)),const(size.xscale))
+value      = Floor(-1 * (PowerMax * 0.001))

@@ -1,0 +1,3246 @@
+;　通常技、－2，－3,  
+;v(0-5),システム予約　var(10)ママハハ攻撃命令 var(18)シラル判定
+;v(13)キャンセル可フラグ v(14)弾かれ硬直time v(15)弾かれ硬直time (予備）
+;var(30)シクルゥ命令 var(31) 乗ってるかどうか　v49=char var(50)氷砕タイムvar(51)introキャラC
+;AI var(52),fvar(32)以降 
+;fvar(0)=攻撃係数　7.8125=ss3（inS5900）
+;h,p,e(200)コンル攻撃時
+
+;---------------------------------------------------------------------------
+; 立ち・弱・武器　遠距離・の動作　s200,swwf
+[Statedef 200];テクサムトゥクノタク
+type    = S                      
+movetype= A                      
+physics = S                      
+velset = 0,0                     ;このステートが始まった時に移動するか（0,0で動かない）
+ctrl = 0                         ;このステート中に他のコマンドを受け付けるか(1で受け付ける)
+anim = 200                       ;このステートで表示するスプライトステート番号(0で変化無し)
+sprpriority = 2                  ;表示した絵の重なり具合(2一番前　0通常　-1奥)
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 0
+
+[state 200x,defencetime];弾かれ硬直時間設定
+type = varset
+trigger1 = time = 0
+var(14) = 12
+
+[State 200, 1]
+type = HitDef
+trigger1 = time = 0
+attr = S, NA                     
+damage = floor(5 * fvar(0))              
+animtype = Light               
+guardflag = M                  
+hitflag = MA                   
+priority = 4            
+pausetime = 12, 12
+guard.pausetime = 0, 12
+sparkno = s6200    
+guard.sparkno = S6140
+sparkxy = 0, -70               
+hitsound = s205,ifelse(p2life - floor(5 * fvar(0)) <= 0, 10,random % 3)                  
+guardsound = s150, random % 3     
+ground.type = High             
+ground.slidetime = 20           
+ground.hittime  = 20             
+ground.velocity = -2             
+air.type = High                
+air.velocity = -1.4,-3          
+air.hittime = 12                 
+getpower = 0,0
+
+;-----------------TEST　slash　efe ｈｉｔ中のID=201固定、－３で一個ですむ
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = 0;animelem =3
+anim = 201
+ID=2011
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる
+type = Explod
+trigger1 = 0;animelem =4
+anim = 202
+ID=201
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = 8 + 4
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem = 5
+ID =201
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = 0;animelem =5
+anim = 203
+ID=203
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = 0;animelem =6
+anim = 204
+ID=204
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+;-----------------------------SLASH efe end
+
+[state 200,]
+type = posadd
+trigger1 = animelem = 3
+x = 22
+persistent = 0
+
+[state 200,]
+type = posadd
+trigger1 = animelem = 11
+x = -22
+persistent = 0
+
+[State 200, guard]
+type = ChangeState
+trigger1 = moveguarded
+value = 700
+
+[State 200, 7]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; 立ち・弱・武器　近距離・の動作 s205,swwn
+[Statedef 205];テクサムトゥイェノタク
+type    = S                      
+movetype= A                      
+physics = S                      
+velset = 0,0                     
+ctrl = 0                       
+anim = 205                      
+sprpriority = 2                 
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 1
+
+[state 200x,defencetime];弾かれ硬直時間設定
+type = varset
+trigger1 = time = 0
+var(14) = 12
+
+[State 205, 1]
+type = HitDef
+trigger1 = time=0
+attr = S, NA                     ;立ち状態で、通常の攻撃(ｓは立ち、ｎは通常、aは攻撃を表す)
+damage = floor(4 * fvar(0))                   ;ダメージ量（左が当たった時、右はガードした時）
+animtype = Light                 ;当てた時の相手のポーズ（light/midium/hard/back）から選択
+guardflag = M                   ;ガードできる状態（ｍaは全ての状態でガード可能）
+hitflag = MA                    ;当てる事のできる条件
+priority = 3, Hit                ;攻撃の優先権（0弱い　4通常　7強い
+pausetime = 10, 10                 ;攻撃が当たった時の硬直時間（左が自分、右が相手）
+guard.pausetime = 0, 10
+sparkno = s6200   ;ヒットエフェクトのスプライトステート（無ければ0）
+guard.sparkno = S6140
+sparkxy = -10, -76               ;ヒットエフェクトを表示する場所（相手の座標で）
+hitsound = s205,ifelse(p2life - floor(4 * fvar(0)) <= 0, 10,random % 3)          
+guardsound = s150, random % 3    ;ガードした時の音（同上）
+ground.type = High               ;相手のくらった場所（High：頭、体, Low：足, Trip：足払い）
+ground.slidetime = 20             ;相手が後にすべる時間
+ground.hittime  = 20             ;コンボが繋がる時間（高くしすぎない事）
+ground.velocity = -4             ;地上で攻撃をくらった場合の相手の移動状況（ｘとｙで小数点可）
+airguard.velocity = -1.9,-.8     ;空中で攻撃をくらった場合の相手の移動状況（ｘとｙで小数点可）
+air.type = High                  ;空中で相手がくらった場所（上と同じ）
+air.velocity = -1.4,-3           ;空中で攻撃をくらった場合の相手の移動状況（ｘとｙで小数点可）
+air.hittime = 12                 ;空中でコンボが繋がる時間
+getpower = 0,0
+
+[State 205, guard]
+type = ChangeState
+trigger1 = moveguarded
+value = 700
+
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる
+type = Explod
+trigger1 = 0;animelem =2
+anim = 206
+ID=201
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = 15
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem = 3
+ID =201
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = 0;animelem =3
+anim = 207
+ID=207
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = 5
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+;-----------------------------SLASH efe end
+
+[State 205, 7]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; 立ち・中・武器・遠距離の動作 s210,smwf
+[Statedef 210];エペシモムノタク
+type    = S
+movetype= A
+physics =s
+ctrl = 0
+velset = 0,0
+anim = 210
+sprpriority = 0
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 1
+
+[state 200x,defencetime];弾かれ硬直時間設定
+type = varset
+trigger1 = time = 0
+var(14) = 18
+
+[State 210, hit2]
+type = HitDef
+trigger1 = time = 0
+attr = S, NA
+animtype  = Medium
+damage    = floor(21 * fvar(0))
+guardflag = M
+hitflag = MA                
+pausetime = 12,12
+guard.pausetime = 0,12
+sparkno = S6200  
+guard.sparkno = S6140
+sparkxy = -10,-70
+hitsound = s205,ifelse(p2life - floor(21 * fvar(0)) <= 0, 10,random % 3 + 3)          
+guardsound = s150, random % 3
+ground.type = High
+ground.slidetime = 12
+ground.hittime  = 15
+ground.velocity = -4.5
+air.velocity = -2.5,-2
+getpower = 0,0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6710
+id = 6710
+postype = p2
+pos = -5,-60
+sprpriority = 3
+supermove = 1
+bindtime = 20
+removetime = -2
+persistent = 0
+ownpal = 1
+
+[State 210, guard]
+type = ChangeState
+trigger1 = moveguarded
+value = 700
+
+;-----------------TEST　slash　efe
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 =0; animelemtime(4) =0
+anim = 211
+ID=211
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 2
+removetime = 2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = 0;animelemtime(4) =2
+anim = 212
+ID=212
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 2
+removetime = 2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる
+type = Explod
+trigger1 = 0;animelem =5
+anim = 213
+ID=201
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = 20
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem = 6
+ID =201
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 =0; animelem =6
+anim = 214
+ID=214
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = 2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+;-----------------------------SLASH efe end
+
+[State 210, 5]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;------------------------------------
+;中斬り　近距離　s215,smwn
+[Statedef 215];テクサムトゥイェノタク
+type    = S
+movetype= A
+physics = S
+ctrl = 0
+velset = 0,0
+anim = 215
+sprpriority = 2
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 1
+
+[state 200x,defencetime];弾かれ硬直時間設定
+type = varset
+trigger1 = time = 0
+var(14) = 14
+
+[State 215, 2]
+type = HitDef
+trigger1 = time = 0
+attr = S, NA
+animtype  = Medium
+damage    = floor(21 * fvar(0))
+guardflag = M
+hitflag = MA                    ;当てる事のできる条件
+pausetime = 12,12
+guard.pausetime = 0, 12
+sparkno = S6200   
+guard.sparkno = S6140
+sparkxy = -10,-70
+hitsound = s205,ifelse(p2life - floor(21 * fvar(0)) <= 0, 10,random % 3)          
+guardsound = s150, random % 3
+ground.type = High
+ground.slidetime = 12
+ground.hittime  = 15
+ground.velocity = -5.5
+air.velocity = -2.5,-4
+getpower = 0,0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6710
+id = 6710
+postype = p2
+pos = -5,-60
+sprpriority = 3
+supermove = 1
+bindtime = 20
+removetime = 20
+persistent = 0
+ownpal = 1
+
+[State 215, guard]
+type = ChangeState
+trigger1 = moveguarded
+value = 700
+
+;----------------------------SLASH efe start
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる
+type = Explod
+trigger1 = 0;animelem =2
+anim = 206
+ID=201
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = 20
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem = 3
+ID =201
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = 0;animelem =3
+anim = 207
+ID=207
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = 5
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+;-----------------------------SLASH efe end
+
+[State 215, 5]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;立ち武器　強　遠距離 s220,sswf
+;-------------------------------------
+[Statedef 220];ルヤンペヤサエムシ/ニシペレエムシ
+type    = S                      
+movetype= A                      
+physics = S                      
+velset = 0,0                     ;このステートが始まった時に移動するか（0,0で動かない）
+ctrl = 0                         ;このステート中に他のコマンドを受け付けるか(1で受け付ける)
+anim = 220                       ;このステートで表示するスプライトステート番号(0で変化無し)
+sprpriority = 2                  ;表示した絵の重なり具合(2一番前　0通常　-1奥)
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 1
+
+[state 200x,defencetime];弾かれ硬直時間設定
+type = varset
+trigger1 = time = 0
+var(14) = 16
+
+[State 220, hit1]
+type = HitDef
+trigger1 = time = 0
+attr = S, NA                    
+damage = floor(34* fvar(0))                  
+animtype = hard                
+guardflag = M                  
+hitflag = MA                    
+priority = 3, Hit                
+pausetime = 12, 12
+guard.pausetime = 0, 12
+sparkno = S6200                    
+guard.sparkno = S6140
+sparkxy = -5, -55               
+hitsound = s205,ifelse(p2life - floor(34 * fvar(0)) <= 0, 10,random % 4 + 5) 
+guardsound =s150, random % 3         
+ground.type = high              
+ground.slidetime = 25             
+ground.hittime  = 20             
+ground.velocity = -4.5,-3            
+air.type = High                  
+air.velocity = -3.4,-2.5          
+air.hittime = 25                 
+getpower = 0,0
+fall = 1
+fall.recover = 0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6720
+id = 6720
+postype = p2
+pos = -5,-60
+sprpriority = 3
+supermove = 1
+bindtime = 20
+removetime = 20
+persistent = 0
+ownpal = 1
+
+[State 220, guard]
+type = ChangeState
+trigger1 = moveguarded
+value = 700
+
+;----------------------------SLASH efe start
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる
+type = Explod
+trigger1 = 0;animelem =9
+anim = 223
+ID=201
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = 20
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem = 10
+ID =201
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = 0;animelem =7
+anim = 221
+ID=221
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = 0;animelem =8
+anim = 222
+ID=222
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+pausemovetime =255
+
+[state 220,]
+type = posadd
+trigger1 = animelem = 3
+trigger2 = animelem = 4
+trigger3 = animelem = 5
+trigger4 = animelem = 6
+x = -12
+
+[state 220,]
+type = posadd
+trigger1 = animelem = 7
+trigger2 = animelem = 10
+x = 12
+
+[state 220,]
+type = posadd
+trigger1 = animelem = 8
+trigger2 = animelem = 9
+x = 30
+
+[State 220, 7]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;------立ち強武器　近距離 s225,sswn
+[Statedef 225];/モヨンネレラノタク/ラメトクコルクルエムシ
+type    = S                      
+movetype= A                      
+physics = S                      
+velset = 0,0                   
+ctrl = 0                        
+anim = 225                      
+sprpriority = 2                  
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+trigger2 = animelem = 10
+var(13) = ifelse(time = 0,1,0)
+
+[state 200x,defencetime];弾かれ硬直時間設定　一撃目&２撃目
+type = varset
+trigger1 = time = 0
+trigger2 = animelem = 10
+var(14) = ifelse(time = 0,19,24)
+
+[State 225, hit1]
+type = HitDef
+trigger1 = animelem = 9
+attr = S, NA                     
+damage = floor(16 * fvar(0))                   ;ダメージ量（左が当たった時、右はガードした時）
+animtype = Light                 ;当てた時の相手のポーズ（light/midium/hard/back）から選択
+guardflag = M                   ;ガードできる状態（ｍaは全ての状態でガード可能）
+hitflag = MA                   ;当てる事のできる条件
+priority = 5, Hit                ;攻撃の優先権（0弱い　4通常　7強い
+pausetime = 15, 12                 ;攻撃が当たった時の硬直時間（左が自分、右が相手）
+guard.pausetime = 0, 14
+sparkno = S6200                      ;ヒットエフェクトのスプライトステート（無ければ0）
+guard.sparkno = S6140
+sparkxy = -10, -76               ;ヒットエフェクトを表示する場所（相手の座標で）
+hitsound = s205,ifelse(p2life - floor(16 * fvar(0)) <= 0, 10,random % 5+ 4) ;ヒットした時の音（ｓ*,*にすると自分の音を使う）
+guardsound = s150, random % 3   ;ガードした時の音（同上）
+ground.type = High               ;相手のくらった場所（High：頭、体, Low：足, Trip：足払い）
+ground.slidetime = 25             ;相手が後にすべる時間
+ground.hittime  = 20             ;コンボが繋がる時間（高くしすぎない事）
+ground.velocity = -2             ;地上で攻撃をくらった場合の相手の移動状況（ｘとｙで小数点可）
+airguard.velocity = -1.9,-.8     ;空中で攻撃をくらった場合の相手の移動状況（ｘとｙで小数点可）
+air.type = High                  ;空中で相手がくらった場所（上と同じ）
+air.velocity = -1.4,-3           ;空中で攻撃をくらった場合の相手の移動状況（ｘとｙで小数点可）
+air.hittime = 12                 ;空中でコンボが繋がる時間
+getpower = 0,0
+
+[State 225, hit2]
+type = HitDef
+trigger1 = animelem = 11
+attr = S, NA                     ;立ち状態で、通常の攻撃(ｓは立ち、ｎは通常、aは攻撃を表す)
+damage = floor(16 * fvar(0))                   ;ダメージ量（左が当たった時、右はガードした時）
+animtype = back                 ;当てた時の相手のポーズ（light/midium/hard/back）から選択
+guardflag = M                   ;ガードできる状態（ｍaは全ての状態でガード可能）
+hitflag = MA                    ;当てる事のできる条件
+priority = 7, Hit                ;攻撃の優先権（0弱い　4通常　7強い
+pausetime = 14, 10                 ;攻撃が当たった時の硬直時間（左が自分、右が相手）
+guard.pausetime = 0, 14
+sparkno = S6200                      ;ヒットエフェクトのスプライトステート（無ければ0）
+guard.sparkno = S6140
+sparkxy = -10, -76               ;ヒットエフェクトを表示する場所（相手の座標で）
+hitsound = s210,ifelse(p2life - floor(16 * fvar(0)) <= 0, 10,random % 4 + 4) ;ヒットした時の音（ｓ*,*にすると自分の音を使う）
+guardsound = s150, random % 3         ;ガードした時の音（同上）
+ground.type = High               ;相手のくらった場所（High：頭、体, Low：足, Trip：足払い）
+ground.slidetime = 30             ;相手が後にすべる時間
+ground.hittime  = 20             ;コンボが繋がる時間（高くしすぎない事）
+ground.velocity = -3.5             ;地上で攻撃をくらった場合の相手の移動状況（ｘとｙで小数点可）
+airguard.velocity = -1.9,-.8     ;空中で攻撃をくらった場合の相手の移動状況（ｘとｙで小数点可）
+air.type = High                  ;空中で相手がくらった場所（上と同じ）
+air.velocity = -1.4,-3           ;空中で攻撃をくらった場合の相手の移動状況（ｘとｙで小数点可）
+air.hittime = 30                 ;空中でコンボが繋がる時間
+getpower = 0,0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6720
+id = 6720
+postype = p2
+pos = -5,-60
+sprpriority = 3
+supermove = 1
+bindtime = 25
+removetime = 25
+persistent = 0
+ownpal = 1
+
+[State 225, guard]
+type = ChangeState
+trigger1 = moveguarded
+value = 700
+
+[state 220,]
+type = posadd
+trigger1 = animelem = 3
+x = 30
+
+[state 220,]
+type = posadd
+trigger1 = animelem = 16
+x = -20
+
+;-----------------TEST　slash　efe
+[state 200x,];刀の軌跡　226
+type = Explod
+trigger1 = 0;animelemtime(3) =0
+anim = 224
+ID=226
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる201
+type = Explod
+trigger1 = 0;animelem =7
+anim = 226
+ID=201
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = 20
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem = 8
+ID =201
+
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる202
+type = Explod
+trigger1 = 0;animelem =10
+anim = 228
+ID=202
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = 20
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem = 11
+ID =202
+
+[state 200x,];刀の軌跡　227
+type = Explod
+trigger1 = 0;animelemtime(9) =0
+anim = 227
+ID=227
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = 0;animelem =11
+anim = 229
+ID=229
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+;-----------------------------SLASH efe end
+
+[State 225, 7]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; 立ち・弱・キック s230,swk
+[Statedef 230];モィチキリ
+type    = S
+movetype= A
+physics = S
+ctrl = 0
+velset = 0,0
+anim = 230
+sprpriority = -1
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 0
+
+[State 230, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = S, NA
+animtype  = Medium
+damage    = floor(10 * fvar(0))
+guardflag = MA
+pausetime = 12,12
+sparkno = S6300
+guard.sparkno = S6150
+sparkxy = -10,-37
+hitsound   = s205, ifelse(p2life - floor(3 * fvar(0)) <= 0, 21,30 + random % 2) 
+guardsound = s205, 30 + random % 2
+ground.type = Low
+ground.slidetime = 10
+ground.hittime  = 12
+ground.velocity = -5
+air.velocity = -2.5,-3.5
+getpower = 0,0
+
+[State 230, 3]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; 立ち遠距離・強・キック s240,sskf
+[Statedef 240];モシリモムチキリ
+type    = S
+movetype= A
+physics = s
+ctrl = 0
+velset = 0,0
+anim = 240
+sprpriority = 2
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 0
+
+[State 240 hit1, hit2];
+type = HitDef
+trigger1 = time = 0
+attr = S, NA
+animtype  = Medium
+damage    = floor(15 * fvar(0))
+guardflag = H
+pausetime = 8,8
+sparkno = S6300   
+guard.sparkno = S6150
+sparkxy = -10,-10
+hitsound   = s205, ifelse(p2life - floor(3 * fvar(0)) <= 0, 21,30 + random % 2) 
+guardsound = s205, 30 + random % 2
+ground.type = Low
+ground.slidetime = 20
+ground.hittime  = 15
+ground.velocity = -3.5
+air.velocity = -2.2,-3.2
+getpower = 0,0
+
+[State 240, 4]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; ダッシュ 弱斬り　　s300,Dswwf
+[Statedef 300];ウトゥルサムモムノタク
+type    = S                      
+movetype= A                      
+physics = n                    
+velset = const(velocity.run.fwd.x),0                     
+ctrl = 0                       
+anim = 200                       
+sprpriority = 2                 
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 0
+
+[state 200x,defencetime];弾かれ硬直時間設定
+type = varset
+trigger1 = time = 0
+var(14) = 16
+
+[State 300, 1]
+type = HitDef
+trigger1 = time = 0
+attr = S, NA                     ;立ち状態で、通常の攻撃(ｓは立ち、ｎは通常、aは攻撃を表す)
+damage = floor(12 * fvar(0))                   ;ダメージ量（左が当たった時、右はガードした時）
+animtype = mid                 ;当てた時の相手のポーズ（light/midium/hard/back）から選択
+guardflag = M                   ;ガードできる状態（ｍaは全ての状態でガード可能）
+hitflag = MA                    ;当てる事のできる条件
+priority = 3             ;攻撃の優先権（0弱い　4通常　7強い
+pausetime = 10, 10                 ;攻撃が当たった時の硬直時間（左が自分、右が相手）
+guard.pausetime = 0, 10
+sparkno = s6200                      ;ヒットエフェクトのスプライトステート（無ければ0）
+guard.sparkno = S6140
+sparkxy = -10, -76               ;ヒットエフェクトを表示する場所（相手の座標で）
+hitsound = s205,ifelse(p2life - floor(12 * fvar(0)) <= 0, 5,random % 3) ;ヒットした時の音（ｓ*,*にすると自分の音を使う）
+guardsound = s150, random % 3     ;ガードした時の音（同上）
+ground.type = High               ;相手のくらった場所（High：頭、体, Low：足, Trip：足払い）
+ground.slidetime = 7             ;相手が後にすべる時間
+ground.hittime  = 12             ;コンボが繋がる時間（高くしすぎない事）
+ground.velocity = -4.5             ;地上で攻撃をくらった場合の相手の移動状況（ｘとｙで小数点可）
+airguard.velocity = -1.9,-.8     ;空中で攻撃をくらった場合の相手の移動状況（ｘとｙで小数点可）
+air.type = High                  ;空中で相手がくらった場所（上と同じ）
+air.velocity = -1.4,-3           ;空中で攻撃をくらった場合の相手の移動状況（ｘとｙで小数点可）
+air.hittime = 12                 ;空中でコンボが繋がる時間
+getpower = 0,0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6710
+id = 6710
+postype = p2
+pos = -5,-65
+sprpriority = 3
+supermove = 1
+bindtime = -1
+removetime = -2
+persistent = 0
+ownpal = 1
+
+[State 300, guard]
+type = ChangeState
+trigger1 = moveguarded
+value = 700
+
+;-----------------TEST　slash　efe ｈｉｔ中のID=201固定、－３で一個ですむ
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = animelem =3
+anim = 201
+ID=2011
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる
+type = Explod
+trigger1 = animelem =4
+anim = 202
+ID=201
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = 8 + 4
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem = 5
+ID =201
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = animelem =5
+anim = 203
+ID=203
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = animelem =6
+anim = 204
+ID=204
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+;-----------------------------SLASH efe end
+
+[state 300,]
+type = statetypeset
+trigger1 = animelem >= 4
+type = s
+physics = s
+
+[State 300, 7]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;ダッシュ　中斬り s310,Dsmwf    
+[Statedef 310];ニシヤサノタク/ニタンレラノタク
+type    = S
+movetype= A
+physics = n
+ctrl = 0
+velset = const(velocity.run.fwd.x),0 
+anim = 220
+sprpriority = 2
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 1
+
+[state 200x,defencetime];弾かれ硬直時間設定
+type = varset
+trigger1 = time = 0
+var(14) = 24
+[State 210, hit2]
+type = HitDef
+trigger1 = animelem = 7
+attr = S, NA
+animtype  = Medium
+damage    = floor(19 * fvar(0))
+guardflag = M
+hitflag = MA                    ;当てる事のできる条件
+pausetime = 14,14
+guard.pausetime = 0, 15
+sparkno = S6200  
+guard.sparkno = S6140
+sparkxy = -10,-60
+hitsound   = s205,ifelse(p2life - floor(21 * fvar(0)) <= 0, 10,random % 3 + 3) 
+guardsound = s150, random % 3
+ground.type = High
+ground.slidetime = 12
+ground.hittime  = 15
+ground.velocity = -5.5
+air.velocity = -2.5,-4
+getpower = 0,0
+
+[State 310, guard]
+type = ChangeState
+trigger1 = moveguarded
+value = 700
+
+;----------------------------SLASH efe start
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる
+type = Explod
+trigger1 = animelem =9
+anim = 223
+ID=201
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = 20
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem = 10
+ID =201
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = animelem =7
+anim = 221
+ID=221
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = animelem =8
+anim = 222
+ID=222
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+pausemovetime =255
+
+[state 300,]
+type = statetypeset
+trigger1 = animelem >= 8
+type = s
+physics = s
+
+[State 310, 5]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;-------------------------------------
+;ダッシュ　強斬り　s320,dsswf
+[Statedef 320];カントテルケノタク/ノチウモムエムシ
+type    = S                      
+movetype= A                      
+physics = n                      
+velset = const(velocity.run.fwd.x),0                 
+ctrl = 0                       
+anim = 320                    
+sprpriority = 2                 
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 0
+
+[state 320,velstop]
+type = velset
+trigger1 = animelem  = 3
+x = 0.5
+
+[state 320,rollsound]
+type = playsnd
+trigger1 = animelem = 2
+value = s240,0
+
+;-----------------TEST　slash　efe ｈｉｔ中のID=201固定、－３で一個ですむ
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = animelemtime(5) =0
+anim = 421
+ID=421
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+;ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = animelemtime(6) =0
+anim = 423
+ID=423
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+;ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる201
+type = Explod
+trigger1 = animelem =7
+anim = 424
+ID=201
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = 24 + 4
+ownpal = 1
+persistent = 0
+;ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem =8
+ID =201
+
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる201
+type = Explod
+trigger1 = animelem =8
+anim = 425
+ID=202
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = 24 + 4
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem =9
+ID =202
+
+[state 320,notguard]
+type = AssertSpecial
+trigger1 = 1
+flag = unguardable
+
+[State 320, hit1]
+type = HitDef
+trigger1 = animelem = 7
+attr = S, NA                     ;立ち状態で、通常の攻撃(ｓは立ち、ｎは通常、aは攻撃を表す)
+damage = floor(3 * fvar(0))                 ;ダメージ量（左が当たった時、右はガードした時）
+animtype = midium                 ;当てた時の相手のポーズ（light/midium/hard/back）から選択
+guardflag = -1                   ;ガードできる状態（ｍaは全ての状態でガード可能）
+hitflag = MA                    ;当てる事のできる条件
+priority = 7, Hit                ;攻撃の優先権（0弱い　4通常　7強い
+pausetime = 8, 8                 ;攻撃が当たった時の硬直時間（左が自分、右が相手）
+sparkno = s6200                      ;ヒットエフェクトのスプライトステート（無ければ0）
+guard.sparkno = S6140
+sparkxy = -5, -45               ;ヒットエフェクトを表示する場所（相手の座標で）
+hitsound = s205,ifelse(p2life - floor(3 * fvar(0)) <= 0, 10,random % 3 +7) 
+guardsound = s150, random % 3   ;ガードした時の音（同上）
+ground.type = high               ;相手のくらった場所（High：頭、体, Low：足, Trip：足払い）
+ground.slidetime = 10             ;相手が後にすべる時間
+ground.hittime  = 20             ;コンボが繋がる時間（高くしすぎない事）
+ground.velocity = -4,-5            ;地上で攻撃をくらった場合の相手の移動状況（ｘとｙで小数点可）
+getpower = 0,0
+fall.envshake.time = 15
+fall.recover = 0
+fall = 1
+
+[State 320, hit2]
+type = HitDef
+trigger1 = animelem = 8
+attr = S, NA                     ;立ち状態で、通常の攻撃(ｓは立ち、ｎは通常、aは攻撃を表す)
+damage = floor(16* fvar(0))                   ;ダメージ量（左が当たった時、右はガードした時）
+animtype = hard                 ;当てた時の相手のポーズ（light/midium/hard/back）から選択
+guardflag = M                   ;ガードできる状態（ｍaは全ての状態でガード可能）
+hitflag = MA                    ;当てる事のできる条件
+priority = 4, Hit                ;攻撃の優先権（0弱い　4通常　7強い
+pausetime = 8, 10                ;攻撃が当たった時の硬直時間（左が自分、右が相手）
+sparkno = s6200                      ;ヒットエフェクトのスプライトステート（無ければ0）
+guard.sparkno = S6140
+sparkxy = -10, -55               ;ヒットエフェクトを表示する場所（相手の座標で）
+hitsound = s205,ifelse(p2life - floor(16 * fvar(0)) <= 0, 10,random % 3 +7) 
+guardsound =s150, random % 3         ;ガードした時の音（同上）
+ground.type = high               ;相手のくらった場所（High：頭、体, Low：足, Trip：足払い）
+ground.slidetime = 9             ;相手が後にすべる時間
+ground.hittime  = 12             ;コンボが繋がる時間（高くしすぎない事）
+ground.velocity = -5,-8            ;地上で攻撃をくらった場合の相手の移動状況（ｘとｙで小数点可）
+air.velocity = -2,-6
+fall = 1
+fall.recover = 0
+getpower = 0,0
+fall.envshake.time = 15
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6720
+id = 6720
+postype = p2
+pos = -5,-60
+sprpriority = 3
+supermove = 1
+bindtime = 25
+removetime = 25
+persistent = 0
+ownpal = 1
+
+[State 320, 7]
+type = ChangeState
+triggerall = !var(1)
+trigger1 = Animelem = 16
+value = 322
+ctrl = 0
+
+[State 320, 7]
+type = ChangeState
+triggerall =var(1)
+trigger1 = Animtime = 0
+value = 0
+ctrl = 1
+
+;------------------------
+[Statedef 322];カントテルケノタク  follow t
+type    = A                      
+movetype= I                      
+physics = A                      
+juggle  = 1				;Commonly-used controllers:
+velset = -3.5,-7                     ;このステートが始まった時に移動するか（0,0で動かない）
+ctrl = 0                         ;このステート中に他のコマンドを受け付けるか(1で受け付ける)
+sprpriority = 2                  ;表示した絵の重なり具合(2一番前　0通常　-1奥)
+
+[State 322, 7]
+type = veladd
+trigger1 = time = 0
+x =0.5
+
+;---------------------------------------------------------------------------
+;踏み込み強キック s340,dsk
+[Statedef 340];エエンモムケマ
+type    = C
+movetype= A
+physics = n
+velset = const(velocity.run.fwd.x),0                     
+ctrl = 0
+anim = 340
+sprpriority = 2
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 0
+
+[State 340, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = C, NA
+damage    = floor(8 * fvar(0))
+animtype  = up
+hitflag = MA
+guardflag = L
+pausetime = 3,3
+sparkno = s6300
+guard.sparkno = S6150
+sparkxy = -10,-8
+hitsound   = s205, ifelse(p2life - floor(8 * fvar(0)) <= 0, 21,20)
+guardsound = s151, random % 3 + 4
+ground.type = Low
+ground.slidetime = 7
+ground.hittime  = 18
+ground.velocity = 0,-7
+air.velocity = -2,-6.4
+down.velocity = -5,-2.5
+down.hittime = 3
+fall = 1
+fall.recover = 0
+getpower = 0,0
+
+[state 330,]
+type = statetypeset
+trigger1 = time >= 13
+type = c
+physics = c
+
+[State 330, 3]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 11
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;屈み・弱・武器 s400,cwwn cwwf
+[statedef 400];ケマトゥイェノタク（弱）
+type    = C
+movetype= A
+physics = C
+ctrl = 0
+anim = 400
+sprpriority = 2
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 0
+
+[state 200x,defencetime];弾かれ硬直時間設定
+type = varset
+trigger1 = time = 0
+var(14) = 9
+
+[State 400, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = C, NA
+damage    = floor(4 * fvar(0))
+priority  = 4
+animtype  = Light
+hitflag = MA
+guardflag = L
+pausetime = 8,8
+guard.pausetime = 0, 8
+sparkno = s6200
+guard.sparkno = S6140
+sparkxy = -10,-42
+hitsound   = s205, ifelse(p2life - floor(4 * fvar(0)) <= 0, 10,random % 3) 
+guardsound = s150, random % 3
+ground.type = Low
+ground.slidetime = 4
+ground.hittime  = 12
+ground.velocity = -4
+air.velocity = -1.5,-3
+getpower = 0,0
+
+[State 400, guard]
+type = ChangeState
+trigger1 = moveguarded
+value = 710
+
+;----------------------------SLASH efe start
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる
+type = Explod
+trigger1 = 0;animelem =2
+anim = 401
+ID=201
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = 15
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem = 3
+ID =201
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 =0; animelem =3
+anim = 402
+ID=402
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = 3
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+;-----------------------------SLASH efe end
+
+[State 400, guard]
+type = ChangeState
+trigger1 = moveguarded
+value = 710
+
+[State 400, 4]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 11
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;屈み・中武器 s410,cmw
+[Statedef 410];ケマトゥイェノタク(中）
+type    = C
+movetype= A
+physics = C
+ctrl = 0
+anim = 410
+sprpriority = 2
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 1
+
+[state 200x,defencetime];弾かれ硬直時間設定
+type = varset
+trigger1 = time = 0
+var(14) = 13
+
+[State 410, 2]
+type = HitDef
+trigger1 = time = 0
+attr = C, NA
+damage    = floor(21 * fvar(0))
+animtype  = Medium
+hitflag = MA
+guardflag = M
+pausetime = 10,10
+guard.pausetime = 0, 12
+sparkno = S6200   
+guard.sparkno = S6140
+sparkxy = -10,-55
+hitsound   = s205, ifelse(p2life - floor(21 * fvar(0)) <= 0, 10,random % 5 + 3) 
+guardsound = s150, random % 3
+ground.type = Low
+ground.slidetime = 12
+ground.hittime  = 15
+ground.velocity = -4
+air.velocity = -3,-4
+getpower = 0,0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6710
+id = 6710
+postype = p2
+pos = -5,-15
+sprpriority = 3
+supermove = 1
+bindtime = 20
+removetime = 20
+persistent = 0
+ownpal = 1
+
+[State 410, guard]
+type = ChangeState
+trigger1 = moveguarded
+value = 710
+
+;----------------------------SLASH efe start
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる
+type = Explod
+trigger1 = 0;animelem =2
+anim = 401
+ID=201
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = 1
+removetime = 15
+ownpal = 1
+persistent = 0
+;ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem = 3
+ID =201
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = 0;animelem =3
+anim = 402
+ID=402
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = 3
+ownpal = 1
+persistent = 0
+;ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+;-----------------------------SLASH efe end
+
+[State 410, guard]
+type = ChangeState
+trigger1 = moveguarded
+value = 700
+
+[State 410, 4]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 11
+ctrl = 1
+
+;-屈強武器--------s420,csw----------
+[statedef 420]; チキリニセノタク/カリプヌイエエムシ
+type    = C
+movetype= A
+physics = C
+ctrl = 0
+anim = 420
+sprpriority = 2
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 0
+
+[state 200x,defencetime];弾かれ硬直時間設定
+type = varset
+trigger1 = time = 0
+var(14) = 24
+
+[State 420, test] 
+type = HitDef
+trigger1 = time = 0
+attr = C, NA
+damage    = floor(16 * fvar(0))
+animtype  = hard
+hitflag = MA
+guardflag = M
+pausetime = 18,18
+guard.pausetime = 0,15
+sparkno = S6200
+guard.sparkno = S6140
+sparkxy = -10,-10
+hitsound   = s205, ifelse(p2life - floor(16 * fvar(0)) <= 0, 10,random % 3 + 7)            
+guardsound = s150, random % 3
+ground.type = low
+ground.slidetime = 20
+ground.hittime  = 22
+ground.velocity = -2.2,-3
+air.velocity = -2,-2
+getpower = 0,0
+fall = 1
+fall.recover = 0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6720
+id = 6720
+postype = p2
+pos = -5,-15
+sprpriority = 3
+supermove = 1
+bindtime = 20
+removetime = 20
+persistent = 0
+ownpal = 1
+
+;-----------------TEST　slash　efe ｈｉｔ中のID=201固定、－３で一個ですむ420
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = 0;animelemtime(5) =0
+anim = 421
+ID=421
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+;ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = 0;animelemtime(6) =0
+anim = 423
+ID=423
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+;ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる201
+type = Explod
+trigger1 = 0;animelem =7
+anim = 424
+ID=201
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = 24 + 4
+ownpal = 1
+persistent = 0
+;ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem =8
+ID =201
+
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる201
+type = Explod
+trigger1 = 0;animelem =8
+anim = 425
+ID=202
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = 24 + 4
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem =9
+ID =202
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = 0;animelemtime(9) =0
+anim = 426
+ID=426
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[State 420, guard]
+type = ChangeState
+trigger1 = moveguarded
+value = 710
+
+[state 420,]
+type = posadd
+trigger1 = animelem = 3
+trigger2 = animelem = 4
+trigger3 = animelem = 5
+trigger4 = animelem = 6
+trigger5 = animelem = 7
+x = 5
+
+[State 420, 4]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 11
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;屈み・弱・キック s430,cwk
+[Statedef 430];エエンケマ
+type    = C
+movetype= A
+physics = C
+ctrl = 0
+anim = 430
+sprpriority = 2
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 1
+
+[State 430, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = C, NA
+damage    = floor(8 * fvar(0))
+animtype  = Light
+hitflag = MA
+guardflag = L
+pausetime = 12,12
+sparkno = S6300
+guard.sparkno = S6150
+sparkxy = -10,-8
+hitsound   = s205, ifelse(p2life - floor(8 * fvar(0)) <= 0, 21,20) 
+guardsound = s205, 30 + random % 2
+ground.type = Low
+ground.slidetime = 6
+ground.hittime  = 12
+ground.velocity = -5
+air.velocity = -2,-3
+getpower = 0,0
+
+[State 430, 3]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 11
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;屈み・強・キック s440,csk
+[Statedef 440];カントトゥカンウケマ
+type    = C
+movetype= A
+physics = C
+ctrl = 0
+anim = 440
+velset = 15,0
+sprpriority = 2
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 0
+
+[State 440, 3]
+type = HitDef
+trigger1 = Time = 0
+attr = C, NA
+damage    = floor(14 * fvar(0))
+hitflag = MA
+guardflag = M
+animtype  = back
+pausetime = 12,12
+sparkno = S6300
+guard.sparkno = S6150
+sparkxy = -5,-30
+hitsound   = s205, ifelse(p2life - floor(14 * fvar(0)) <= 0, 21,20) 
+guardsound = s205, 30 + random % 2
+ground.type = Trip
+ground.slidetime = 10
+ground.hittime  = 15
+ground.velocity = -2.5,-2.5
+air.velocity = -1.2,-3
+guard.velocity = -2
+fall = 1
+getpower = 0,0
+fall.envshake.time = 15
+
+[State 440, 4]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 11
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;空中・弱・武器
+[Statedef 600];ニシアシノタク
+type    = A
+movetype= A
+physics = A
+ctrl = 0
+anim = 600
+sprpriority = 2
+hitcountpersist = 1
+
+[State 600, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = A, NA
+damage    = floor(10 * fvar(0))
+guardflag = HA
+priority = 3
+pausetime = 8,8
+sparkno = S6200
+guard.sparkno = S6140
+sparkxy = -10,-58
+hitsound   = s205,ifelse(p2life - floor(10 * fvar(0)) <= 0, 10,random % 3)
+guardsound = s150, random % 3
+ground.type = High
+ground.slidetime = 5
+ground.hittime  = 5
+ground.velocity = -4
+air.velocity = -1.3,-3
+getpower = 0,0
+
+;-----------------TEST　slash　efe ｈｉｔ中のID=201固定、－３で一個ですむ
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる201
+type = Explod
+trigger1 = 0;animelem =2
+anim = 601
+ID=201
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = 20 + 4
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem = 3
+ID =201
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 =0; animelemtime(3) =0
+anim = 602
+ID=602
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 =0; animelemtime(3) =2
+anim = 603
+ID=603
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[State 600, 3]
+type = ChangeState
+trigger1 = AnimTime = 0
+ctrl = 0
+value = 51
+anim=870
+
+;---------------------------------------------------------------------------
+;空中・中・武器
+[Statedef 610];レラトゥイェノタク
+type    = A
+movetype= A
+physics = A
+ctrl = 0
+anim = 610
+sprpriority = 2
+hitcountpersist = 1
+
+[State 610, 3]
+type = HitDef
+trigger1 = Time = 0
+attr = A, NA
+damage = floor(19 * fvar(0))
+guardflag = HA
+priority = 4
+pausetime = 12,12
+sparkno = S6200   
+guard.sparkno = S6140
+sparkxy = -10,-55
+hitsound   = s205, ifelse(p2life - floor(19 * fvar(0)) <= 0, 10,random % 3) 
+guardsound = s150, random % 3
+animtype = Med
+ground.type = High
+ground.slidetime = 17
+ground.hittime  = 17
+ground.velocity = -5
+air.velocity = -3,-4
+getpower = 0,0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6710
+id = 6710
+postype = p2
+pos = -5,-70
+sprpriority = 3
+supermove = 1
+bindtime = 20
+removetime = 20
+persistent = 0
+ownpal = 1
+
+;-----------------TEST　slash　efe ｈｉｔ中のID=201固定、－３で一個ですむ
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる201
+type = Explod
+trigger1 = 0;animelem =2
+anim = 611
+ID=201
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = 20 + 4
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem = 3
+ID =201
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = 0;animelemtime(3) =0
+anim = 612
+ID=612
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[State 610, 3]
+type = ChangeState
+trigger1 = AnimTime = 0
+ctrl = 0
+value = 51
+anim=870
+
+;---------------------------------------------------------------------------
+;空中・強・武器 s620,asw
+[Statedef 620];カントヤサエムシ
+type    = A
+movetype= A
+physics = A
+ctrl = 0
+anim = 620
+sprpriority = 2
+hitcountpersist = 1
+
+[State 620, 3]
+type = HitDef
+trigger1 = time = 0
+attr = A, NA
+damage = floor(30 * fvar(0))
+hitflag = MAF
+guardflag = HA
+priority = 4
+pausetime = 12,12
+sparkno = S6200  
+guard.sparkno = S6140
+sparkxy = -10,-55
+hitsound   = s205,ifelse(p2life - floor(4 * fvar(0)) <= 0, 10,9)                  
+guardsound = s150, random % 3
+animtype = Med
+ground.type = High
+ground.slidetime = 17
+ground.hittime  = 17
+ground.velocity = -5
+air.velocity = -3,-4
+id = 620
+getpower = 0,0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6720
+id = 6720
+postype = p2
+pos = -5,-50
+sprpriority = 3
+supermove = 1
+bindtime = 20
+removetime = 20
+persistent = 0
+ownpal = 1
+
+;-----------------TEST　slash　efe ｈｉｔ中のID=201固定、－３で一個ですむ
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 = 0;animelem =1
+anim = 621
+ID=621
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,];刀の軌跡　多めに出しておいて、elem移動で消す。これでpause中でも出てくれる201
+type = Explod
+trigger1 =0; animelem =3
+anim = 622
+ID=201
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = 20 + 4
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+[state 200x,]
+type = removeexplod
+trigger1 = animelem = 4
+ID =201
+
+[state 200x,];刀の軌跡　ここは普通に
+type = Explod
+trigger1 =0; animelem =4
+anim = 623
+ID=623
+postype = p1
+pos = 0,0
+sprpriority = 3
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+removeongethit=1
+pausemovetime =255
+
+;-----------------------------SLASH efe end
+
+[State 620, 3]
+type = ChangeState
+trigger1 = AnimTime = 0
+ctrl = 0
+value = 51
+anim=870
+
+;---------------------------------------------------------------------------
+;空中・弱・キック
+[Statedef 630];ニシアシケマ
+type    = A
+movetype= A
+physics = A
+ctrl = 0
+anim = 630
+sprpriority = 2
+hitcountpersist = 1
+
+[State 630, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = A, NA
+damage = floor(10 * fvar(0))
+guardflag = HA
+priority = 3
+pausetime = 8,8
+sparkno = S6300
+guard.sparkno = S6150
+sparkxy = -5,-35
+hitsound   = s205, ifelse(p2life - floor(10 * fvar(0)) <= 0, 21,30 + random % 2)
+guardsound = s205, 30 + random % 2
+ground.type = High
+ground.slidetime = 6
+ground.hittime  = 6
+ground.velocity = -4
+air.velocity = -2,-3
+getpower = 0,0
+
+[State 630, 3]
+type = ChangeState
+trigger1 = AnimTime = 0
+ctrl = 0
+value = 51
+anim=870
+
+;---------------------------------------------------------------------------
+;空中・強・キック
+[Statedef 640];ニシヤサケマ/カムイフムケスプ
+type    = A
+movetype= A
+physics = A
+ctrl = 0
+anim = 640
+sprpriority = 2
+hitcountpersist = 1
+
+[State 640, 3]
+type = HitDef
+trigger1 = animelem  =8
+attr = A, NA
+damage    = floor(8 * fvar(0))
+guardflag = HA
+priority =7,hit
+pausetime = 22,25
+sparkno = S6300
+guard.sparkno = S6150
+sparkxy = -10,-65
+hitsound   = s205, ifelse(p2life - floor(8 * fvar(0)) <= 0, 21,20) 
+guardsound = s205, 30 + random % 2
+animtype = up
+ground.type = High
+ground.slidetime = 17
+ground.hittime  = 17
+ground.velocity = 0,3
+air.velocity = -0.5,4
+getpower = 0,0
+fall= 1
+air.fall = 1
+fall.recover = 0
+
+[State 640, 3];ガード時、ダメージ0の追加
+type = HitDef
+triggerall = p2stateno = [120,155]
+trigger1 = animelem >=8
+attr = A, NA
+damage    = 0;floor(0 * fvar(0))
+guardflag = HA
+priority =7,hit
+pausetime = 25,25
+sparkno = S6300
+guard.sparkno = S6150
+sparkxy = -10,-65
+hitsound   = s150, random % 2+ 4
+guardsound = s150, random % 2+ 4
+animtype = up
+ground.type = High
+ground.slidetime = 17
+ground.hittime  = 17
+ground.velocity = 0,3
+air.velocity = -0.5,4
+getpower = 0,0
+fall= 1
+air.fall = 1
+fall.recover = 0
+persistent = 0
+
+;--------武器攻撃ガード弾かれ---------仕組み♪　v13が１なら必殺技キャンセルＯＫ．v14、timeカウント0で通常に。-----
+;地上,立ち攻撃　弾かれ s700 sguarded　
+[Statedef 700];
+type    = S
+movetype= I
+physics = S
+anim = 700
+ctrl = 0
+velset = 0,0
+sprpriority = 0
+
+[state 200x,]
+type = removeexplod
+trigger1 = time = 0
+ignorehitpause = 1
+ID =201
+
+[state 200x,]
+type = removeexplod
+trigger1 = time = 0
+ignorehitpause = 1
+ID =202
+
+[state 200x,]
+type = removeexplod
+trigger1 = time = 0
+ignorehitpause = 1
+ID =203
+
+[state 200x,cancelF];キャンセルOK？フラグreset
+type = varset
+trigger1 = animelem = 2
+var(13) = 0
+
+[state 200x,cancelF];弾かれ硬直時間設定reset
+type = varset
+trigger1 = var(14) <= 0
+var(14) = 0
+
+[state 200x,cancelF];弾かれ硬直時間設定count
+type = varadd
+trigger1 = 1
+var(14) = -1
+
+[State 700, 3]
+type = ChangeState
+trigger1 = var(14) <= 0
+ctrl = 1
+value = 0
+
+;------------------------地上,しゃがみ攻撃　弾かれ s710 cguarded
+[Statedef 710];
+type    = c
+movetype= I
+physics = c
+anim = 710
+ctrl = 0
+velset = 0,0
+sprpriority = 0
+
+[state 200x,]
+type = removeexplod
+trigger1 = time = 0
+ignorehitpause = 1
+ID =201
+
+[state 200x,]
+type = removeexplod
+trigger1 = time = 0
+ignorehitpause = 1
+ID =202
+
+[state 200x,]
+type = removeexplod
+trigger1 = time = 0
+ignorehitpause = 1
+ID =203
+
+[state 200x,cancelF];キャンセルOK？フラグreset
+type = varset
+trigger1 = animelem = 2
+var(13) = 0
+
+[state 200x,cancelF];弾かれ硬直時間設定reset
+type = varset
+trigger1 = var(14) <= 0
+var(14) = 0
+
+[state 200x,cancelF];弾かれ硬直時間設定count
+type = varadd
+trigger1 = 1
+var(14) = -1
+
+[State 710, 3]
+type = ChangeState
+trigger1 = var(14) <= 0
+ctrl = 1
+value = 11
+
+;---------------------------------
+;受け返し（弾き）
+[statedef 720]
+type = s
+movetype= I
+physics = S
+juggle  = 0
+velset = 0,0
+ctrl = 0
+anim = 720
+sprpriority = 2
+
+[state 720,end]
+type = changestate
+trigger1 = animtime = 0
+ctrl = 1
+value = 0
+
+;---------------------------------------------------------------------------
+;
+[Statedef 800]
+type    = S
+movetype= A
+physics = S
+juggle  = 0
+velset = 0,0
+ctrl = 0
+anim = 800
+sprpriority = 2
+
+[State 800, 1]
+type = HitDef
+Trigger1 = Time = 0
+attr = S, NT          
+hitflag = M-          
+priority = 1, Miss    
+sparkno = -1         
+sprpriority = 1     
+pausetime = 8,8
+p1facing = 1;ifelse (command = "holdfwd", -1, 1) 
+p2facing = 1          
+p1stateno = 810       
+p2stateno = 820      
+snap = 30,0
+
+[State 800, 2]
+type = ChangeState
+Trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+[Statedef 810]
+type    = S
+movetype= A
+physics = s
+anim = 810
+poweradd = 0
+
+[State 810, Grab Sound]
+type = PlaySnd
+trigger1 = AnimElem = 2
+value = 1, 1
+
+[State 810, Throw Sound]
+type = PlaySnd
+trigger1 = AnimElem = 7
+value = 800, 0
+
+[State 200, 1]
+type = HitDef
+trigger1 = time = 0
+attr = s, na                      
+damage = floor(20 *fvar(0)),1              
+animtype = back             
+guardflag = -1                  
+hitflag = M                   
+priority = 7,hit            
+pausetime = 10, 10
+guard.pausetime = 10, 8 
+sparkno = s6200    
+guard.sparkno = S6140
+sparkxy = 0, -70               
+hitsound = s205,ifelse(p2life - floor(20* fvar(0)) <= 0, 10,random % 3 + 5)      
+guardsound = s150, random % 3     
+ground.type = High             
+ground.slidetime = 25           
+ground.hittime  = 20             
+ground.velocity = -3,-6             
+air.type = High                
+air.velocity = -1.4,-5          
+air.hittime = 20                 
+getpower = 0,0
+fall=1
+air.fall =1
+fall.revover = 0
+p2stateno = 3480
+
+[State 810, State End]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;------------------------------p2
+[Statedef 820]
+type    = s
+movetype= H
+physics = s
+velset = 0,0
+
+[State 820, 1]
+type = ChangeAnim
+Trigger1 = 1
+value = ifelse(authorname = "R-R",5000 + var(0),5000)
+
+[state 820,]
+type = selfstate
+trigger1 = time >= 80
+value =5001
+
+;---------------------------------------------------------------------------
+;投げ技2　　s830,s840
+[Statedef 830];
+type    = S
+movetype= A
+physics = S
+velset = 0,0
+ctrl = 0
+anim = 800
+sprpriority = 2
+
+[State 800, 1]
+type = HitDef
+Trigger1 = Time = 0
+attr = S, NT          ;ｓ：立ち　ｎ：通常　ｔ：投げ
+hitflag = M-          ;コンボの途中から投げが入らないよう設定してある
+priority = 1, Miss    ;１は優先順位が低いので技がでないかミスするという設定
+sparkno = -1          ;-をつければスパークエフェクトは無い
+pausetime = 8,8
+sprpriority = 1       ;２Ｐより上に表示される
+p1facing = 1;ifelse (command = "holdfwd", -1, 1) ;前を押したらターンする設定
+p2facing = 1          ;？
+forcestand = 1
+p1stateno = 835       ;投げが成功した場合の移動する１Ｐのステート
+p2stateno = 820       ;投げが成功した場合の移動する２Ｐのステート
+snap =30,0
+
+[State 830, 2]
+type = ChangeState
+Trigger1 = Animtime = 0
+value = 0
+ctrl = 1
+
+;------------root hitmove   
+[Statedef 835]
+type    = S
+movetype= A
+physics = N
+anim = 830
+poweradd = 0
+
+[state 835,]:
+type = targetbind
+trigger1 = animelem = 6
+y = -50
+
+[State 810, Throw Sound]
+type = PlaySnd
+trigger1 = AnimElem = 6
+value = 800, 0
+
+[State 200, 1]
+type = HitDef
+trigger1 = time = 0
+attr = s, nt                      
+damage = floor(15 * fvar(0)),1              
+animtype = back             
+guardflag = -1                  
+hitflag = M                   
+priority = 7,hit            
+pausetime = 10, 10
+guard.pausetime = 10, 8 
+sparkno = s6200    
+guard.sparkno = S6140
+sparkxy = 0, -70               
+hitsound = s205,ifelse(p2life - floor(15 * fvar(0)) <= 0, 10,random % 3 + 5)      
+guardsound = s150, random % 3     
+ground.type = High             
+ground.slidetime = 25           
+ground.hittime  = 20             
+ground.velocity = 8,-6             
+getpower = 0,0
+fall=1
+air.fall =1
+fall.revover = 0
+
+[State 835, State End]
+type = ChangeState
+trigger1 = animtime = 0
+value = 0
+ctrl = 1
+
+;------------------------
+
+;------enemy state-----------------------------------------------------------use p2spr  
+[Statedef 840]
+type = S
+movetype= H
+physics = N
+velset = 0,0
+
+[State 840, 1]
+type = ChangeAnim2
+triggerall = 1   ;debug
+Trigger1 = Time = 0
+value = ifelse(authorname = "R-R",840 + var(0),840)
+
+;------enemy state-----------------------------------------------------------use p2spr  
+[Statedef 845]
+type = S
+movetype= H
+physics = N
+velset = 0,0
+
+[State 840, 1]
+type = ChangeAnim2
+triggerall = 1   ;debug
+Trigger1 = Time = 0
+value = ifelse(authorname = "R-R",2050 + var(0),2050)
+
+;------enemy state-----------------------------------------------------------use p2spr  
+[Statedef 850]
+type = s
+movetype= H
+physics = N
+velset = -6,-7
+
+[state 850,vel]
+type = velset
+trigger1 = time = 0
+x = -6
+y = -7
+
+[state 850,]
+type = veladd
+trigger1 = time = 0
+y = 0.44
+
+[State 840, 1]
+type = ChangeAnim2
+triggerall = 0;1   ;debug
+Trigger1 = Time = 0
+value = ifelse(authorname = "R-R",5070 + var(0),5070)
+
+[State 850, hfs]
+type = HitFallSet
+trigger1 = time = 0 
+value = 1
+
+[State 850, 1]
+type = selfstate
+;trigger1 = vel y > 0
+;trigger1 = pos y >= -20
+;trigger2 = animtime = 0
+trigger1 = time = 0
+value = 5070
+
+;----------------------------------------------連ねきり　輪廻　スタート
+[Statedef 500];
+type    = s
+movetype= A
+physics = s
+velset = 0.0
+ctrl = 0
+anim = 500
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 0
+
+[State -3,  Sound]
+type = PlaySnd
+trigger1 = Time = 0
+value = s250, 0
+channel = 0
+
+[State 410, 2]
+type = HitDef
+trigger1 = time = 0
+attr = s, NA
+damage    = floor(5* fvar(0))
+animtype  = hard
+hitflag = MA
+guardflag = M
+pausetime = 8,10
+sparkno = S6200   
+guard.sparkno = S6140
+sparkxy = -10,-55
+hitsound   = s205, ifelse(p2life - floor(5 * fvar(0)) <= 0, 10,random % 5 + 3) 
+guardsound = s150, random % 3
+ground.type = Low
+ground.slidetime = 25
+ground.hittime  = 20
+ground.velocity = 0
+air.velocity = -1,-2
+air.slidetime = 29
+air.hittime  = 25
+getpower = 0,0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6710
+id = 6710
+postype = p2
+pos = -5,-15
+sprpriority = 3
+supermove = 1
+bindtime = 20
+removetime = 20
+persistent = 0
+ownpal = 1
+
+[state 200x,];光輪
+type = Explod
+trigger1 = time = 0
+anim = 555
+ID=555
+postype = p1
+pos = 15,-70
+sprpriority = 4
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+
+[State 50, State End]
+type = ChangeState
+trigger1 = animtime = 0
+value = 0
+ctrl = 1
+
+;--------------2きり目
+[Statedef 505];
+type    = s
+movetype= A
+physics = s
+velset = 0.0
+ctrl = 0
+anim = 505
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+trigger1 = animelem = 10
+var(13) = ifelse(time = 0,1,0)
+
+[State 505, 2]
+type = HitDef
+trigger1 = time = 0
+trigger2 = animelem = 10
+attr = s, NA
+damage    = floor(4* fvar(0))
+animtype  = hard
+hitflag = MA
+guardflag = M
+pausetime = 10,12
+sparkno = S6200   
+guard.sparkno = S6140
+sparkxy = -10,-55
+hitsound   = s205, ifelse(p2life - floor(4 * fvar(0)) <= 0, 10,random % 5 + 3) 
+guardsound = s150, random % 3
+ground.type = Low
+ground.slidetime = 29
+ground.hittime  = 25
+ground.velocity = 0
+air.velocity = -1,-2
+air.slidetime = 29
+air.hittime  = 25
+getpower = 0,0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6710
+id = 6710
+postype = p2
+pos = -5,-15
+sprpriority = 3
+supermove = 1
+bindtime = 20
+removetime = 20
+persistent = 0
+ownpal = 1
+
+[state 505,]
+type = posadd
+trigger1 = animelem = 3
+x = 30
+
+[state 505,]
+type = posadd
+trigger1 = animelem = 16
+x = -20
+
+[State 505, State End]
+type = ChangeState
+trigger1 = animtime = 0
+value = 0
+ctrl = 1
+
+;--------------3きり目  正確には４hit目
+[Statedef 510];
+type    = s
+movetype= A
+physics = s
+velset = 0.0
+ctrl = 0
+anim = 510
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) =0
+
+[State 505, 2]
+type = HitDef
+trigger1 = time = 0
+attr = s, NA
+damage    = floor(4* fvar(0))
+animtype  = hard
+hitflag = MA
+guardflag = M
+pausetime = 8,10
+sparkno = S6200   
+guard.sparkno = S6140
+sparkxy = -10,-55
+hitsound   = s205, ifelse(p2life - floor(4 * fvar(0)) <= 0, 10,random % 5 + 3) 
+guardsound = s150, random % 3
+ground.type = Low
+ground.slidetime = 30
+ground.hittime  = 26
+ground.velocity = -2
+air.velocity = -1,-2
+air.slidetime = 29
+air.hittime  = 25
+getpower = 0,0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6710
+id = 6710
+postype = p2
+pos = -5,-15
+sprpriority = 3
+supermove = 1
+bindtime = 20
+removetime = 20
+persistent = 0
+ownpal = 1
+
+[State 505, State End]
+type = ChangeState
+trigger1 = animtime = 0
+value = 0
+ctrl = 1
+
+;--------------4きり目 Last 正確には5hit目
+[Statedef 515];
+type    = s
+movetype= A
+physics = s
+velset = 0.0
+ctrl = 0
+anim = 515
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) =0
+
+[State 505, 2]
+type = HitDef
+trigger1 = time = 0
+attr = s, NA
+damage    = floor(4* fvar(0))
+animtype  = diagup
+hitflag = MA
+guardflag = M
+pausetime = 10,10
+sparkno = S6200   
+guard.sparkno = S6140
+sparkxy = -10,-55
+hitsound   = s205, ifelse(p2life - floor(4 * fvar(0)) <= 0, 10,random % 5 + 3) 
+guardsound = s150, random % 3
+ground.type = Low
+ground.slidetime = 20
+ground.hittime  = 20
+ground.velocity = -8,-6
+air.velocity = -5,-3
+air.slidetime = 29
+air.hittime  = 25
+getpower = 0,0
+fall = 1
+fall.recover = 0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6710
+id = 6710
+postype = p2
+pos = -5,-15
+sprpriority = 3
+supermove = 1
+bindtime = 20
+removetime = 20
+persistent = 0
+ownpal = 1
+
+[State 505, State End]
+type = ChangeState
+trigger1 = animtime = 0
+value = 0
+ctrl = 1
+
+;----------------------------------------------連ねきり　転生　スタート
+[Statedef 520];
+type    = s
+movetype= A
+physics = s
+velset = 0.0
+ctrl = 0
+anim = 520
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 0
+
+[State -3,  Sound]
+type = PlaySnd
+trigger1 = Time = 0
+value = s250, 1
+channel = 0
+
+[State 520, 2]
+type = HitDef
+trigger1 = time = 0
+attr = s, NA
+damage    = floor(5* fvar(0))
+animtype  = hard
+hitflag = MA
+guardflag = M
+pausetime = 8,10
+sparkno = S6200   
+guard.sparkno = S6140
+sparkxy = -10,-55
+hitsound   = s205, ifelse(p2life - floor(5 * fvar(0)) <= 0, 10,3) 
+guardsound = s150, random % 3
+ground.type = Low
+ground.slidetime = 25
+ground.hittime  = 20
+ground.velocity = 0
+air.velocity = -1,-2
+air.slidetime = 29
+air.hittime  = 25
+getpower = 0,0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6710
+id = 6710
+postype = p2
+pos = -5,-55
+sprpriority = 3
+supermove = 1
+bindtime = 20
+removetime = 20
+persistent = 0
+ownpal = 1
+
+[state 200x,];光輪
+type = Explod
+trigger1 = time = 0
+anim = 555
+ID=555
+postype = p1
+pos =  -35,-80
+sprpriority = 4
+bindtime = -1
+removetime = -2
+ownpal = 1
+persistent = 0
+ignorehitpause = 1
+
+[State 520, State End]
+type = ChangeState
+trigger1 = animtime = 0
+value = 0
+ctrl = 1
+
+;--------------2きり目
+[Statedef 525];
+type    = s
+movetype= A
+physics = s
+velset = 0.0
+ctrl = 0
+anim = 525
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) = 0
+
+[State 505, 2]
+type = HitDef
+trigger1 = time = 0
+attr = s, NA
+damage    = floor(4* fvar(0))
+animtype  = hard
+hitflag = MA
+guardflag = M
+pausetime = 12,12
+sparkno = S6200   
+guard.sparkno = S6140
+sparkxy = -10,-55
+hitsound   = s205, ifelse(p2life - floor(4 * fvar(0)) <= 0, 10,random % 5 + 3) 
+guardsound = s150, random % 3
+ground.type = Low
+ground.slidetime = 29
+ground.hittime  = 25
+ground.velocity = 0
+air.velocity = -1,-2
+air.slidetime = 29
+air.hittime  = 25
+getpower = 0,0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6710
+id = 6710
+postype = p2
+pos = -5,-15
+sprpriority = 3
+supermove = 1
+bindtime = 20
+removetime = 20
+persistent = 0
+ownpal = 1
+
+[State 525, State End]
+type = ChangeState
+trigger1 = animtime = 0
+value = 0
+ctrl = 1
+
+;--------------3きり目  
+[Statedef 530];
+type    = s
+movetype= A
+physics = s
+velset = 0.0
+ctrl = 0
+anim = 530
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) =0
+
+[State 505, 2]
+type = HitDef
+trigger1 = time = 0
+attr = s, NA
+damage    = floor(4* fvar(0))
+animtype  = hard
+hitflag = MA
+guardflag = M
+pausetime = 12,12
+sparkno = S6200   
+guard.sparkno = S6140
+sparkxy = -10,-55
+hitsound   = s205, ifelse(p2life - floor(4 * fvar(0)) <= 0, 10,random % 5 + 3) 
+guardsound = s150, random % 3
+ground.type = Low
+ground.slidetime = 30
+ground.hittime  = 26
+ground.velocity = -2
+air.velocity = -1,-2
+getpower = 0,0
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6710
+id = 6710
+postype = p2
+pos = -5,-15
+sprpriority = 3
+supermove = 1
+bindtime = 20
+removetime = 20
+persistent = 0
+ownpal = 1
+
+[State 505, State End]
+type = ChangeState
+trigger1 = animtime = 0
+value = 0
+ctrl = 1
+
+;--------------4きり目 Last 
+[Statedef 535];
+type    = s
+movetype= A
+physics = s
+velset = 0.0
+ctrl = 0
+anim = 535
+hitcountpersist = 1
+
+[state 200x,cancelF];キャンセルOK？フラグ
+type = varset
+trigger1 = time = 0
+var(13) =0
+
+[State 535, 2]
+type = HitDef
+trigger1 = time = 0
+attr = s, NA
+damage    = floor(4* fvar(0))
+animtype  = back
+hitflag = MA
+guardflag = M
+pausetime = 12,10
+sparkno = S6200   
+guard.sparkno = S6140
+sparkxy = -10,-55
+hitsound   = s205, ifelse(p2life - floor(4 * fvar(0)) <= 0, 10,random % 5 + 3) 
+guardsound = s150, random % 3
+ground.type = Low
+ground.slidetime = 20
+ground.hittime  = 20
+ground.velocity = -1,-8
+air.velocity = -1,-5
+air.slidetime = 29
+air.hittime  = 25
+getpower = 0,0
+fall = 1
+fall.recover = 0
+p2stateno = 580
+
+[state 000,bloodw];
+type = Explod
+trigger1 = movehit
+anim = 6710
+id = 6710
+postype = p2
+pos = -5,-15
+sprpriority = 3
+supermove = 1
+bindtime = 20
+removetime = 20
+persistent = 0
+ownpal = 1
+
+[State 535, State End]
+type = ChangeState
+trigger1 = animtime = 0
+value = 0
+ctrl = 1
+
+[Statedef 580];
+type    = a
+movetype= h
+physics = n
+ctrl = 0
+
+[state 580,]
+type = turn
+trigger1 = time = 0
+trigger1 = enemynear,facing = facing
+
+[state 580,
+type = posfrreze
+trigger1 = time <= 10
+time = 1
+
+[state 580,]
+type = velset
+trigger1 = time = 10
+x = -0.5
+y = -8
+
+[state 840,]
+type = veladd
+trigger1 = time > 10
+y = 0.30
+
+[State 840, 1]
+type = ChangeAnim
+triggerall = 1   ;debug
+Trigger1 = Time = 0
+value = ifelse(authorname = "R-R",5050 + var(0),5050)
+
+[State 840, 1]
+type = ChangeAnim
+triggerall = 1   ;debug
+Trigger1 = vel y > 0
+trigger1 = selfanimexist(5060)
+value = ifelse(authorname = "R-R",5060 + var(0),5060)
+persistent = 0
+
+[State 535, State End]
+type = selfState
+trigger1 = pos y >= -20 && vel y > 0
+value = 5100
+ctrl = 0
+
+

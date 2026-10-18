@@ -1,0 +1,442 @@
+;---------------------------------------------------------------------------
+; Guard Crush
+
+[Statedef 5400]
+type = U
+physics = N
+movetype = H
+ctrl = 0
+
+[State AntiHelper]
+type = DestroySelf
+trigger1 = ishelper
+
+[State 5400, PalFX]
+type = PalFX
+trigger1 = !time
+trigger1 = prevstateno != 5400
+sinadd = 200, 200, 200, 5
+time = gethitvar(hitshaketime)
+ignorehitpause = 1
+
+[State 5400, HitAnim]
+type = ChangeAnim
+trigger1 = !time
+value = 5002 + 20*statetype = C
+ignorehitpause = 1
+
+[State 5400, HitAnim]
+type = ChangeAnim
+trigger1 = !time
+trigger1 = selfanimexist(5910 + 10*statetype = C + 20*statetype = A) && (statetype = A || selfanimexist(5911 + 10*statetype = C))
+value = 5910 + 10*statetype = C + 20*statetype = A
+ignorehitpause = 1
+
+[State 5400, HitAnim]
+type = ChangeState
+trigger1 = time
+trigger1 = gethitvar(hitshaketime)
+value = 5400
+ignorehitpause = 1
+
+[State 5400, 1]
+type = HitVelSet
+trigger1 = !time
+trigger1 = statetype != A
+x = 1
+
+[State 5400, RecoveryAnim]
+type = ChangeAnim
+trigger1 = animtime = -1
+value = anim
+elem = animelemno(0)
+ignorehitpause = 1
+
+[State 5400, Friction]
+type = StateTypeSet
+trigger1 = !time
+trigger1 = statetype = S
+physics = S
+ignorehitpause = 1
+
+[State 5400, Friction]
+type = StateTypeSet
+trigger1 = !time
+trigger1 = statetype = C
+physics = C
+ignorehitpause = 1
+
+[State 5400, Freeze]
+type = PosFreeze
+trigger1 = !time
+ignorehitpause = 1
+
+[State 5400, Fall]
+type = VelAdd
+trigger1 = gethitvar(hitshaketime) < 1
+trigger1 = statetype = A
+y = const(movement.yaccel)
+ignorehitpause = 1
+
+[State 5400, RecoveryAnim]
+type = ChangeAnim
+triggerall = selfanimexist(5911 + 10*statetype = C) && selfanimexist(5910 + 10*statetype = C) 
+triggerall = anim != 5911 + 10*statetype = C
+triggerall = statetype != A
+trigger1 = animtime = 0
+trigger2 = time = 30
+value = 5911 + 10*statetype = C
+
+[State 5400, RecoveryAnim]
+type = ChangeAnim
+triggerall = !selfanimexist(5911 + 10*statetype = C) || !selfanimexist(5910 + 10*statetype = C)
+triggerall = anim != 5007 + 20*statetype = C
+triggerall = statetype != A
+trigger1 = animtime = 0
+trigger2 = time = 30
+value = 5007 + 20*statetype = C
+
+[State 5400, End]
+type = PosSet
+trigger1 = statetype != A
+trigger1 = time > 40
+trigger2 = statetype = A
+trigger2 = pos y + vel y >= 0
+y = 0
+
+[State 5400, End]
+type = SelfState
+trigger1 = statetype != A
+trigger1 = time > 40
+trigger2 = statetype = A
+trigger2 = pos y + vel y >= 0
+value = 11*statetype = C + 52*statetype = A
+ctrl = 1
+
+
+;---------------------------------------------------------------------------
+; Frozen (Standing)
+[Statedef 5706]
+type    = U
+movetype= H
+physics = U
+ctrl = 0
+sprpriority = 0
+
+[State AntiHelper]
+type = DestroySelf
+trigger1 = ishelper
+
+[State Safety]
+type = SelfState
+trigger1 = gethitvar(guarded)
+value = ifelse((prevstateno = [5706, 5707]), 150 + 2*(statetype = C) + 4*(statetype = A), prevstateno)
+
+[State 5706, ChangeState]
+type = ChangeState
+triggerall = !gethitvar(guarded)
+trigger1 = statetype = A
+trigger2 = pos y < 0
+trigger3 = !alive
+trigger4 = gethitvar(fall)
+value = 5707
+
+[State 5706, StateTypeSet]
+type = StateTypeSet
+trigger1 = !time
+statetype = S
+movetype = H
+physics = S
+
+[State 5706, PosFreeze]
+type = PosFreeze
+trigger1 = !hitshakeover
+ignorehitpause = 1
+
+[State 5706, 0]
+type = VelSet
+trigger1 = time > 10
+x = -5
+persistent = 0
+
+[State 5706, 3] ;Stop sliding back
+type = VelMul
+trigger1 = time > 20
+x = .8
+
+[State 5706, 6]
+type = SelfState
+trigger1 = time > 55
+value = 5001
+ctrl = 0
+ignorehitpause = 1
+
+[State 5706, 1] ;Anim for HIT_LIGHT to HIT_HARD
+type = ChangeAnim
+trigger1 = GetHitVar(animtype) != [3,5]
+value = ifelse((GetHitVar(groundtype) = 1),5000,5010) + GetHitVar(animtype)
+elem = ifelse( time && animelemno(0) > 1 && animelem = 1, < 3 && ((anim = [5000, 5002]) || (anim = [5010, 5012])), 2, 1)
+ignorehitpause = 1
+
+[State 5706, 2] ;Anim for HIT_BACK
+type = ChangeAnim
+trigger1 = GetHitVar(animtype) = [3,5]
+value = 5030
+ignorehitpause = 1
+
+[State 5706, 3] ;Anim for HIT_UP/HIT_DIAGUP (only if it exists)
+type = ChangeAnim
+trigger1 = (GetHitVar(animtype) = [4,5]) && (SelfAnimExist(5047 + GetHitVar(animtype)))
+value = 5047 + GetHitVar(animtype) ;5051 - 4 + type
+ignorehitpause = 1
+
+[State 5706, 0]
+type = PalFX
+trigger1 = gametime%30 < 15
+color = 0
+invertall = 1
+mul = 64 + (gametime%30)*2, 96 + (gametime%30)*2, 128 + (gametime%30)*4
+add = 384, 384, 384
+time = 1
+ignorehitpause = 1
+
+[State 5706, 0]
+type = PalFX
+trigger1 = gametime%30 > 14
+color = 0
+invertall = 1
+mul = 64 + (30 - (gametime%30))*2, 96 + (30 - (gametime%30))*2, 128 + (30 - (gametime%30))*4
+add = 384, 384, 384
+time = 1
+ignorehitpause = 1
+
+;---------------------------------------------------------------------------
+; Frozen
+
+[Statedef 5707]
+type    = A
+movetype= H
+physics = N
+ctrl = 0
+sprpriority = 0
+
+[State AntiHelper]
+type = DestroySelf
+trigger1 = ishelper
+
+[State Safety]
+type = SelfState
+trigger1 = gethitvar(guarded)
+value = ifelse((prevstateno = [5706, 5707]), 150 + 2*(statetype = C) + 4*(statetype = A), prevstateno)
+
+[State 5707, 0]
+type = PosFreeze
+trigger1 = !hitshakeover
+ignorehitpause = 1
+
+[State 5707, 1]
+type = VelAdd;Gravity
+trigger1 = hitshakeover
+y = GetHitVar(yaccel)
+ignorehitpause = 1
+
+[State 5707, 2]
+type = HitVelSet
+trigger1 = !time
+x = 1
+y = 1
+ignorehitpause = 1
+
+[State 5707, 3]
+type = SelfState
+triggerall = hitshakeover
+triggerall = !HitFall
+trigger1 = Vel Y > 0    ;Hit ground
+trigger1 = Pos Y >= 10  ;.
+value = 5040 ;HITA_RECOV
+ignorehitpause = 1
+
+[State 5707, 4]
+type = SelfState
+triggerall = hitshakeover
+triggerall = HitFall
+trigger1 = Vel Y > 0    ;Hit ground
+trigger1 = Pos Y >= 10  ;.
+value = 5050 ;HITA_FALL
+ignorehitpause = 1
+
+[State 5707, ChangeAnim]
+type = ChangeAnim
+trigger1 = 1
+value = 5012
+ignorehitpause = 1
+
+[State 5707, 0]
+type = PalFX
+trigger1 = gametime%30 < 15
+color = 0
+invertall = 1
+mul = 64 + (gametime%30)*3, 96 + (gametime%30)*2, 128 + (gametime%30)*4
+add = 384, 384, 384
+time = 1
+ignorehitpause = 1
+
+[State 5707, 0]
+type = PalFX
+trigger1 = gametime%30 > 14
+color = 0
+invertall = 1
+mul = 64 + (30 - (gametime%30))*3, 96 + (30 - (gametime%30))*2, 128 + (30 - (gametime%30))*4
+add = 384, 384, 384
+time = 1
+ignorehitpause = 1
+
+;---------------------------------------------------------------------------
+; HITG_SHAKE
+[Statedef 25000]
+type    = U
+movetype= H
+physics = N
+velset = 0,0
+ctrl = 0
+
+[State NotHitBy]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 25000, Cancel]
+type = SelfState
+trigger1 = !alive
+trigger2 = anim = 5300
+value = 5000
+
+[State 25000, Cancel]
+type = SelfState
+trigger1 = Time = 0
+trigger1 = GetHitVar(yvel) != 0 || GetHitVar(fall)
+trigger2 = Pos Y != 0
+value = 5000
+
+[State 25000, 1] ;Anim for HIT_LIGHT to HIT_HARD
+type = ChangeAnim
+trigger1 = Time = 0
+trigger1 = GetHitVar(animtype) != [3,5]
+value = ifelse((GetHitVar(groundtype) = 1),5000,5010) + GetHitVar(animtype)
+
+[State 25000, 2] ;Anim for HIT_BACK
+type = ChangeAnim
+trigger1 = Time = 0
+trigger1 = GetHitVar(animtype) = [3,5]
+value = 5030
+
+[State 25000, 3] ;Anim for HIT_UP/HIT_DIAGUP (only if it exists)
+type = ChangeAnim
+trigger1 = Time = 0
+trigger1 = (GetHitVar(animtype) = [4,5]) && (SelfAnimExist(5047 + GetHitVar(animtype)))
+value = 5047 + GetHitVar(animtype) ;5051 - 4 + type
+
+[State 25000, 4] ;Freeze anim
+type = ChangeAnim
+trigger1 = Time > 0
+value = anim
+
+[State 25000, 5] ;State type gets set to aerial if getting hit up
+type = StateTypeSet
+trigger1 = Time = 0
+trigger1 = GetHitVar(yvel) != 0 || GetHitVar(fall)
+trigger2 = Pos Y != 0
+statetype = a
+
+[State 25000, 6]
+type = ChangeState
+trigger1 = HitShakeOver
+trigger1 = GetHitVar(yvel) = 0 && !GetHitVar(fall)
+value = 25001 ;HITG_SLIDE
+
+[State 25000, 7]
+type = SelfState
+trigger1 = HitShakeOver
+value = 5030
+
+[State 25000, FFB Light]
+type = ForceFeedback
+trigger1 = anim = 5000
+trigger2 = anim = 5010
+persistent = 0
+time = 6
+waveform = square
+
+[State 25000, FFB Medium]
+type = ForceFeedback
+trigger1 = anim = 5001
+trigger2 = anim = 5011
+persistent = 0
+time = 8
+waveform = sinesquare
+ampl = 110,-1,-.3
+
+[State 25000, FFB Hard]
+type = ForceFeedback
+trigger1 = anim = 5012
+trigger2 = anim = 5002
+trigger3 = anim = 5030
+persistent = 0
+time = 15
+waveform = sinesquare
+ampl = 140
+
+;---------------------------------------------------------------------------
+; HITG_SLIDE
+[Statedef 25001]
+type    = S
+movetype= H
+physics = S
+
+[State 25001, 1]
+type = HitVelSet
+trigger1 = Time = 0
+x = 1
+
+[State 25001, 2]
+type = ChangeAnim
+trigger1 = AnimTime = 0
+value = 5005 + GetHitVar(animtype) + (GetHitVar(groundtype)=2)*10
+
+[State 25001, 3] ;Stop sliding back
+type = VelMul
+trigger1 = Time >= GetHitVar(slidetime)
+x = .6
+
+[State 25001, 4]
+type = VelSet
+trigger1 = HitOver
+x = 0
+
+[State 25001, 5]
+type = DefenceMulSet
+trigger1 = HitOver
+value = 1
+
+[State 25001, 6]
+type = ChangeState
+trigger1 = HitOver
+value = 25301
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; DIZZY (Poison)
+[Statedef 25301]
+type    = S
+movetype= I
+physics = N
+velset = 0,0
+anim = 5300
+ctrl = 0
+
+[State 25301, End]
+type = SelfState
+trigger1 = time = 60
+value = 0
+ctrl = 1

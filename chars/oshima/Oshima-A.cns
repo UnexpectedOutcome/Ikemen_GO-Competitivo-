@@ -1,0 +1,437 @@
+
+;---------------------------------------------------------------------------
+; 怒り爆発、迎撃防御、給気座
+;---------------------------------------------------------------------------
+; 怒り爆発
+
+[Statedef 700]
+type     = S
+movetype = A
+physics  = S
+ctrl     = 0
+velset   = 0,0
+anim     = 700
+sprpriority = 2
+
+[state 700, varset]
+type = varset
+trigger1 = power >= 1000
+trigger1 = power < 2000
+var(32) = 1
+
+[state 700, varset]
+type = varset
+trigger1 = power >= 2000
+trigger1 = power < 3000
+var(32) = 2
+
+[state 700, varset]
+type = varset
+trigger1 = power >= 3000
+var(32) = 3
+
+[State 700, 一時的にその場に停止]
+type = PosFreeze
+trigger1 = 1
+
+[State 700, 軸位置設定]
+type = PosSet
+trigger1 = Time = 0
+y = 0
+
+[state 700, 無敵]
+type = nothitby
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 700, 画面を揺らす]
+type = EnvShake
+trigger1 = Time = 10
+time = 50
+freq = 60
+ampl = -4
+phase = 0
+
+[State 700, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 2
+value = 1, 11
+
+[State 700, ボイス]
+type = PlaySnd
+trigger1 = Time = 3
+value = 5, 4
+channel = 0
+
+[State 700, ヒット定義]
+type = HitDef
+triggerall = p2stateno != 5040
+triggerall = p2stateno != [5200,5210]
+trigger1 = Time = 0
+p2facing = 1
+attr = S, NA
+damage = 46, 7
+getpower = 0,0
+givepower = 86,0
+animtype = Hard
+guardflag = MA
+pausetime = 0, 19
+sparkno = s7003
+guard.sparkno = s7010
+sparkxy = -10,-55
+hitsound = s2, 1
+guardsound = s3, 0
+ground.type = High
+ground.slidetime = 16
+ground.hittime  = 16;35
+ground.velocity = -8,-4
+guard.velocity = -10
+air.type = High
+air.velocity = -8,-4
+airguard.velocity = -4,-3
+air.hittime = 12;26
+fall = 1
+fall.recover = 0
+yaccel = .60
+
+[state 700, varset]
+type = varset
+trigger1 = AnimTime = 0
+trigger2 = var(33) = 1
+var(31) = 0
+
+[State 700, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+trigger2 = var(33) = 1
+value = 0
+ctrl = Ifelse(RoundState >= 2,1,0)
+
+;---------------------------------------------------------------------------
+; 迎撃防御
+
+[Statedef 710] 
+type     = S
+movetype = I
+physics  = N
+ctrl     = 0
+anim     = 710
+velset   = 0,0
+
+[State 710, 速度加算] ;重力
+type = VelAdd
+trigger1 = Pos Y <= -1
+y = .40
+
+[State 710, 軸位置設定] ;地面の位置に軸をリセット
+type = PosSet
+trigger1 = Vel Y > 0 && Pos Y >= -5
+y = 0
+
+[State 710, VelSet]
+type = VelSet
+trigger1 = Vel Y > 0 && Pos Y >= 0
+y = 0
+
+[State 710, 受け止め定義]
+type = ReversalDef
+trigger1 = 1
+attr = S, SA
+reversal.attr = SCA, NA, SA, HA
+hitflag = MAF
+priority = 6, hit
+pausetime     = 0,30
+numhits       = 0 ;ヒット数
+sparkno       = s7010
+sparkxy       = 0,0
+hitsound      = s3,0
+p1stateno = 711
+
+[State 710, やられ状態上書き];飛び道具用
+type = HitOverRide
+trigger1 = Time = [0,30]
+attr = SCA, NP, SP, HP
+time = 1
+stateno = 712
+ignorehitpause = 1
+
+[State 710, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; 迎撃防御成功(対打撃)
+
+[Statedef 711] 
+type     = S
+movetype = H;I
+physics  = N
+ctrl     = 0
+anim     = 711
+sprpriority = -1
+
+[State 711, 速度加算] ;重力
+type = VelAdd
+trigger1 = Pos Y <= -1
+y = .40
+
+[State 711, 軸位置設定] ;地面の位置に軸をリセット
+type = PosSet
+trigger1 = Vel Y > 0 && Pos Y >= -5
+y = 0
+
+[State 711, VelSet]
+type = VelSet
+trigger1 = Vel Y > 0 && Pos Y >= 0
+y = 0
+
+[State 711, NotHitBy]
+type = NotHitBy
+trigger1 = Time = 0
+value = SCA
+time = 31;34
+
+[State 711, 擬似HitShake]
+type = PosAdd
+trigger1 = Time = [0,20]
+x = ifelse(time %2 = 0,-2,2)
+
+[State 711, guard.velocit]
+type = VelSet
+trigger1 = AnimElemTime(3) = 0
+x = GetHitVar(xvel)
+
+[State 711, ステート変更]
+type = ChangeState
+trigger1 = Time >= 31
+trigger1 = inguarddist
+value = 130
+
+[State 711, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; 迎撃防御成功(対飛び道具)
+
+[Statedef 712] 
+type     = S
+movetype = I
+physics  = N
+ctrl     = 0
+anim     = 712
+sprpriority = -1
+
+[State 712, 速度加算] ;重力
+type = VelAdd
+trigger1 = Pos Y <= -1
+y = .40
+
+[State 712, 軸位置設定] ;地面の位置に軸をリセット
+type = PosSet
+trigger1 = Vel Y > 0 && Pos Y >= -5
+y = 0
+
+[State 712, VelSet]
+type = VelSet
+trigger1 = Vel Y > 0 && Pos Y >= 0
+y = 0
+
+[State 712, NotHitBy]
+type = NotHitBy
+trigger1 = Time = 0
+value = SCA
+time = 13;34
+
+[State 712, 擬似HitShake]
+type = PosAdd
+trigger1 = Time = [0,12]
+x = ifelse(time %2 = 0,-2,2)
+
+[State 712, guard.velocit]
+type = VelSet
+trigger1 = AnimElemTime(2) = 0
+x = GetHitVar(xvel)
+
+[State 712, ステート変更]
+type = ChangeState
+trigger1 = Time >= 13
+trigger1 = inguarddist
+value = 130
+
+[State 712, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; 給気座
+
+[Statedef 720]
+type     = C
+movetype = I
+physics  = C;※攻撃を受けるとSだけど体勢的に
+ctrl     = 0
+velset   = 0,0
+anim     = 720
+sprpriority = 2
+
+[State 720, varset]
+type = varset
+trigger1 = Time = 0
+var(14) = 0
+
+[State 720, 速度加算] ;重力
+type = VelAdd
+trigger1 = Pos Y <= -1
+y = .40
+
+[State 720, 軸位置設定] ;地面の位置に軸をリセット
+type = PosSet
+trigger1 = Vel Y > 0 && Pos Y >= -5
+y = 0
+
+[State 720, VelSet]
+type = VelSet
+trigger1 = Vel Y > 0 && Pos Y >= 0
+y = 0
+
+[State 720, PosAdd]
+type = PosAdd
+trigger1 = AnimElem = 1
+x = 1
+
+[State 720, ボイス]
+type = PlaySnd
+trigger1 = Time = 1
+value = 11,1
+channel = 0
+
+[State 720, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 1
+value = 0, 17
+channel = 1
+
+[State 720, パワーが溜まる]
+type = PowerAdd
+trigger1 = Time = 1
+value = 78
+
+[State 720, varset]
+type = varset
+triggerall = var(59) = 0
+triggerall = var(14) = 0
+trigger1 = time = [7,15]
+trigger1 = command = "bb"
+trigger1 = command = "holddown"
+var(14) = 721
+
+[State 720, varsetステート変更]
+type = ChangeState
+triggerall = AnimTime = 0
+trigger1 = var(59) = 0
+trigger1 = var(14) != 0
+value = var(14)
+
+[State 720, AIステート変更]
+type = ChangeState
+triggerall = AnimTime = 0
+trigger1 = var(59) != 0
+trigger1 = RoundState = 2
+Trigger1 = EnemyNear(var(55)),StateType = L
+;Trigger1 = P2BodyDist X = [61,170]
+value = 721
+
+[State 720, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+trigger2 = RoundState != [1,2]
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+; 給気座2
+
+[Statedef 721]
+type     = C
+movetype = I
+physics  = C
+ctrl     = 0
+;velset   = 0,0
+anim     = 721
+sprpriority = 2
+
+[State 721, varset]
+type = varset
+trigger1 = Time = 0
+var(14) = 0
+
+[State 721, 速度加算] ;重力
+type = VelAdd
+trigger1 = Pos Y <= -1
+y = .40
+
+[State 721, 軸位置設定] ;地面の位置に軸をリセット
+type = PosSet
+trigger1 = Vel Y > 0 && Pos Y >= -5
+y = 0
+
+[State 721, VelSet]
+type = VelSet
+trigger1 = Vel Y > 0 && Pos Y >= 0
+y = 0
+
+[State 721, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 1
+value = 0, 17
+channel = 1
+
+[State 721, パワーが溜まる]
+type = PowerAdd
+trigger1 = Time = 1
+value = 78
+
+[State 721, varset]
+type = varset
+triggerall = var(59) = 0
+triggerall = var(14) = 0
+trigger1 = time = [7,15]
+trigger1 = command = "bb"
+trigger1 = command = "holddown"
+var(14) = 721
+
+[State 721, varsetステート変更]
+type = ChangeState
+triggerall = AnimTime = 0
+trigger1 = var(59) = 0
+trigger1 = var(14) != 0
+value = var(14)
+
+[State 721, AIステート変更]
+type = ChangeState
+triggerall = AnimTime = 0
+trigger1 = var(59) != 0
+trigger1 = RoundState = 2
+Trigger1 = EnemyNear(var(55)),StateType = L
+;Trigger1 = P2BodyDist X = [61,170]
+value = 721
+
+[State 721, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+trigger2 = RoundState != [1,2]
+value = 0
+ctrl = 1
+
+
+;この下、一行以上空ける事。
+
+

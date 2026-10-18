@@ -1,0 +1,373 @@
+;　基本データ、イントロ関連  
+;var(0) システム予約 var(5),システム予約　var(10)
+;fvar(0)=攻撃係数　7.8125=ss3（inS5900）
+;h,p,e(200)
+;id(0)予約　id（100）　id(300）
+
+[Data]  
+life = 1000  ;体力ゲージの初期値
+attack = 100  
+defence = 95  ;防御力（これ以上に設定すると強くなる）
+fall.defence_up = 55  ;コンボをくらっている時にあがる防御力
+liedown.time = 60  ;倒れてから起上がるまでのフレーム数
+airjuggle = 18  ;空中でどれだけコンボが繋がるか
+sparkno = s6200  ;hitdefで設定していない時の基本ヒットスパークナンバー
+guard.sparkno = s6150  ;設定してない時のガードナンバー）
+KO.echo = 0           ;KOした時に声にエコーをかけるか（１でＯＮ
+volume = 255
+IntPersistIndex = -1;60
+FloatPersistIndex = -1;40
+
+[Size]
+xscale = 1           ;水平方向の縮尺（通常１）
+yscale = 1           ;垂直方向の縮尺（通常１）
+ground.back = 15     ;キャラの幅(後方,地上)
+ground.front = 16    ;キャラの幅(前方,地上)
+air.back = 13        ;キャラの幅(後方,空中)
+air.front = 13       ;キャラの幅(前方,空中)
+height = 60          ;キャラの高さ
+attack.dist = 160    ;攻撃をした時相手がガード体制に入る最低距離
+proj.attack.dist = 90;攻撃をした時相手がガード体制に入る最低距離（飛び道具）
+proj.doscale = 0     ;上で設定した縮尺を飛び道具にも適用するか（１でＯＮ）   
+head.pos = 5, -75   ;頭の大体の座標
+mid.pos = -10, -55    ;体の中心の大体の座標
+shadowoffset = 0     ;影の垂直方向のオフセット
+draw.offset = 0,0    ;使用しない
+
+[Velocity]
+walk.fwd  = 2.0      ;前進の速度
+walk.back = -2.0     ;後退の速度
+run.fwd  = 4.5, 0    ;前ダッシュの速度（ホップする時はyを-にする）
+run.back = -4.6,-4.1 ;後ダッシュの速度（ホップする時はyを-にする）
+jump.neu = 0,-11.4    ;垂直ジャンプの速度
+jump.back = -3.00    ;後ジャンプの速度
+jump.fwd = 3.00       ;前ジャンプの速度
+runjump.back = -3.80,-9.0.1 ;後ダッシュしながらのジャンプ速度(オプション)
+runjump.fwd = 4,-11.8      ;前ダッシュしながらのジャンプ速度(オプション)
+airjump.neu = 0,-11.4      ;２段ジャンプ以降の垂直ジャンプの速度(オプション)
+airjump.back = -3.00      ;２段ジャンプ以降の後ジャンプの速度(オプション)
+airjump.fwd = 3.00         ;２段ジャンプ以降の前ジャンプの速度
+
+[Movement]
+airjump.num = 0      ;空中でジャンプする回数
+airjump.height = 35  ;空中でジャンプする最低限の高さ
+yaccel = 0.41         ;重力
+stand.friction = .82  ;立ち状態の摩擦係数
+crouch.friction = .80 ;屈み状態の摩擦係数
+
+;---------------------------------------------------------------------------
+; タイムオーバーで負けた時
+[Statedef 170]
+type = S
+ctrl = 0
+velset = 0,0
+
+[State 180, 1];どろー
+type = Changeanim
+triggerall = time = 0
+trigger1 = drawgame
+value = 170 + var(0)
+
+[State 180, 1];体力少ない負け
+type = Changeanim
+triggerall = time = 0
+trigger1 = !drawgame
+value = 171 + var(0)
+
+[State 180, 1];体力少ない負け
+type = varset
+triggerall = time = 0
+trigger1 = !drawgame
+var(10) = 8170
+
+[State 170, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;---------------------------------------------------------------------------
+; 勝った動作 start staet
+[Statedef 180]
+type = S
+
+[State 180, 1];２本目勝ちへ 
+type = ChangeState
+trigger1 = time = 0
+trigger1 = MatchOver = 1
+value = 183
+
+[State 180, 1];1本目勝ちへ
+type = ChangeState
+triggerall = time = 0
+trigger1 = 1
+value = 181 + random % 2
+
+;---------------------------------------------------------------------------
+; 勝ちポーズ 1本目　s181,win1_1 
+[Statedef 181];ほっといて
+type = S
+ctrl = 0
+physics = N
+anim = 181+ var(0)
+velset = 0,0
+
+[state 180,sikuru order];
+type = varset
+trigger1 = time = 0
+var(10) = 8181
+
+[State 181, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[state 181,]
+type = playsnd
+trigger1 = anim = 181 + var(0)
+trigger1 = animelem = 3
+channel = 0
+value = s180,0
+
+[state 181,]
+type = changeanim
+trigger1 = anim = 181 + var(0)
+trigger1 = time >= 70
+value = 182 + var(0)
+
+[State 181, 4]
+type = AssertSpecial
+trigger1 = Time  <= 180
+flag = RoundNotOver
+
+;-------------------- 勝ちポーズ 1_2　s182,win1_2　
+[Statedef 182]
+type = S
+ctrl = 0
+physics = N
+anim = 192+ var(0)
+velset = 0,0
+
+[state 180,sikuru order];をおすわりに
+type = varset
+trigger1 = time = 0
+var(10) = 8182
+
+[state 181,]
+type = playsnd
+trigger1 = animelem = 3
+channel = 0
+value = s180,1
+
+[State 181, 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 181, 4]
+type = AssertSpecial
+trigger1 = Time  <= 200
+flag = RoundNotOver
+
+;---------------------------------------------------------------------------
+; 勝ちポーズ ２本目 s183,win2_0 
+;にげだし
+[Statedef 183]
+type = S
+movetype = i
+physics = n
+ctrl = 0
+anim = 180 + var(0)
+
+[state 183,sikuru order];
+type = varset
+trigger1 = time = 0
+var(10) = 8183
+
+[state 183,]
+type = playsnd
+trigger1 = anim = 180 + var(0)
+trigger1 = animelem = 4
+value = s2000,0
+channel = 0
+perisitent = 0
+
+[state 183,]
+type = playsnd
+trigger1 = anim = 100 + var(0)
+value = s20,0
+channel = 2
+persistent = 0
+
+[state 183,]
+type = changeanim
+trigger1 = anim = 180 + var(0)
+trigger1 = animtime = 0
+value = 100 + var(0)
+persistent = 0
+
+[state 183,]
+type = velset
+trigger1 = anim = 100 + var(0)
+x = 8
+persistent = 0
+
+[state 183,]
+type = playerpush
+trigger1 = 1
+value = 0
+time = 1
+
+[state 183,]
+type =ScreenBound
+trigger1 = anim = 100 + var(0)
+value = 0
+
+[State 183, 4]
+type = AssertSpecial
+trigger1 = Time  <= 250
+flag = RoundNotOver
+
+;---------------------------------------------------------------------------
+; 開始前の動作 PREINTRO override common190
+[Statedef 190]
+type = S
+ctrl = 0
+velset = 0,0
+
+[State 190, 1]
+type = ChangeAnim
+trigger1 = time = 0
+value = 190+ var(0)
+
+;--------------------------------------------
+[State -2, mamahaha];んじゃあ一応ちゃんぷる用。
+type = Helper
+trigger1 = numhelper(300) = 0
+trigger1 = time = 0
+ID = 300
+pos = -60, 0;rootdistでは-30
+stateno = 8020
+helpertype = normal
+name = "baby"
+postype = p1
+keyctrl = 0
+ownpal = 1
+pausemovetime= 255
+
+[state 191, changestate]
+type = changestate
+trigger1 = time = 0
+VALUE = 191 + random % 2 
+
+[State 190, 2] ;Go straight to intro.安全のため
+type = ChangeState
+trigger1 = Time = 0
+value = 191
+
+;----以下イントロ1---そばにこないでー＞ちかづかないで
+[Statedef 191]
+type = S
+ctrl = 0
+velset = 0,0
+anim  = 190+ var(0)
+
+[State 191, 2] 
+type = AssertSpecial
+trigger1 = 1
+flag = Intro
+
+[state 195,voice];
+type = playsnd
+trigger1 = anim = 190 + var(0)
+trigger1 = animelem = 2
+value = s190,1
+channnel = 0
+
+[State 191, 4] 
+type = Changeanim
+trigger1 = anim = var(0) + 190
+trigger1 = Time >= 120
+value = var(0) + 191
+persistent = 0
+
+[State 191, 4] 
+type = ChangeState
+trigger1 = anim = var(0) + 191
+trigger1 = AnimTime = 0
+value = 0
+
+;---------intro2　ばさりと脱ぐ
+[Statedef 192]
+type = S
+ctrl = 0
+anim = 10193
+velset = 0,0
+
+[state 190,sikuru order];しくるぅをいんとろにする
+type = varset
+trigger1 = time = 0
+var(10) = 8192
+
+[State 192, 2] 
+type = AssertSpecial
+trigger1 = 1
+flag = Intro
+
+[state 195,voice];いくよちゃんぷる
+type = playsnd
+trigger1 = time = 60
+value = s2000,0
+channnel = 0
+
+[State 192, 4] 
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+
+;---------------------------------------------------------------------------
+; 挑発の動作
+[Statedef 195]
+type = S
+ctrl = 0
+anim = 195
+velset = 0,0
+movetype = I
+physics = S
+sprpriority = 2
+
+[state 195,voice];
+type = playsnd
+trigger1 = animelem = 3
+value = s180,1
+channnel = 0
+
+[State 195, konru visible]
+type = Helper
+trigger1 = numhelper(150) = 0
+trigger1 = animelem = 3
+ID = 150
+pos = 30,-50 
+stateno = 6195
+helpertype = normal
+name = "konru intro"
+postype = p1
+keyctrl = 0
+ownpal = 1
+parsistent = 0
+
+[State 195, 1]
+type = CtrlSet
+trigger1 = Time = 40
+value = 1
+
+[State 195, 2]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;--------------------おふざけ
+

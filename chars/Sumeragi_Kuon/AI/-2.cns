@@ -1,0 +1,1435 @@
+[Statedef -2]
+
+[State AI用常駐ヘルパー]
+type = Helper
+triggerall = !ishelper
+trigger1 = Numhelper(60000) = 0
+helpertype = normal
+name = "AI"
+postype = back
+pos = 0,9999
+stateno = 60000
+id = 60000
+keyctrl = 0
+pausemovetime=2147483647
+supermovetime=2147483647
+
+[State ];画面外アイコン
+type=Helper
+trigger1=!numhelper(3030)&&!numhelper(13030)&&(roundstate=[2,3])&&(screenpos Y>=320||(screenpos Y>=300&&statetype=C)||(screenpos Y>=280&&statetype=L)||screenpos Y<=-1)&&!numhelper(1423)
+helpertype=normal
+name="icon"
+ID=ifelse(screenpos Y<=-1,13030,3030)
+postype=left
+stateno=3030
+supermovetime=99999999999
+pausemovetime=99999999999
+ignorehitpause=1
+
+[State ];インフォメーション用ヘルパー
+type=Helper
+trigger1=!numhelper(3012)&&var(13)>=1
+helpertype=normal
+name="information"
+ID=3012
+postype=left
+stateno=3012
+supermovetime=99999999999
+pausemovetime=99999999999
+ignorehitpause=1
+
+[state ];パワーMAX
+type=poweradd
+trigger1=(var(35)&1)||fvar(37)=1
+value=powermax
+ignorehitpause=1
+
+[State ];ファーストアタック判定
+type=Varadd
+trigger1=(movetype=H&&(stateno!=[120,155]))||movehit
+trigger2=numpartner>=1
+trigger2=partner,movetype=H&&(partner,stateno!=[120,155])
+trigger3=numenemy
+trigger3=enemy,movetype=H&&(enemy,stateno!=[120,155])
+trigger4=numenemy>=2
+trigger4=enemy(1),movetype=H&&(enemy(1),stateno!=[120,155])
+var(17)=1
+ignorehitpause=1
+
+[State ];ファーストアタック判定2
+type=Varset
+trigger1=var(17)>=2
+var(25)=1
+ignorehitpause=1
+
+[state ];リバーサル判定解除
+type=Varset
+trigger1=var(23)=1&&(time=3||movetype=H)
+var(23)=0
+ignorehitpause=1
+
+[State ];コンボ補正判定
+type=Varset
+trigger1=numenemy
+trigger1=numtarget||enemynear,movetype!=H
+var(26)=0
+ignorehitpause=1
+
+[state ダウン補正]
+type = varset
+triggerall = !ishelper
+trigger1 = enemynear,movetype = H
+trigger1 = enemynear,statetype = L
+var(19) = 1
+
+[state 補正リセット ダウン]
+type = varset
+triggerall = !ishelper
+trigger1 = enemynear,movetype != H||enemynear,stateno =[5200,5211]
+trigger2 = enemynear,alive = 0
+var(19) = 0
+
+[state 補正小数第3以下切り上げ]
+type = varset
+trigger1 = !ishelper
+fvar(7) = ceil(fvar(7)*100)*0.01
+
+[State ]
+type=Varset
+triggerall=var(26)=0
+trigger1=numtarget
+trigger1=target,movetype!=H&&(movetype!=A||(stateno=[0,155]))
+trigger2=enemynear,movetype!=H
+trigger3=(var(35)&16)
+fvar(7)=1
+ignorehitpause=1
+
+[State ];コンボ補正解除
+type=Varset
+triggerall=var(26)=0
+trigger1=numtarget
+trigger1=target,movetype!=H&&(movetype!=A||(stateno=[0,155]))
+trigger2=enemynear,movetype!=H
+var(30)=0
+ignorehitpause=1
+
+[state 実際の乗算値]
+type = varset
+trigger1 = !ishelper
+fvar(6) = fvar(7)*ifelse(var(46)=1,1.25,1)
+
+[State ];攻撃力補正値(飾り)
+type=AttackMulSet
+trigger1=1
+value=1
+ignorehitpause=1
+
+[State 根性補正 敷居40最大補正75]
+type = varSet
+trigger1 = !ishelper
+fvar(30)  = ifelse(((Life*1000/(LifeMax)<=400)&&!(var(35)&64)),(1-0.75+(0.75*Life/LifeMax)),1)
+ignorehitpause = 1
+persistent = 1
+
+[state ];防御力補正値
+type=DefenceMulSet
+trigger1=1
+value=(1-ifelse(var(46)>=2,.5,0)-ifelse(var(46)=1,.25,0))*fvar(30)
+ignorehitpause=1
+
+[State ];ブライドパージ発動可能判定
+type=Varset
+trigger1=enemynear,HitDefAttr=SCA,HA||enemynear,HitDefAttr=SCA,HT||enemynear,HitDefAttr=SCA,HP
+fvar(16)=1
+
+[State ]
+type=Varset
+trigger1=!(enemynear,HitDefAttr=SCA,HA||enemynear,HitDefAttr=SCA,HT||enemynear,HitDefAttr=SCA,HP)&&time=1
+fvar(16)=0
+
+[state ];リバーサル解除
+type=Varset
+trigger1=var(20)=1&&stateno!=0&&(stateno!=[10,12])&&stateno!=20&&stateno!=100&&(time=3||movetype=H)
+var(20)=0
+
+[State ];ブライドゲージ
+type=Varset
+trigger1=roundstate=0||(var(35)&2)||fvar(37)=1||(roundstate>=2&&var(33)=0)
+var(5)=1000
+
+[State ]
+type=Varset
+trigger1=var(5)<0||var(5)>1000
+var(5)=ifelse(var(5)<0,0,1000)
+ignorehitpause=1
+
+[State ];ラヴゲージ上昇1
+type=Varadd
+trigger1=movetype=H
+trigger1=var(46)=0
+trigger1=stateno!=[120,159]
+trigger1=(gethitvar(damage)>=1)||(helper(3000),var(49)-life>=5)
+trigger1=!(enemynear,HitDefAttr=SCA,SA,SP,ST,HA,HP,HT)
+var(50)=ceil((2+(abs(gethitvar(damage))+abs(helper(3000),var(49)-life))*0.05)*ifelse(helper(3000),fvar(14)=1,.1,1))
+
+[State ];ラヴゲージ上昇2
+type=Varadd
+trigger1=movetype=H
+trigger1=var(46)=0
+trigger1=stateno!=[120,159]
+trigger1=(gethitvar(damage)>=1)||(helper(3000),var(49)-life>=5)
+trigger1=(enemynear,HitDefAttr=SCA,SA,SP,ST)
+var(50)=ceil((5+(abs(gethitvar(damage))+abs(helper(3000),var(49)-life))*0.05)*ifelse(helper(3000),fvar(14)=1,.1,1))
+
+[State ];ラヴゲージ上昇3
+type=Varadd
+trigger1=movetype=H
+trigger1=var(46)=0
+trigger1=stateno!=[120,159]
+trigger1=(gethitvar(damage)>=1)||(helper(3000),var(49)-life>=5)
+trigger1=(enemynear,HitDefAttr=SCA,HA,HP,HT)
+var(50)=ceil((8+(abs(gethitvar(damage))+abs(helper(3000),var(49)-life))*0.05)*ifelse(helper(3000),fvar(14)=1,.1,1))
+
+[State ];エンゲージレベル
+type=Varset
+trigger1=((var(35)&4)||fvar(37)=1)&&var(46)=0
+var(50)=900
+ignorehitpause=1
+
+[State ]
+type=Varset
+trigger1=var(50)<0||var(50)>900
+var(50)=ifelse(var(50)<0,0,900)
+ignorehitpause=1
+
+[State ]
+type=Varset
+trigger1=fvar(8)=2
+fvar(8)=0
+
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+; エフェクトを消す
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[state ]
+type=RemoveExplod
+trigger1=numexplod(200)&&(anim!=200||time<=1)
+ID=200
+
+[state ]
+type=RemoveExplod
+trigger1=numexplod(206)&&(anim!=206||time<=1)
+ID=206
+
+[state ]
+type=RemoveExplod
+trigger1=numexplod(210)&&(anim!=210||time<=1)
+ID=210
+
+[state ]
+type=RemoveExplod
+trigger1=numexplod(400)&&(anim!=400||time<=1)
+ID=400
+
+[state ]
+type=RemoveExplod
+trigger1=numexplod(410)&&(anim!=410||time<=1)
+ID=410
+
+[state ]
+type=RemoveExplod
+trigger1=numexplod(600)&&(anim!=600||time<=1)
+ID=600
+
+[state ]
+type=RemoveExplod
+trigger1=numexplod(610)&&(anim!=610||time<=1)
+ID=610
+
+[state ]
+type=RemoveExplod
+trigger1=numexplod(616)&&(anim!=616||time<=1)
+ID=616
+
+[state ]
+type=RemoveExplod
+trigger1=numexplod(801)&&(anim!=801||time<=1)
+ID=801
+
+[state ]
+type=RemoveExplod
+trigger1=numexplod(811)&&(anim!=811||time<=1)
+ID=811
+
+[state ]
+type=RemoveExplod
+trigger1=numexplod(3000)&&(anim!=3000)
+ID=3000
+
+[state ]
+type=RemoveExplod
+trigger1=numexplod(3001)&&(anim!=3000)
+ID=3001
+
+[state ]
+type=RemoveExplod
+trigger1=numexplod(3002)&&(anim!=3001)
+ID=3002
+
+[state ]
+type=RemoveExplod
+trigger1=numexplod(3016)&&(anim!=3014)
+ID=3016
+
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+; 
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[State 汎用変数リセット]
+type = null
+triggerall = time<=1&&movetype!=A
+triggerall = roundstate=2
+trigger1 = 1
+trigger1 = var(0):=0
+trigger2 = 1
+trigger2 = var(3):=0
+trigger3 = 1
+trigger3 = var(22):=0
+trigger4 = 1
+trigger4 = var(23):=0
+trigger5 = 1
+trigger5 = var(24):=0
+trigger6 = 1
+trigger6 = fvar(0):=0
+trigger7 = 1
+trigger7 = fvar(1):=0
+trigger8 = 1
+trigger8 = fvar(2):=0
+ignorehitpause = 1
+persistent = 1
+
+[State ]
+type=Varset
+trigger1=var(4)!=0&&statetype!=A
+var(4)=0
+
+[State ]
+type=Varset
+trigger1=var(28)!=0&&statetype!=A&&stateno!=1260
+var(28)=0
+
+[State ]
+type=Varset
+trigger1=var(29)!=0&&(((stateno!=[1200,1290])&&stateno!=52)||movetype=H)
+var(29)=0
+
+[State ]
+type=Varset
+trigger1=fvar(3)!=0&&(statetype!=A||movetype=H)
+fvar(3)=0
+
+[State ]
+type=Varset
+trigger1=fvar(4)!=0&&stateno!=5050&&stateno!=1500
+fvar(4)=0
+
+[State ]
+type=Varset
+trigger1=var(31)!=0&&stateno!=5050&&stateno!=5030&&stateno!=1500
+var(31)=0
+
+[State ]
+type=Varset
+trigger1=roundstate>=3
+fvar(36)=ifelse(winko,1,ifelse(lose,2,ifelse(wintime,3,0)))
+
+[State ]
+type=Varset
+trigger1=fvar(5)!=0&&((stateno!=[800,821])||movetype=H)
+fvar(5)=0
+
+[State ]
+type=Varset
+trigger1=fvar(10)!=0&&((statetype!=A&&stateno!=2001)||movetype=H)
+fvar(10)=0
+
+[State ]
+type=Varset
+trigger1=fvar(11)!=0&&(statetype!=A||movetype=H)
+fvar(11)=0
+
+[State ]
+type=AfterImage
+trigger1=var(46)=0&&fvar(12)=1
+time=0
+
+[State ]
+type=Varset
+trigger1=var(46)=0&&fvar(12)=1
+fvar(12)=0
+
+[State ]
+type=Varset
+trigger1=(movetype!=A||(movetype=A&&time=1))&&fvar(13)=1
+fvar(13)=0
+
+;------------------------------------------------------------------
+;life関係
+;------------------------------------------------------------------
+
+[State F1対策]
+type = lifeset
+triggerall = numhelper(5150)=0
+triggerall = numhelper(3000)
+triggerall = movetype != H && stateno != [3300,3310]
+triggerall = helper(3000),var(49) > 0  && life < helper(3000),var(49)
+trigger1 = roundstate != 2
+value = helper(3000),var(49)
+ignorehitpause = 1
+
+[State 総合防御力の補完]
+type = lifeset
+triggerall = !var(16)
+triggerall = !ishelper
+triggerall = !(var(35)&64)
+trigger1 = movetype = H
+trigger1 = (stateno=[5000,5020])||(var(18))
+trigger1 = life < var(14)
+trigger1 = life > 0
+trigger1 = var(14) >= 1
+value = var(14)
+ignorehitpause = 1
+persistent = 1
+
+[State 総合防御力の補完var(14)]
+type = varset
+triggerall = !ishelper
+trigger1 = !var(16)
+trigger2 = !gethitvar(damage)
+var(14) = floor(helper(3000),var(49) - (gethitvar(damage) *(1-ifelse(palno=12,.5,0)-ifelse(var(46)=1,.25,0))*fvar(30)))
+ignorehitpause = 1
+persistent = 1
+
+[State まだ死なない]
+type = lifeadd
+triggerall = !var(16)
+triggerall = !ishelper
+triggerall = !(var(35)&64)
+triggerall = gethitvar(damage) = [(ceil(lifemax*0.02)),(ceil(lifemax*0.40))]
+trigger1 = helper(3000),var(49) >= (gethitvar(damage) *(1-ifelse(palno=12,.5,0)-ifelse(var(46)=1,.25,0))*fvar(30)) 
+trigger1 = var(14) >= 1
+value = floor(gethitvar(damage) -(gethitvar(damage) *(1-ifelse(palno=12,.5,0)-ifelse(var(46)=1,.25,0))*fvar(30)))
+ignorehitpause = 1
+persistent = 1
+
+;-------------------------------------------------[7～12P関係]
+
+[State やられ中判定]
+type = varset
+trigger1 = time
+var(16) = (movetype = H)
+ignorehitpause = 0
+persistent = 1
+
+[State 総合防御力の補完var(18)]
+type = varset
+trigger1 = !ishelper
+var(18) = gethitvar(damage)
+ignorehitpause = 1
+persistent = 1
+
+[State やられ中保険]
+type = varset
+trigger1 = var(16) = 0
+trigger1 = movetype = H && (stateno !=[7040,7041])
+trigger1 = stateno!=[120,155]
+trigger1 = stateno!=[5000,5020]
+var(16) = 1
+ignorehitpause = 1
+persistent = 1
+
+;------------------------------------------------------------------
+;ブライド必殺技飛び道具関係
+;------------------------------------------------------------------
+
+[State ラヴ・セイバー飛び道具1]
+Type     = Helper
+Triggerall = numhelper(1400)
+Triggerall = helper(1400),stateno=1401
+Trigger1 = helper(1400),time=18
+Name     = "236Cproj"
+Stateno  = 1402
+ID       = 1402
+pos      = (25+random%41)*facing*helper(1400),facing+((Helper(1400),Pos X)-(Pos X))*helper(1400),facing*ifelse(facing=helper(1400),facing,1,-1),-10+random%10+(Helper(1400),Pos Y)-(Pos Y)
+facing   = facing*helper(1400),facing
+PosType  = P1
+SuperMoveTime = 0
+PauseMoveTime = 0
+IgnoreHitPause = 1
+ownpal   = 1
+
+[State ラヴ・セイバー飛び道具2]
+Type     = Helper
+Triggerall = numhelper(1400)
+Triggerall = helper(1400),stateno=1401
+Trigger1 = helper(1400),time=24
+Name     = "236Cproj"
+Stateno  = 1402
+ID       = 1402
+pos      = (25+random%41)*facing*helper(1400),facing+((Helper(1400),Pos X)-(Pos X))*helper(1400),facing*ifelse(facing=helper(1400),facing,1,-1),-125+random%10+(Helper(1400),Pos Y)-(Pos Y)
+facing   = facing*helper(1400),facing
+PosType  = P1
+SuperMoveTime = 0
+PauseMoveTime = 0
+IgnoreHitPause = 1
+ownpal   = 1
+
+[State ラヴ・セイバー飛び道具3]
+Type     = Helper
+Triggerall = numhelper(1400)
+Triggerall = helper(1400),stateno=1401
+Trigger1 = helper(1400),time=30
+Name     = "236Cproj"
+Stateno  = 1402
+ID       = 1402
+pos      = (25+random%41)*facing*helper(1400),facing+((Helper(1400),Pos X)-(Pos X))*helper(1400),facing*ifelse(facing=helper(1400),facing,1,-1),-65+random%10+(Helper(1400),Pos Y)-(Pos Y)
+facing   = facing*helper(1400),facing
+PosType  = P1
+SuperMoveTime = 0
+PauseMoveTime = 0
+IgnoreHitPause = 1
+ownpal   = 1
+
+[State ラヴ・セイバー飛び道具4]
+Type     = Helper
+Triggerall = numhelper(1400)
+Triggerall = helper(1400),stateno=1401
+Trigger1 = helper(1400),time=36
+Trigger1 = var(50)>=300
+Trigger2 = helper(1400),time=42
+Trigger2 = var(50)>=600
+Name     = "236Cproj"
+Stateno  = 1402
+ID       = 1402
+pos      = (25+random%41)*facing*helper(1400),facing+((Helper(1400),Pos X)-(Pos X))*helper(1400),facing*ifelse(facing=helper(1400),facing,1,-1),-130+random%66+(Helper(1400),Pos Y)-(Pos Y)
+facing   = facing*helper(1400),facing
+PosType  = P1
+SuperMoveTime = 0
+PauseMoveTime = 0
+IgnoreHitPause = 1
+ownpal   = 1
+
+[State ラヴ・ライトニング飛び道具]
+Type     = Helper
+Triggerall = numhelper(1400)
+Triggerall = helper(1400),stateno=1411
+Trigger1 = helper(1400),time=39
+Name     = "623Cproj"
+Stateno  = 1412
+ID       = 1412
+pos      = 0,0
+facing   = -1
+PosType  = P2
+SuperMoveTime = 0
+PauseMoveTime = 0
+IgnoreHitPause = 1
+ownpal   = 1
+
+;-------------------==================================================================
+;やられ音声
+;-------------------==================================================================
+
+[State やられ弱]
+type = PlaySnd
+triggerall = !ishelper
+triggerall = GetHitVar(damage) > 0
+triggerall = Movetype = H
+triggerall = stateNo != [120,155]
+triggerall = stateno!=1039
+triggerall = stateno!=2031
+triggerall = random%2=1
+trigger1 = statetype != A
+trigger1 = GetHitVar(animtype) = 0
+trigger2 = statetype = A
+trigger2 = GetHitVar(fall.recovertime) < 15
+value = 3,5000+(random%3)
+channel = 3
+lowpriority = 1
+
+[State やられ中]
+type = PlaySnd
+triggerall = !ishelper
+triggerall = GetHitVar(damage) > 0
+triggerall = Movetype = H
+triggerall = stateNo != [120,155]
+triggerall = stateno!=1039
+triggerall = stateno!=2031
+triggerall = random%2=1
+trigger1 = statetype != A
+trigger1 = GetHitVar(animtype) = [1,2]
+trigger2 = statetype = A
+trigger2 = GetHitVar(fall.recovertime) = [15,24]
+value = 3,5010+(random%3)
+channel = 3
+lowpriority = 1
+
+[State やられ強]
+type = PlaySnd
+triggerall = !ishelper
+triggerall = GetHitVar(damage) > 0
+triggerall = Movetype = H
+triggerall = stateNo != [120,155]
+triggerall = stateno!=1039
+triggerall = stateno!=2031
+triggerall = random%2=1
+trigger1 = statetype != A
+trigger1 = GetHitVar(animtype) >= 3
+trigger2 = statetype = A
+trigger2 = GetHitVar(fall.recovertime) > 24
+value = 3,5020+(random%3)
+channel = 3
+lowpriority = 1
+
+[State 氏んだら停止]
+type = Stopsnd
+triggerall = !Alive
+trigger1 = 1
+channel = 3
+IgnoreHitPause = 1
+Persistent = 1
+
+[State KOされた音声]
+type     = Helper
+triggerall = !ishelper
+triggerall = !Alive
+triggerall = NumHelper(19970) = 0
+trigger1   = 1
+helpertype = normal
+name       = "Nooooooo"
+pos      = 0,9999
+stateno  = 19970
+ID       = 19970
+keyctrl    = 0
+ownpal     = 1
+ignorehitpause = 0
+
+;-------------------==================================================================
+;特殊やられ演出集
+;-------------------==================================================================
+
+;グロスプー「こどものはらわたたべちゃった」対応ステート
+[state ]
+type=ChangeAnim
+trigger1=numenemy
+trigger1=enemynear,name="gurospooo"&&enemynear,authorname="souken"&&stateno=3121&&movetype=H&&anim!=29971
+value=9020
+
+;デミトリ「ミッドナイトブリス」対応ステート
+[state ]
+type=changeanim
+trigger1=numenemy
+trigger1=P2name="Demitri"&&enemynear,authorname="bad darkness"&&(stateno=[2021,2026])&&movetype=H
+value=9020
+elem=stateno-2020
+
+
+;右代宮縁寿 他「メタ返し＆メタ再反論」対応ステート
+[state ]
+type=Poweradd
+triggerall=alive&&!numexplod(19864)&&!numexplod(19865)
+trigger1=numenemy&&!numpartner
+trigger1=enemy,var(56)=19861004&&enemy,Authorname="YU-TOHARU"&&(enemy,stateno=2910||enemy,stateno=2930)&&enemy,time=2
+trigger2=numenemy&&numpartner
+trigger2=enemy,var(56)=19861004&&enemy,Authorname="YU-TOHARU"&&(enemy,stateno=2910||enemy,stateno=2930)&&enemy,time=2&&(ID<Partner,ID||(ID>Partner,ID&&partner,numexplod(19864)=0&&partner,numexplod(19865)=0))
+trigger3=numenemy>=2&&!numpartner
+trigger3=enemy(1),var(56)=19861004&&enemy(1),Authorname="YU-TOHARU"&&(enemy(1),stateno=2910||enemy(1),stateno=2930)&&enemy(1),time=2
+trigger4=numenemy>=2&&numpartner
+trigger4=enemy(1),var(56)=19861004&&enemy(1),Authorname="YU-TOHARU"&&(enemy(1),stateno=2910||enemy(1),stateno=2930)&&enemy(1),time=2&&(ID<Partner,ID||(ID>Partner,ID&&partner,numexplod(19864)=0&&partner,numexplod(19865)=0))
+value=-1000
+ignorehitpause=1
+
+[state ]
+type=PlaySnd
+triggerall=alive&&!numexplod(19864)
+trigger1=numenemy
+trigger1=enemy,var(56)=19861004&&enemy,Authorname="YU-TOHARU"&&enemy,stateno=2910&&enemy,time=2
+trigger2=numenemy>=2
+trigger2=enemy(1),var(56)=19861004&&enemy(1),Authorname="YU-TOHARU"&&enemy(1),stateno=2910&&enemy(1),time=2
+value=s3,184
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=alive&&!numexplod(19864)
+trigger1=numenemy
+trigger1=enemy,var(56)=19861004&&enemy,Authorname="YU-TOHARU"&&enemy,stateno=2910&&enemy,time=2&&enemy,facing=-1
+trigger2=numenemy>=2
+trigger2=enemy(1),var(56)=19861004&&enemy(1),Authorname="YU-TOHARU"&&enemy(1),stateno=2910&&enemy(1),time=2&&enemy(1),facing=-1
+anim=19864
+ID=19864
+postype=left
+pos=0,240
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=alive&&!numexplod(19864)
+trigger1=numenemy
+trigger1=enemy,var(56)=19861004&&enemy,Authorname="YU-TOHARU"&&enemy,stateno=2910&&enemy,time=2&&enemy,facing=1
+trigger2=numenemy>=2
+trigger2=enemy(1),var(56)=19861004&&enemy(1),Authorname="YU-TOHARU"&&enemy(1),stateno=2910&&enemy(1),time=2&&enemy(1),facing=1
+anim=19864
+ID=19864
+postype=right
+pos=0,240
+facing=-1
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+[state ]
+type=PlaySnd
+triggerall=alive&&!numexplod(19865)
+trigger1=numenemy
+trigger1=enemy,var(56)=19861004&&enemy,Authorname="YU-TOHARU"&&enemy,stateno=2930&&enemy,time=2
+trigger2=numenemy>=2
+trigger2=enemy(1),var(56)=19861004&&enemy(1),Authorname="YU-TOHARU"&&enemy(1),stateno=2930&&enemy(1),time=2
+value=s3,183
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=alive&&!numexplod(19865)
+trigger1=numenemy
+trigger1=enemy,var(56)=19861004&&enemy,Authorname="YU-TOHARU"&&enemy,stateno=2930&&enemy,time=2&&enemy,facing=-1
+trigger2=numenemy>=2
+trigger2=enemy(1),var(56)=19861004&&enemy(1),Authorname="YU-TOHARU"&&enemy(1),stateno=2930&&enemy(1),time=2&&enemy(1),facing=-1
+anim=19865
+ID=19865
+postype=left
+pos=0,240
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=alive&&!numexplod(19865)
+trigger1=numenemy
+trigger1=enemy,var(56)=19861004&&enemy,Authorname="YU-TOHARU"&&enemy,stateno=2930&&enemy,time=2&&enemy,facing=1
+trigger2=numenemy>=2
+trigger2=enemy(1),var(56)=19861004&&enemy(1),Authorname="YU-TOHARU"&&enemy(1),stateno=2930&&enemy(1),time=2&&enemy(1),facing=1
+anim=19865
+ID=19865
+postype=right
+pos=0,240
+facing=-1
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+;ラムダデルタ＆右代宮戦人「メタ返し＆メタ再反論」対応ステート
+[state ]
+type=Poweradd
+triggerall=alive&&!numexplod(19864)&&!numexplod(19865)
+trigger1=numenemy&&!numpartner
+trigger1=enemy,Authorname="my100yen"&&(enemy,stateno=2910||enemy,stateno=2930)&&enemy,time=2
+trigger2=numenemy&&numpartner
+trigger2=enemy,Authorname="my100yen"&&(enemy,stateno=2910||enemy,stateno=2930)&&enemy,time=2&&(ID<Partner,ID||(ID>Partner,ID&&partner,numexplod(19864)=0&&partner,numexplod(19865)=0))
+trigger3=numenemy>=2&&!numpartner
+trigger3=enemy(1),Authorname="my100yen"&&(enemy(1),stateno=2910||enemy(1),stateno=2930)&&enemy(1),time=2
+trigger4=numenemy>=2&&numpartner
+trigger4=enemy(1),Authorname="my100yen"&&(enemy(1),stateno=2910||enemy(1),stateno=2930)&&enemy(1),time=2&&(ID<Partner,ID||(ID>Partner,ID&&partner,numexplod(19864)=0&&partner,numexplod(19865)=0))
+value=-1000
+ignorehitpause=1
+
+[state ]
+type=PlaySnd
+triggerall=alive&&!numexplod(19864)
+trigger1=numenemy
+trigger1=enemy,Authorname="my100yen"&&enemy,stateno=2910&&enemy,time=2
+trigger2=numenemy>=2
+trigger2=enemy(1),Authorname="my100yen"&&enemy(1),stateno=2910&&enemy(1),time=2
+value=s3,184
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=alive&&!numexplod(19864)
+trigger1=numenemy
+trigger1=enemy,Authorname="my100yen"&&enemy,stateno=2910&&enemy,time=2&&enemy,facing=-1
+trigger2=numenemy>=2
+trigger2=enemy(1),Authorname="my100yen"&&enemy(1),stateno=2910&&enemy(1),time=2&&enemy(1),facing=-1
+anim=19864
+ID=19864
+postype=left
+pos=0,240
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=alive&&!numexplod(19864)
+trigger1=numenemy
+trigger1=enemy,Authorname="my100yen"&&enemy,stateno=2910&&enemy,time=2&&enemy,facing=1
+trigger2=numenemy>=2
+trigger2=enemy(1),Authorname="my100yen"&&enemy(1),stateno=2910&&enemy(1),time=2&&enemy(1),facing=1
+anim=19864
+ID=19864
+postype=right
+pos=0,240
+facing=-1
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+[state ]
+type=PlaySnd
+triggerall=alive&&!numexplod(19865)
+trigger1=numenemy
+trigger1=enemy,Authorname="my100yen"&&enemy,stateno=2930&&enemy,time=2
+trigger2=numenemy>=2
+trigger2=enemy(1),Authorname="my100yen"&&enemy(1),stateno=2930&&enemy(1),time=2
+value=s3,183
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=alive&&!numexplod(19865)
+trigger1=numenemy
+trigger1=enemy,Authorname="my100yen"&&enemy,stateno=2930&&enemy,time=2&&enemy,facing=-1
+trigger2=numenemy>=2
+trigger2=enemy(1),Authorname="my100yen"&&enemy(1),stateno=2930&&enemy(1),time=2&&enemy(1),facing=-1
+anim=19865
+ID=19865
+postype=left
+pos=0,240
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=alive&&!numexplod(19865)
+trigger1=numenemy
+trigger1=enemy,Authorname="my100yen"&&enemy,stateno=2930&&enemy,time=2&&enemy,facing=1
+trigger2=numenemy>=2
+trigger2=enemy(1),Authorname="my100yen"&&enemy(1),stateno=2930&&enemy(1),time=2&&enemy(1),facing=1
+anim=19865
+ID=19865
+postype=right
+pos=0,240
+facing=-1
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+;ルシファー「メタ返し＆メタ再反論」対応ステート
+[state ]
+type=Poweradd
+triggerall=alive&&!numexplod(19864)&&!numexplod(19865)
+trigger1=numenemy&&!numpartner
+trigger1=enemy,name="Lucifer"&&enemy,Authorname="Tokey"&&(enemy,stateno=2910||enemy,stateno=2930)&&enemy,time=2
+trigger2=numenemy&&numpartner
+trigger2=enemy,name="Lucifer"&&enemy,Authorname="Tokey"&&(enemy,stateno=2910||enemy,stateno=2930)&&enemy,time=2&&(ID<Partner,ID||(ID>Partner,ID&&partner,numexplod(19864)=0&&partner,numexplod(19865)=0))
+trigger3=numenemy>=2&&!numpartner
+trigger3=enemy(1),name="Lucifer"&&enemy(1),Authorname="Tokey"&&(enemy(1),stateno=2910||enemy(1),stateno=2930)&&enemy(1),time=2
+trigger4=numenemy>=2&&numpartner
+trigger4=enemy(1),name="Lucifer"&&enemy(1),Authorname="Tokey"&&(enemy(1),stateno=2910||enemy(1),stateno=2930)&&enemy(1),time=2&&(ID<Partner,ID||(ID>Partner,ID&&partner,numexplod(19864)=0&&partner,numexplod(19865)=0))
+value=-1000
+ignorehitpause=1
+
+[state ]
+type=PlaySnd
+triggerall=alive&&!numexplod(19864)
+trigger1=numenemy
+trigger1=enemy,name="Lucifer"&&enemy,Authorname="Tokey"&&enemy,stateno=2910&&enemy,time=2
+trigger2=numenemy>=2
+trigger2=enemy(1),name="Lucifer"&&enemy(1),Authorname="Tokey"&&enemy(1),stateno=2910&&enemy(1),time=2
+value=s3,184
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=alive&&!numexplod(19864)
+trigger1=numenemy
+trigger1=enemy,name="Lucifer"&&enemy,Authorname="Tokey"&&enemy,stateno=2910&&enemy,time=2&&enemy,facing=-1
+trigger2=numenemy>=2
+trigger2=enemy(1),name="Lucifer"&&enemy(1),Authorname="Tokey"&&enemy(1),stateno=2910&&enemy(1),time=2&&enemy(1),facing=-1
+anim=19864
+ID=19864
+postype=left
+pos=0,240
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=alive&&!numexplod(19864)
+trigger1=numenemy
+trigger1=enemy,name="Lucifer"&&enemy,Authorname="Tokey"&&enemy,stateno=2910&&enemy,time=2&&enemy,facing=1
+trigger2=numenemy>=2
+trigger2=enemy(1),name="Lucifer"&&enemy(1),Authorname="Tokey"&&enemy(1),stateno=2910&&enemy(1),time=2&&enemy(1),facing=1
+anim=19864
+ID=19864
+postype=right
+pos=0,240
+facing=-1
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+[state ]
+type=PlaySnd
+triggerall=alive&&!numexplod(19865)
+trigger1=numenemy
+trigger1=enemy,name="Lucifer"&&enemy,Authorname="Tokey"&&enemy,stateno=2930&&enemy,time=2
+trigger2=numenemy>=2
+trigger2=enemy(1),name="Lucifer"&&enemy(1),Authorname="Tokey"&&enemy(1),stateno=2930&&enemy(1),time=2
+value=s3,183
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=alive&&!numexplod(19865)
+trigger1=numenemy
+trigger1=enemy,name="Lucifer"&&enemy,Authorname="Tokey"&&enemy,stateno=2930&&enemy,time=2&&enemy,facing=-1
+trigger2=numenemy>=2
+trigger2=enemy(1),name="Lucifer"&&enemy(1),Authorname="Tokey"&&enemy(1),stateno=2930&&enemy(1),time=2&&enemy(1),facing=-1
+anim=19865
+ID=19865
+postype=left
+pos=0,240
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=alive&&!numexplod(19865)
+trigger1=numenemy
+trigger1=enemy,name="Lucifer"&&enemy,Authorname="Tokey"&&enemy,stateno=2930&&enemy,time=2&&enemy,facing=1
+trigger2=numenemy>=2
+trigger2=enemy(1),name="Lucifer"&&enemy(1),Authorname="Tokey"&&enemy(1),stateno=2930&&enemy(1),time=2&&enemy(1),facing=1
+anim=19865
+ID=19865
+postype=right
+pos=0,240
+facing=-1
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+[State ]
+type=Poweradd
+triggerAll=(Alive)&&(!NumExplod(19864))&&(!NumExplod(19865))
+trigger1=(numenemy)&&(!numpartner)
+Trigger1=((enemy,name="Rosa_Ushiromiya")||((enemy,name="Chiester410")))&&(enemy,Authorname="barai")
+trigger1=(enemy,stateno=2910||enemy,Stateno=2930)&&(enemy,time=2)
+trigger2=(numenemy)&&(numpartner)
+Trigger2=((enemy,name="Rosa_Ushiromiya")||((enemy,name="Chiester410")))&&(enemy,Authorname="barai")
+trigger2=(enemy,stateno=2910||enemy,Stateno=2930)&&(enemy,time=2)
+Trigger2=(ID<Partner,ID||(ID>Partner,ID&&partner,numexplod(19864)=0&&partner,numexplod(19865)=0))
+trigger3=(numenemy>=2)&&(!numpartner)
+trigger3=((enemy(1),name="Rosa_Ushiromiya")||((enemy(1),name="Chiester410")))&&(enemy(1),Authorname="barai")
+trigger3=(enemy(1),stateno=2910||enemy(1),stateno=2930)&&(enemy(1),time=2)
+trigger4=(numenemy>=2)&&(numpartner)
+trigger4=((enemy(1),name="Rosa_Ushiromiya")||((enemy(1),name="Chiester410")))&&(enemy(1),Authorname="barai")
+Trigger4=(enemy(1),stateno=2910||enemy(1),stateno=2930)&&(enemy(1),time=2)&&(ID<Partner,ID||(ID>Partner,ID&&partner,numexplod(19864)=0&&partner,numexplod(19865)=0))
+value=-1*(floor(PowerMax)/5)*2
+ignorehitpause=1
+
+[State ]
+type=PlaySnd
+TriggerAll=(Alive)&&(!NumExplod(19864))
+trigger1=NumEnemy
+trigger1=((enemy,name="Rosa_Ushiromiya")||((enemy,name="Chiester410")))&&(enemy,Authorname="barai")
+trigger1=(enemy,stateno=2910)&&(enemy,time=2)
+trigger2=NumEnemy>=2
+trigger2=((enemy(1),name="Rosa_Ushiromiya")||((enemy(1),name="Chiester410")))&&(enemy(1),Authorname="barai")
+trigger2=(enemy(1),stateno=2910)&&(enemy(1),time=2)&&(enemy(1),facing=-1)
+value=s3,184
+
+[State ]
+type=Explod
+triggerAll=(Alive)&&(!NumExplod(19864))
+trigger1=NumEnemy
+trigger1=((enemy,name="Rosa_Ushiromiya")||((enemy,name="Chiester410")))&&(enemy,Authorname="barai")
+trigger1=(enemy,stateno=2910)&&(enemy,time=2)&&(enemy,facing=-1)
+trigger2=NumEnemy>=2
+trigger2=((enemy(1),name="Rosa_Ushiromiya")||((enemy(1),name="Chiester410")))&&(enemy(1),Authorname="barai")
+trigger2=(enemy(1),stateno=2910)&&(enemy(1),time=2)&&(enemy(1),facing=-1)
+anim=19864
+ID=19864
+postype=left
+pos=0,240
+facing=1
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=999999999
+supermovetime=999999999
+ignorehitpause=1
+
+[State ]
+type=Explod
+triggerAll=(Alive)&&(!NumExplod(19864))
+trigger1=NumEnemy
+trigger1=((enemy,name="Rosa_Ushiromiya")||((enemy,name="Chiester410")))&&(enemy,Authorname="barai")
+trigger1=(enemy,stateno=2910)&&(enemy,time=2)&&(enemy,facing=1)
+trigger2=NumEnemy>=2
+trigger2=((enemy(1),name="Rosa_Ushiromiya")||((enemy(1),name="Chiester410")))&&(enemy(1),Authorname="barai")
+trigger2=(enemy(1),stateno=2910)&&(enemy(1),time=2)&&(enemy(1),facing=1)
+anim=19864
+ID=19864
+postype=right
+pos=0,240
+facing=-1
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=999999999
+supermovetime=999999999
+ignorehitpause=1
+
+[State ]
+type=PlaySnd
+TriggerAll=(Alive)&&(!NumExplod(19865))
+trigger1=NumEnemy
+trigger1=((enemy,name="Rosa_Ushiromiya")||((enemy,name="Chiester410")))&&(enemy,Authorname="barai")
+trigger1=(enemy,stateno=2930)&&(enemy,time=2)
+trigger2=NumEnemy>=2
+trigger2=((enemy(1),name="Rosa_Ushiromiya")||((enemy(1),name="Chiester410")))&&(enemy(1),Authorname="barai")
+trigger2=(enemy(1),stateno=2930)&&(enemy(1),time=2)&&(enemy(1),facing=-1)
+value=s3,183
+
+[State ]
+type=Explod
+triggerAll=(Alive)&&(!NumExplod(19865))
+trigger1=NumEnemy
+trigger1=((enemy,name="Rosa_Ushiromiya")||((enemy,name="Chiester410")))&&(enemy,Authorname="barai")
+trigger1=(enemy,stateno=2930)&&(enemy,time=2)&&(enemy,facing=-1)
+trigger2=NumEnemy>=2
+trigger2=((enemy(1),name="Rosa_Ushiromiya")||((enemy(1),name="Chiester410")))&&(enemy(1),Authorname="barai")
+trigger2=(enemy(1),stateno=2930)&&(enemy(1),time=2)&&(enemy(1),facing=-1)
+anim=19865
+ID=19865
+postype=left
+pos=0,240
+facing=1
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=999999999
+supermovetime=999999999
+ignorehitpause=1
+
+[State ]
+type=Explod
+triggerAll=(Alive)&&(!NumExplod(19865))
+trigger1=NumEnemy
+trigger1=((enemy,name="Rosa_Ushiromiya")||((enemy,name="Chiester410")))&&(enemy,Authorname="barai")
+trigger1=(enemy,stateno=2930)&&(enemy,time=2)&&(enemy,facing=1)
+trigger2=NumEnemy>=2
+trigger2=((enemy(1),name="Rosa_Ushiromiya")||((enemy(1),name="Chiester410")))&&(enemy(1),Authorname="barai")
+trigger2=(enemy(1),stateno=2930)&&(enemy(1),time=2)&&(enemy(1),facing=1)
+anim=19865
+ID=19865
+postype=right
+pos=0,240
+facing=-1
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=999999999
+supermovetime=999999999
+ignorehitpause=1
+
+;ドラノール・A・ノックス「メタ返し＆メタ再反論」対応ステート
+[State ]
+Type=PowerAdd
+TriggerAll=Alive&&!NumExplod(19864)&&!NumExplod(19865)
+Trigger1=NumEnemy&&!NumPartner
+Trigger1=Enemy,Name="Dlanor A. Knox"&&Enemy,AuthorName="Shiroto"&&(Enemy,StateNo=2910||Enemy,StateNo=2930)&&Enemy,StateTime=2
+Trigger2=NumEnemy>=2&&!NumPartner
+Trigger2=Enemy(1),Name="Dlanor A. Knox"&&Enemy(1),AuthorName="Shiroto"&&(Enemy(1),StateNo=2910||Enemy(1),StateNo=2930)&&Enemy(1),StateTime=2
+Trigger3=NumEnemy&&NumPartner
+Trigger3=Enemy,Name="Dlanor A. Knox"&&Enemy,AuthorName="Shiroto"&&(Enemy,StateNo=2910||Enemy,StateNo=2930)&&Enemy,StateTime=2
+Trigger3=ID<Partner,ID||(ID>Partner,ID&&Partner,NumExplod(19864)=0&&Partner,Numexplod(19865)=0)
+Trigger4=NumEnemy>=2&&NumPartner
+Trigger4=Enemy(1),Name="Dlanor A. Knox"&&Enemy(1),AuthorName="Shiroto"&&(Enemy(1),StateNo=2910||Enemy(1),StateNo=2930)&&Enemy(1),StateTime=2
+Trigger4=ID<Partner,ID||(ID>Partner,ID&&Partner,NumExplod(19864)=0&&Partner,Numexplod(19865)=0)
+Value=-(floor(PowerMax)/5)*2
+ignorehitpause=1
+
+[State ]
+Type=PlaySnd
+TriggerAll=Alive
+Trigger1=NumEnemy&&!NumExplod(19864)
+Trigger1=Enemy,Name="Dlanor A. Knox"&&Enemy,AuthorName="Shiroto"
+Trigger1=Enemy,StateNo=2910&&Enemy,StateTime=2
+Trigger2=NumEnemy>=2
+Trigger2=Enemy(1),Name="Dlanor A. Knox"&&Enemy(1),AuthorName="Shiroto"&&Enemy(1),StateNo=2910&&Enemy(1),StateTime=2
+Value=s3,184
+ignorehitpause=1
+
+[state ]
+Type=Explod
+Triggerall=Alive&&!NumExplod(19864)
+Trigger1=NumEnemy
+Trigger1=Enemy,Name="Dlanor A. Knox"&&Enemy,AuthorName="Shiroto"&&Enemy,StateNo=2910&&Enemy,StateTime=2&&Enemy,Facing=-1
+Trigger2=NumEnemy>=2
+Trigger2=Enemy(1),Name="Dlanor A. Knox"&&Enemy(1),AuthorName="Shiroto"&&Enemy(1),StateNo=2910&&Enemy(1),StateTime=2&&Enemy(1),Facing=-1
+Anim=19864
+ID=19864
+Postype=left
+Pos=0,240
+Scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+[state ]
+Type=Explod
+Triggerall=Alive&&!NumExplod(19864)
+Trigger1=NumEnemy
+Trigger1=Enemy,Name="Dlanor A. Knox"&&Enemy,AuthorName="Shiroto"&&Enemy,StateNo=2910&&Enemy,StateTime=2&&Enemy,Facing=1
+Trigger2=NumEnemy>=2
+Trigger2=Enemy(1),Name="Dlanor A. Knox"&&Enemy(1),AuthorName="Shiroto"&&Enemy(1),StateNo=2910&&Enemy(1),StateTime=2&&Enemy(1),Facing=1
+Anim=19864
+ID=19864
+Postype=right
+Pos=0,240
+Facing=-1
+Scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+[State ]
+Type=PlaySnd
+TriggerAll=Alive&&!NumExplod(19865)
+Trigger1=NumEnemy
+Trigger1=Enemy,Name="Dlanor A. Knox"&&Enemy,AuthorName="Shiroto"&&Enemy,StateNo=2930&&Enemy,StateTime=2
+Trigger2=NumEnemy>=2
+Trigger2=Enemy(1),Name="Dlanor A. Knox"&&Enemy(1),AuthorName="Shiroto"&&Enemy(1),StateNo=2930&&Enemy(1),StateTime=2
+Value=s3,183
+ignorehitpause=1
+
+[state ]
+Type=Explod
+Triggerall=Alive&&!NumExplod(19865)
+Trigger1=NumEnemy
+Trigger1=Enemy,Name="Dlanor A. Knox"&&Enemy,AuthorName="Shiroto"&&Enemy,StateNo=2930&&Enemy,StateTime=2&&Enemy,Facing=-1
+Trigger2=NumEnemy>=2
+Trigger2=Enemy(1),Name="Dlanor A. Knox"&&Enemy(1),AuthorName="Shiroto"&&Enemy(1),StateNo=2930&&Enemy(1),StateTime=2&&Enemy(1),Facing=-1
+Anim=19865
+ID=19865
+Postype=left
+Pos=0,240
+Scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+[state ]
+Type=Explod
+Triggerall=Alive&&!NumExplod(19865)
+Trigger1=NumEnemy
+Trigger1=Enemy,Name="Dlanor A. Knox"&&Enemy,AuthorName="Shiroto"&&Enemy,StateNo=2930&&Enemy,StateTime=2&&Enemy,Facing=1
+Trigger2=NumEnemy>=2
+Trigger2=Enemy(1),Name="Dlanor A. Knox"&&Enemy(1),AuthorName="Shiroto"&&Enemy(1),StateNo=2930&&Enemy(1),StateTime=2&&Enemy(1),Facing=1
+Anim=19865
+ID=19865
+Postype=right
+Pos=0,240
+Facing=-1
+Scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+;オヤシロリカ＆トラップサトコ＆古戸ヱリカ「メタ返し＆メタ再反論」対応ステート
+[state ]
+type=Explod
+trigger1=numenemy&&facing=1
+trigger1=(enemynear,name="oyashirorika"||enemynear,name="trapsatoko"||enemynear,name="Furudo_erika")&&enemynear,Authorname="baggy"&&enemynear,stateno=2910&&enemynear,time=2
+anim=19864
+ID=19864
+postype=left
+pos=0,240
+scale=.5,.5
+ownpal=1
+sprpriority=50
+pausemovetime=999999999
+supermovetime=999999999
+
+[state ]
+type=Explod
+trigger1=numenemy&&facing=-1
+trigger1=(enemynear,name="oyashirorika"||enemynear,name="trapsatoko"||enemynear,name="Furudo_erika")&&enemynear,Authorname="baggy"&&enemynear,stateno=2910&&enemynear,time=2
+anim=19864
+ID=19864
+postype=right
+pos=0,240
+facing=-1
+scale=.5,.5
+ownpal=1
+sprpriority=50
+pausemovetime=999999999
+supermovetime=999999999
+
+[state ]
+type=PlaySnd
+trigger1=numenemy
+trigger1=(enemynear,name="oyashirorika"||enemynear,name="trapsatoko"||enemynear,name="Furudo_erika")&&enemynear,Authorname="baggy"&&enemynear,stateno=2910&&enemynear,time=2
+value=s3,184
+
+[state ]
+type=Poweradd
+trigger1=numenemy
+trigger1=(enemynear,name="oyashirorika"||enemynear,name="trapsatoko"||enemynear,name="Furudo_erika")&&enemynear,Authorname="baggy"&&enemynear,stateno=2910&&enemynear,time=2
+value=-1000
+
+[state ]
+type=Explod
+trigger1=numenemy&&facing=1
+trigger1=(enemynear,name="oyashirorika"||enemynear,name="trapsatoko"||enemynear,name="Furudo_erika")&&enemynear,Authorname="baggy"&&enemynear,stateno=2930&&enemynear,time=2
+anim=19865
+ID=19865
+postype=left
+pos=0,240
+scale=.5,.5
+ownpal=1
+sprpriority=50
+pausemovetime=999999999
+supermovetime=999999999
+
+[state ]
+type=Explod
+trigger1=numenemy&&facing=-1
+trigger1=(enemynear,name="oyashirorika"||enemynear,name="trapsatoko"||enemynear,name="Furudo_erika")&&enemynear,Authorname="baggy"&&enemynear,stateno=2930&&enemynear,time=2
+anim=19865
+ID=19865
+postype=right
+pos=0,240
+facing=-1
+scale=.5,.5
+ownpal=1
+sprpriority=50
+pausemovetime=999999999
+supermovetime=999999999
+
+[state ]
+type=PlaySnd
+trigger1=numenemy
+trigger1=(enemynear,name="oyashirorika"||enemynear,name="trapsatoko"||enemynear,name="Furudo_erika")&&enemynear,Authorname="baggy"&&enemynear,stateno=2930&&enemynear,time=2
+value=s3,183
+
+[state ]
+type=Poweradd
+trigger1=numenemy
+trigger1=(enemynear,name="oyashirorika"||enemynear,name="trapsatoko"||enemynear,name="Furudo_erika")&&enemynear,Authorname="baggy"&&enemynear,stateno=2930&&enemynear,time=2
+value=-1000
+
+;エルザ・ラ・コンティ「メタ返し＆メタ再反論」対応ステート
+[state ]
+type=Poweradd
+triggerall=alive&&!NumExplod(19864)&&!NumExplod(19865)&&power>=floor(PowerMax*.4)
+trigger1=enemy,AuthorName="flowrallia"&&enemy,var(56)=19861004&&(enemy,stateno=3001||enemy,stateno=3003)&&enemy,time=2-(TeamSide=1)*1
+trigger2=NumEnemy=2
+trigger2=Enemy(1),AuthorName="flowrallia"&&Enemy(1),var(56)=19861004&&(Enemy(1),stateno=3001||Enemy(1),stateno=3003)&&Enemy(1),time=2-(TeamSide=1)*1
+value=floor(-Powermax*.4)
+ignorehitpause=1
+
+[state ]
+type=PlaySnd
+triggerall=alive&&!NumExplod(19864)&&!NumExplod(19865)
+trigger1=enemy,AuthorName="flowrallia"&&enemy,var(56)=19861004&&enemy,stateno=3001&&enemy,time=2-(TeamSide=1)*1
+trigger2=NumEnemy=2
+trigger2=Enemy(1),AuthorName="flowrallia"&&Enemy(1),var(56)=19861004&&Enemy(1),stateno=3001&&Enemy(1),time=2-(TeamSide=1)*1
+value=s3,184
+ignorehitpause=1
+
+[state ]
+type=PlaySnd
+triggerall=alive&&!NumExplod(19864)&&!NumExplod(19865)
+trigger1=enemy,AuthorName="flowrallia"&&enemy,var(56)=19861004&&enemy,stateno=3003&&enemy,time=2-(TeamSide=1)*1
+trigger2=NumEnemy=2
+trigger2=Enemy(1),AuthorName="flowrallia"&&Enemy(1),var(56)=19861004&&Enemy(1),stateno=3003&&Enemy(1),time=2-(TeamSide=1)*1
+value=s3,183
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=TeamSide=1&&alive&&!NumExplod(19864)&&!NumExplod(19865)
+trigger1=enemy,AuthorName="flowrallia"&&enemy,var(56)=19861004&&enemy,stateno=3001&&enemy,time<=2
+trigger2=NumEnemy=2
+trigger2=Enemy(1),AuthorName="flowrallia"&&Enemy(1),var(56)=19861004&&Enemy(1),stateno=3001&&Enemy(1),time<=2
+anim=19864
+ID=19864
+postype=left
+pos=0,240
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+suermove=1
+pausemovetime=100
+supermovetime=100
+persistent=0
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=TeamSide!=1&&alive&&!NumExplod(19864)&&!NumExplod(19865)
+trigger1=enemy,AuthorName="flowrallia"&&enemy,var(56)=19861004&&enemy,stateno=3001&&enemy,time<=2
+trigger2=NumEnemy=2
+trigger2=Enemy(1),AuthorName="flowrallia"&&Enemy(1),var(56)=19861004&&Enemy(1),stateno=3001&&Enemy(1),time<=2
+anim=19864
+ID=19864
+postype=right
+pos=0,240
+facing=-1
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+supermove=1
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=TeamSide=1&&alive&&!NumExplod(19864)&&!NumExplod(19865)
+trigger1=enemy,AuthorName="flowrallia"&&enemy,var(56)=19861004&&enemy,stateno=3003&&enemy,time<=2
+trigger2=NumEnemy=2
+trigger2=Enemy(1),AuthorName="flowrallia"&&Enemy(1),var(56)=19861004&&Enemy(1),stateno=3003&&Enemy(1),time<=2
+anim=19865
+ID=19865
+postype=left
+pos=0,240
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+suermove=1
+pausemovetime=100
+supermovetime=100
+persistent=0
+ignorehitpause=1
+
+[state ]
+type=Explod
+triggerall=TeamSide!=1&&alive&&!NumExplod(19864)&&!NumExplod(19865)
+trigger1=enemy,AuthorName="flowrallia"&&enemy,var(56)=19861004&&enemy,stateno=3003&&enemy,time<=2
+trigger2=NumEnemy=2
+trigger2=Enemy(1),AuthorName="flowrallia"&&Enemy(1),var(56)=19861004&&Enemy(1),stateno=3003&&Enemy(1),time<=2
+anim=19865
+ID=19865
+postype=right
+pos=0,240
+facing=-1
+scale=.5,.5
+ownpal=1
+bindtime=-1
+sprpriority=50
+supermove=1
+pausemovetime=100
+supermovetime=100
+ignorehitpause=1
+
+[state ];iwakick氏イントロ用音声1
+type=PlaySnd
+triggerall=roundstate=1
+triggerall=stateno=110191
+triggerall=sysfvar(0)=100000.0+1
+triggerall=sysfvar(1)=100000.0+1
+trigger1=time=400
+trigger1=enemy,name="silversamurai"
+trigger2=time=200
+trigger2=enemy,name="spiral"
+value=s3,185
+ignorehitpause=1
+
+[state ];iwakick氏イントロ用音声2
+type=PlaySnd
+triggerall=roundstate=1
+triggerall=stateno=110191
+triggerall=sysfvar(0)=100000.0+1
+triggerall=sysfvar(1)=100000.0+1
+trigger1=time=950
+trigger1=enemy,name="silversamurai"
+trigger2=time=520
+trigger2=enemy,name="spiral"
+value=s3,180
+ignorehitpause=1

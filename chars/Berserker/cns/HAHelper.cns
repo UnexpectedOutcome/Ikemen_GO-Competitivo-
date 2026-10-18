@@ -1,0 +1,154 @@
+; 『アラド戦記 阿修羅』のステートのファイルです。
+;
+; 本ファイルでは以下のステートを定義しています。
+;   ・HA用ヘルパー
+;
+; 『アラド戦記 阿修羅』のHA処理の為に作りましたが
+; 手順を守って使用することで好きなステートにHAを適用できるように作って有ります。
+;
+;===========================================================================
+; ステート
+;===========================================================================
+;---------------------------------------------------------------------------
+; HA用ヘルパー
+;---------------------------------------------------------------------------
+[Statedef 8800]; HA用ヘルパー
+type      = S
+movetype  = H
+physics   = N
+velset    = 0, 0
+
+[State 8800, 本体がきたら場合立ちへ移行]
+type = ChangeState
+trigger1 = !IsHelper
+value = 0
+ignorehitpause = 1
+
+[State 8800, 親の位置に固定]
+type = BindToRoot
+trigger1 = 1
+time = 1
+facing = 1
+pos = 0, 0
+ignorehitpause = 1
+
+[State 8800, 透明化]; 透明化
+type = AssertSpecial
+trigger1 = 1
+flag = invisible
+flag2 = noshadow
+ignorehitpause = 1
+
+[State 8800, ブランクアニメ設定]; HA処理用ヘルパーは基本ブランクアニメ
+type = ChangeAnim
+trigger1 = 1
+value = 20000
+ignorehitpause = 1
+
+[State 8800, アニメ変更]; HA処理用 食らい判定アニメ
+type = ChangeAnim
+;************************************************
+; ※ 以下にHA処理を行いたいステートの条件を羅列する。
+;     ここの記述内容は -3ステートの「HAモーションに打撃無敵付加」の箇所で指定した条件と
+;     同じ条件を羅列することになりますが、ヘルパーから本体への参照となる為
+;     Root, リダイレクトを追記する必要が有ります。
+;************************************************
+trigger1 = Root, StateNo = 1100
+trigger1 = Root, AnimElemTime(1) >= 0
+trigger1 = Root, AnimElemTime(5) < 0  ; ステート1100の1コマ～4コマの間をHA化
+;************************************************
+value = Root, Anim
+Elem = Root, AnimElemNo(0)
+ignorehitpause = 1
+
+[State 8800, 被弾判定制御]; ブランクアニメ時は無敵状態
+type = NotHitBy
+trigger1 = Anim = 20000
+value = SCA
+ignorehitpause = 1
+
+[State 8800, 被弾判定制御]; HA状態(Helperは打撃判定を担当する為、全ての投げを無効化)
+type = NotHitBy
+trigger1 = Anim != 20000
+value = , AT
+ignorehitpause = 1
+
+[State 8800, HitPause時間初期化]
+type = VarSet
+trigger1 = Var(41) != 0
+trigger1 = Anim = 20000
+var(41) = 0
+ignorehitpause = 1
+
+[State 8800, 前回分のRoot, AnimTime【Var(1)】の初期化]
+type = Null
+triggerall = Var(1) = 0 || Var(1) = -1
+;************************************************
+; ※ 以下にHA処理の終了フレームまでのAnimTime取得条件を羅列する。
+;     ここの記述内容は -3ステートの「HAモーション最終フレームから1F打撃無敵付加」の箇所で指定した条件と
+;     ほぼ同じ条件を羅列することになりますが、ヘルパーから本体への参照となる為
+;     Root, リダイレクトを追記する必要が有ります。
+;     また、取得したAnimTimeをヘルパー変数のVar(1)へ代入する為に「 Var(1) := XXXX 」という記述を
+;     行う必要が有ります。
+;************************************************
+trigger1 = Root, StateNo = 1100
+trigger1 = Var(1) := Root, AnimElemTime(5)  ; ステート1100の1コマ～4コマの間をHA化
+;************************************************
+ignorehitpause = 1
+
+[State 8800, ダメージ処理]
+type = VarSet
+trigger1 = 1
+var(40) = GetHitVar(damage)
+ignorehitpause = 1
+
+; HA中に攻撃被弾時、もしもHitPauseがHAの残りモーションより長く続く場合
+; HA終了直後にHitStop中の相手の攻撃を食らってしまう。
+; （本体の変わりに打撃を食らうヘルパーが無敵状態になると共に本体の打撃無敵が解除されるため
+;   ヘルパー、本体の順にHAで耐えたはずの攻撃を2重に食らってしまう）
+;
+; その為、ヘルパーが受けた打撃のHitPause時間からHAの残り時間を引いた値が0以上の場合
+; （HA終了後にも打撃のHitPauseが続く場合）
+; HA終了後も継続するHitPauseの時間分、本体に打撃無敵を付ける。
+; その為、ParentのVar(41)へHA終了後も継続するHitPauseの時間を代入する。
+;（10フレーム多く打撃無敵を付加。飛び道具とか設置技のような持続が長い技を2重に食らうのは妥協します。）
+; (普通の打撃であれば10F以上持続が有るような技は無いと思うので10Fに設定)
+; (延長する無敵時間は各々好きなように調節してください)
+[State 8800, HitPauseTime取得]
+type = VarSet
+trigger1 = GetHitVar(damage) != 0
+trigger1 = GetHitVar(hitshaketime) + Var(1) > 0
+var(41) = GetHitVar(hitshaketime) + Var(1) + 10
+ignorehitpause = 1
+
+[State 8800, 前回分のRoot, AnimTime【Var(1)】の取得]
+type = Null
+;************************************************
+; ※ 以下にHA処理の終了フレームまでのAnimTime取得条件を羅列する。
+;     ここの記述内容は -3ステートの「HAモーション最終フレームから1F打撃無敵付加」の箇所で指定した条件と
+;     ほぼ同じ条件を羅列することになりますが、ヘルパーから本体への参照となる為
+;     Root, リダイレクトを追記する必要が有ります。
+;     また、取得したAnimTimeをヘルパー変数のVar(1)へ代入する為に「 Var(1) := XXXX 」という記述を
+;     行う必要が有ります。
+;
+;     ここの条件は、[State 8800, 前回分のRoot, AnimTime【Var(1)】の初期化]の変更部分をコピペすればおｋです。
+;
+;************************************************
+trigger1 = Root, StateNo = 1100
+trigger1 = Var(1) := Root, AnimElemTime(5)  ; ステート1100の1コマ～4コマの間をHA化
+;************************************************
+ignorehitpause = 1
+
+[State 8800, デバッグ]
+type = null;DisplayToClipboard
+trigger1 = 1
+text = "Var(40) = %d, Var(41) = %d, Var(1) = %d, Root, AnimTime = %d, AnimTime = %d"
+params = Var(40), Var(41), Var(1), Root, AnimTime, AnimTime
+
+[State 8800, 攻撃被弾上書き]
+type = HitOverRide
+trigger1 = 1
+attr = SCA, AA, AT, AP
+stateno = 8800
+ignorehitpause = 1
+

@@ -1,0 +1,122 @@
+;-----------------------------------------------------------------------------
+[Statedef -2];常時監視ステート(相手に行動を制御されても関係無く常に実行される)
+;-----------------------------------------------------------------------------
+
+;===============================================================================
+;距離
+;===============================================================================
+;■Enemynear,リダイレクトの相手座標認識
+;※これをタッグに対応させる場合、EnemyNear,をEnemyNear(*Var(*生存相手認識*)*),などに置換してください。
+[State adi , var bodydist 1]
+Type=null
+;X座標
+Trigger1 =1||var(31):= Ifelse( (EnemyNear,StateType!= A), Ifelse( (Pos X <= EnemyNear,Pos X ^^ EnemyNear,Facing = 1),(EnemyNear,Const(Size.Ground.Front)),(EnemyNear,Const(Size.Ground.back)) ) , 0 );地上
+Trigger1 =1||var(31):= Ifelse( (EnemyNear,StateType = A), Ifelse( (Pos X <= EnemyNear,Pos X ^^ EnemyNear,Facing = 1),(EnemyNear,Const(Size.Air.Front)),(EnemyNear,Const(Size.Air.back)) ) , var(31) ) ;空中
+Trigger1 =1||var(30):= Floor( ( Pos X - EnemyNear,Pos X )* Facing * -1) ;相手までの距離
+Trigger1 =1||var(30):= var(30) - var(31) * Ifelse(var(30)>0, 1 ,-1) ;キャラ幅加算
+Trigger1 =1||var(30):= var(30) - Ifelse( (StateType != A), (Const(Size.Ground.Front)),(Const(Size.Air.Front)) ) ;自分情報
+;Y座標
+Trigger1 =1||var(31):= Floor( EnemyNear,Pos Y - Pos Y );
+
+;■EnemyNear(1),リダイレクト（二人目用）
+;※生存相手を認識させている場合は、EnemyNear(1),をEnemyNear(var(**)+1),に置換処理してください。
+[State adi , var bodydist 2]
+Type=null
+TriggerAll = 1||(var(32):=var(30))||(var(33):=var(31)) ;2人目が居ない場合の数値※適当な数値に変えて良い
+TriggerAll = NumEnemy > 1 ;二人以上である
+TriggerAll = EnemyNear(0),Alive && EnemyNear(0+1),Alive ;両方生きている。
+;X座標
+Trigger1 =1||var(33):= Ifelse( (EnemyNear(1),StateType!= A), Ifelse( (Pos X <= EnemyNear(1),Pos X ^^ EnemyNear(1),Facing = 1),(EnemyNear(1),Const(Size.Ground.Front)),(EnemyNear(1),Const(Size.Ground.back)) ) , 0 );地上
+Trigger1 =1||var(33):= Ifelse( (EnemyNear(1),StateType = A), Ifelse( (Pos X <= EnemyNear(1),Pos X ^^ EnemyNear(1),Facing = 1),(EnemyNear(1),Const(Size.Air.Front)),(EnemyNear(1),Const(Size.Air.back)) ) , var(33) ) ;空中
+Trigger1 =1||var(32):= Floor( ( Pos X - EnemyNear(1),Pos X )* Facing * -1) ;相手までの距離
+Trigger1 =1||var(32):= var(32) - var(33) * Ifelse(var(32)>0, 1 ,-1) ;キャラ幅加算
+Trigger1 =1||var(32):= var(32) - Ifelse( (StateType != A), (Const(Size.Ground.Front)),(Const(Size.Air.Front)) ) ;自分情報
+;Y座標
+Trigger1 =1||var(33):= Floor( EnemyNear(1),Pos Y - Pos Y );
+
+;■Partner,リダイレクト（パートナー用）
+[State adi , var bodydist 3]
+Type=null
+TriggerAll = 1||(var(34):=0)||(var(35):=0) ;パートナーが居ない場合の数値※適当な数値に変えて良い
+TriggerAll = NumPartner > 0 ;パートナーがいる
+TriggerAll = Partner,Alive ;生きている。
+;X座標
+Trigger1 =1||var(35):= Ifelse( (Partner,StateType!= A), Ifelse( (Pos X <= Partner,Pos X ^^ Partner,Facing = 1),(Partner,Const(Size.Ground.Front)),(Partner,Const(Size.Ground.back)) ) , 0 );地上
+Trigger1 =1||var(35):= Ifelse( (Partner,StateType = A), Ifelse( (Pos X <= Partner,Pos X ^^ Partner,Facing = 1),(Partner,Const(Size.Air.Front)),(Partner,Const(Size.Air.back)) ) , var(35) ) ;空中
+Trigger1 =1||var(34):= Floor( ( Pos X - Partner,Pos X )* Facing * -1) ;相手までの距離
+Trigger1 =1||var(34):= var(34) - var(35) * Ifelse(var(34)>0, 1 ,-1) ;キャラ幅加算
+Trigger1 =1||var(34):= var(34) - Ifelse( (StateType != A), (Const(Size.Ground.Front)),(Const(Size.Air.Front)) ) ;自分情報
+;Y座標
+Trigger1 =1||var(35):= Floor( Partner,Pos Y - Pos Y );
+
+[State -1, Taunt]
+type = varadd
+trigger1 = stateno != 40
+var(40) = -1
+
+[State -1, Taunt]
+type = varset
+trigger1 = enemy,movetype != H
+fvar(2) = 1
+
+;===============================================================================
+;ヘルパー
+;===============================================================================
+
+;===============================================================================
+;ボイス再生用処理
+;===============================================================================
+;----小ダメージ-------------------
+[State -2, Damage Voice]
+Type = PlaySnd
+triggerAll = Alive = 1
+triggerAll = Time = 1
+triggerAll = (StateNo = 5000 || StateNo = 5010 || StateNo = 5020)
+trigger1 = Anim = 5000 || Anim = 5010 || Anim = 5020
+Value = s3,4
+channel = 1
+persistent = 0
+ignorehitpause = 1
+
+;----中ダメージ-------------------
+[State -2, Damage Voice]
+Type = PlaySnd
+triggerAll = Alive = 1
+triggerAll = Time = 1
+triggerAll = (StateNo = 5000 || StateNo = 5010 || StateNo = 5020)
+trigger1 = Anim = 5001 || Anim = 5011 || Anim = 5021
+Value = s3,5
+channel = 1
+persistent = 0
+ignorehitpause = 1
+
+;----大ダメージ------------------
+[State -2, Damage Voice]
+Type = PlaySnd
+triggerAll = Alive = 1
+triggerAll = Time = 1
+trigger1 = (StateNo = 5000 || StateNo = 5010 || StateNo = 5020)
+trigger1 = Anim = 5002 || Anim = 5012 || Anim = 5022
+trigger2 = (StateNo = 5000 || StateNo = 5010 || StateNo = 5020)
+trigger2 = Anim = 5030
+Value = s3,6
+channel = 1
+persistent = 0
+ignorehitpause = 1
+
+;----着地------------------
+
+[State -3, 音を鳴らす]
+type = PlaySnd
+triggerall = Time = 1
+trigger1 = stateno = 52
+trigger2 = stateno = 106
+value = 0,2
+
+;----相手------------------
+
+[State -3, 音を鳴らす]
+type = PlaySnd
+trigger1 = numtarget
+trigger1 = target,stateno = 813 && target,animelemtime(1)=1
+value = 0,9
