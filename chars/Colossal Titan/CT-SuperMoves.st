@@ -9,6 +9,7 @@
 ; 爆裂攻擊 (親)
 [Statedef 2000]
 type = S
+poweradd = 20
 movetype = A
 physics = S
 juggle = 0
@@ -285,6 +286,7 @@ value = 5852
 ; 巨人玩偶 (親)
 [Statedef 2500]
 type = S
+poweradd = 20
 movetype = A
 physics = S
 juggle = 0

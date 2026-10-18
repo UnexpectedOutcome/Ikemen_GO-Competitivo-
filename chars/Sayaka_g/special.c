@@ -7,7 +7,7 @@ type = s
 movetype = a
 physics = s
 anim = 1000
-poweradd = 150
+poweradd = 0
 ctrl = 0
 
 [state -, varadd];煌きのオラトリオ、の業
@@ -92,7 +92,7 @@ ground.type = low
 priority = 5,hit
 sprpriority = 1
 damage = floor(70*fvar(1)),10
-getpower = 90,5
+getpower = 60,30
 givepower = 20,5
 ground.hittime = 40
 air.hittime = 60
@@ -184,7 +184,7 @@ type = s
 movetype = a
 physics = s
 anim = 1030
-poweradd = 150
+poweradd = 0
 ctrl = 0
 
 [state -, varadd];煌きのオラトリオ、の業
@@ -270,7 +270,7 @@ ground.type = low
 priority = 5,hit
 sprpriority = 1
 damage = floor(70*fvar(1)),10
-getpower = 90,5
+getpower = 60,30
 givepower = 20,5
 ground.hittime = 40
 air.hittime = 60
@@ -362,7 +362,7 @@ type = s
 movetype = a
 physics = s
 anim = 1060
-poweradd = 150
+poweradd = 0
 ctrl = 0
 
 [state -, varadd];煌きのオラトリオ、の業
@@ -462,7 +462,7 @@ ground.type = low
 priority = 5,hit
 sprpriority = 1
 damage = floor(70*fvar(1)),10
-getpower = 90,5
+getpower = 60,30
 givepower = 20,5
 ground.hittime = 40
 air.hittime = 60
@@ -630,7 +630,7 @@ type = a
 movetype = a
 physics = n
 anim = 1100
-poweradd = 150
+poweradd = 0
 ctrl = 0
 velset = 0,0
 
@@ -701,7 +701,7 @@ ground.type = low
 priority = 5,hit
 sprpriority = 1
 damage = floor(70*fvar(1)),10
-getpower = 90,5
+getpower = 60,30
 givepower = 20,5
 ground.hittime = 40
 air.hittime = 60
