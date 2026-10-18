@@ -1,0 +1,941 @@
+;===========================================================================
+; 準常時監視ステート（‐３）
+;===========================================================================
+;---------------------------------------------------------------------------
+; こちらは通常の食らい状態以外の「P2StateNo」や「TargetState」等で制御された、
+; 作成者が任意に指定した相手側の食らいステートに限り、
+; 登録したステートコントローラが有効にはなりません。
+; ‐１や‐２と上手く使い分けて行きましょう。
+;---------------------------------------------------------------------------
+
+;通常ボイスとgametime取得
+[Statedef -3]
+;裏回り防止。やられ、例外的に発動したくないものを除いて画面端から3ドット押し出されるようにすればいいらしい
+[State -3]
+type = width
+trigger1 = movetype != H
+;trigger1 = stateno != 801;例外的に発動したくないstatenoをここに入れる
+;trigger1 = stateno != 811
+edge = 3,0
+ignorehitpause = 1
+
+;-----------------------------------
+;先行入力認識用ヘルパー暴走防止
+[state -3, ステートリセット]
+type = changestate
+trigger1 = ishelper(99999)
+value = 99999
+ignorehitpause = 1
+
+[state -3, ステートリセット]
+type = changestate
+trigger1 = ishelper(99998)
+value = 99999
+ignorehitpause = 1
+
+;-----------------------------------
+
+;先行入力認識用ヘルパー
+[state -3, 先行入力認識用ヘルパー地上]
+type = helper
+trigger1 = !numhelper(99999);helper(99999)の数が0だったら発動
+trigger1 = !ishelper
+helpertype = normal
+name = "commandhelper"
+stateno = 99999
+ID = 99999
+postype = p1
+pos = 0,9999
+keyctrl = 1
+pausemovetime = 2147483647
+supermovetime = 2147483647
+
+
+[state -3, 空中コマンド認識用ヘルパー]
+type = helper
+trigger1 = !numhelper(99998);helper(99999)の数が0だったら発動
+trigger1 = !ishelper
+trigger1 = alive
+helpertype = normal
+name = "commandhelperA"
+stateno = 99999;同じく99999で管理
+ID = 99998;ただしIDは地上と変えること
+postype = p1
+pos = 0,9999
+keyctrl = 1
+pausemovetime = 2147483647
+supermovetime = 2147483647
+
+;-----------------------------------
+
+
+; 先行入力用ステート奪取感知
+[State -3, gametime取得]
+type = varset
+trigger1 = 1
+var(18) = gametime
+ignorehitpause = 1
+
+;-----------------------------------
+;-----------------------------------
+;通常セリフ再生(ステートを奪われたときに出して欲しくない声)
+[State -3, セリフ 散華]
+type = PlaySnd
+triggerall =  time=1
+trigger1 = (stateno = 7500)
+value = 750, (Random%2)
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+
+[State -3, セリフ バースト]
+type = PlaySnd
+triggerall =  time=1
+trigger1 = (stateno = 7600)
+value = 760, 0
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ ステップ]
+type = PlaySnd
+triggerall =  time=1
+trigger1 = (stateno = 100)
+trigger2 = (stateno = 105)
+value = 100, (Random % 2)
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ タイムオーバー]
+type = PlaySnd
+triggerall =  (stateno = 170)
+trigger1 = time =20
+value = 170, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ 勝利（喜びの舞）]
+type = PlaySnd
+triggerall =  (stateno = 181)
+trigger1 = time =32
+value = 181, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ イントロ（宝箱）]
+type = PlaySnd
+triggerall =  (stateno = 191)
+trigger1 = RoundState =0
+trigger1 = time =1
+value = 190, 5
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+
+[State -3, セリフ イントロ（わるいすらいむ1）]
+type = PlaySnd
+triggerall =  (stateno = 192)
+trigger1 = RoundState =0
+trigger1 = time =1
+value = 191, 0
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ イントロ（わるいすらいむ2）]
+type = PlaySnd
+triggerall =  (stateno = 192)
+trigger1 = RoundState =1
+trigger1 = time =360
+value = 191, 1
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ イントロ（全力先輩）]
+type = PlaySnd
+triggerall =  (stateno = 193)
+trigger1 = RoundState =0
+trigger1 = time =1
+value = 100, 1
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ イントロ（全力先輩）];ついてこれる？→全力先輩のセリフ
+type = PlaySnd
+triggerall =  (stateno = 193)
+trigger1 = RoundState =1
+trigger1 = time =60
+value = 100, 0
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ イントロ（全力先輩）];全力先輩と一緒に全力全開
+type = PlaySnd
+triggerall =  (stateno = 193)
+trigger1 = RoundState =1
+trigger1 = time =175
+value = 750, 0
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ イントロ（全力先輩）];全力先輩と一緒に全力全開
+type = PlaySnd
+triggerall =  (stateno = 4124)
+trigger1 = RoundState =0
+trigger1 = time =1
+value = 192, 0
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+
+[State -3, セリフ イントロ（切奈）]
+type = PlaySnd
+triggerall =  (stateno = 6002)
+trigger1 = RoundState =1
+trigger1 = time =246
+value = 191, 0
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ イントロ（切奈）]
+type = PlaySnd
+triggerall =  (stateno = 6002)
+trigger1 = RoundState =1
+trigger1 = time =600
+value = 191, 1
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+
+
+[State -3, セリフ イントロ（飛ばしたときセリフ止める）]
+type = StopSnd
+trigger1 = RoundState =2
+channel = 3 ;0=セリフ、1=システム用ボイス、3=イントロ用
+;ignorehitpause = 
+;persistent = 
+
+
+[State -3, セリフ 挑発]
+type = PlaySnd
+triggerall =  (stateno = 195)
+trigger1 = time =1
+value = 195, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ 弱攻撃]
+type = PlaySnd
+triggerall =  (stateno = 200) || (stateno = 400) || (stateno = 600)
+trigger1 = time =1
+value = 200, (Random % 3)
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ 中攻撃]
+type = PlaySnd
+triggerall =  (stateno = 210) || (stateno = 410) ||(stateno = 610)
+trigger1 = time =1
+value = 210, (Random % 3)
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+
+[State -3, セリフ 5C強攻撃]
+type = PlaySnd
+triggerall =  (stateno = 230)
+trigger1 = time =1
+value = 230, 2
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ 2C強攻撃]
+type = PlaySnd
+triggerall =  (stateno = 430)
+trigger1 = time =1
+value = 230, (Random % 2)
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ JC強攻撃]
+type = PlaySnd
+triggerall = (stateno = 630)
+trigger1 = time =1
+value = 230, 3
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ 5D強攻撃]
+type = PlaySnd
+triggerall =  (stateno = 240)
+trigger1 = time =1
+value = 240, 2
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ 2D強攻撃]
+type = PlaySnd
+triggerall =  (stateno = 440)
+trigger1 = time =1
+value = 240, 3
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ JD強攻撃]
+type = PlaySnd
+triggerall = (stateno = 640)
+trigger1 = time =1
+value = 240, (Random % 2)
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, ドリルボイス割り振り]
+type = varset
+triggerall = (stateno = 700) || (stateno = 710) ||(stateno = 720)
+trigger1 = time =1
+var(25)=random%2;0or1
+
+[State -3, セリフ ドリル1]
+type = PlaySnd
+triggerall = (stateno = 700) || (stateno = 710) ||(stateno = 720)
+trigger1 = time =1
+trigger1 = var(25)=0
+value = 700, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ ドリル2]
+type = PlaySnd
+triggerall = (stateno = 700) || (stateno = 710) ||(stateno = 720)
+trigger1 = time =1
+trigger1 = var(25)=1
+value = 700, 1
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ 投げ抜け]
+type = PlaySnd
+trigger1 =  (stateno = 891) 
+trigger1 = time =1
+trigger2 =  (stateno = 892) 
+trigger2 = time =1
+value = 5000, 2
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ 地上投げ]
+type = PlaySnd
+trigger1 =  (stateno = 801) 
+trigger1 = animelem =2
+trigger2 =  (stateno = 806) 
+trigger2 = animelem =2
+value = 805, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ 空中投げ]
+type = PlaySnd
+trigger1 =  (stateno = 811)
+trigger1 = animelem =2
+trigger2 =  (stateno = 816)
+trigger2 = animelem =2
+value = 805, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ 投げスカり]
+type = PlaySnd
+trigger1 =  (stateno = 800)||(stateno = 810)
+trigger1 = AnimElem=3
+trigger2 =  (stateno = 805)||(stateno = 815)
+trigger2 = AnimElem=3
+value = 800, 1
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+
+[State -3, キャノンボイス割り振り]
+type = varset
+triggerall = (stateno = 1000) || (stateno = 1010) ||(stateno = 1020)
+trigger1 = time =1
+var(25)=random%2;0or1
+
+
+[State -3, セリフ キャノン1]
+type = PlaySnd
+triggerall = (stateno = 1000) || (stateno = 1010) ||(stateno = 1020)
+trigger1 = time =1
+trigger1 = var(25) = 0
+value = 1000, 1
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ キャノン2]
+type = PlaySnd
+triggerall = (stateno = 1000) || (stateno = 1010) ||(stateno = 1020)
+trigger1 = time =1
+trigger1 = var(25) = 1
+value = 1000, 2
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, ドルフィンボイス割り振り]
+type = varset
+triggerall = (stateno = 1100) || (stateno = 1110) ||(stateno = 1120)
+trigger1 = time =1
+var(25)=random%2;0or1
+
+[State -3, セリフ ドルフィン]
+type = PlaySnd
+triggerall = (stateno = 1100) || (stateno = 1110) ||(stateno = 1120)
+trigger1 = time =1
+trigger1 = var(25) = 0
+value = 1100, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ ドルフィン]
+type = PlaySnd
+triggerall = (stateno = 1100) || (stateno = 1110) ||(stateno = 1120)
+trigger1 = time =1
+trigger1 = var(25) = 1
+value = 1100, 1
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, バルーンボイス割り振り]
+type = varset
+triggerall = (stateno = 1200) || (stateno = 1210) ||(stateno = 1220)
+trigger1 = time =1
+var(25)=random%2;0or1
+
+[State -3, セリフ バルーン]
+type = PlaySnd
+triggerall = (stateno = 1200) || (stateno = 1210) ||(stateno = 1220)
+trigger1 = time =1
+trigger1 = var(25) = 0
+value = 1200, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ バルーン]
+type = PlaySnd
+triggerall = (stateno = 1200) || (stateno = 1210) ||(stateno = 1220)
+trigger1 = time =1
+trigger1 = var(25) = 1
+value = 1200, 1
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ 1ゲージ超必発動]
+type = PlaySnd
+triggerall = (stateno = 3000)||(stateno = 3100)||(stateno = 3200)
+trigger1 = time=1
+value = 10000, 1
+volume = 100
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+ignorehitpause = 1
+
+
+[State -3, 水龍飛翔拳ボイス割り振りランダム]
+type = varset
+triggerall = (stateno = 3000)
+trigger1 = var(54)!=1&&var(54)!=2&&var(54)!=3;ランダムモード時のみ使用
+trigger1 = time =1
+var(25)=random%3;0or1or2
+
+[State -3, 水龍飛翔拳ボイス割り振り指定]
+type = varset
+triggerall = (stateno = 3000)
+triggerall = time =1
+trigger1 = var(54)=1||var(54)=2||var(54)=3;ランダムモード時のみ使用
+var(25)=ifelse(var(54)=1,0,ifelse(var(54)=2,1,ifelse(var(54)=3,2,0)));0or1or2。想定外の数字のときは0
+
+
+[State -3, セリフ 水龍飛翔拳パターン1]
+type = PlaySnd
+triggerall = (stateno = 3000)
+trigger1 = var(25)=0
+trigger1 = movehit=1
+trigger1 = AnimElemTime(3)>=0
+trigger1=(Enemynear,Time=12)&&(Enemynear,Movetype=H)
+value = 3000, 4;演出をver0.872以前に戻したいときは3000,3にする。state3000とstate3001のヒットストップも設定せよ
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ 水龍飛翔拳パターン2,3共通1]
+type = PlaySnd
+triggerall = (stateno = 3000)
+triggerall = movehit=1
+trigger1 = var(25)=1||var(25)=2
+trigger1 = AnimElemTime(3)>=0
+trigger1=(Enemynear,Time=12)&&(Enemynear,Movetype=H)
+value = 3000, 5;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ 水龍飛翔拳パターン2,3共通2]
+type = PlaySnd
+triggerall = (stateno = 3001)
+trigger1 = var(25)=1||var(25)=2
+trigger1 = AnimElemTime(4)=0
+;trigger1=(Enemynear,Time=12)&&(Enemynear,Movetype=H)
+value = 3000, 6;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ 水龍飛翔拳パターン2技名]
+type = PlaySnd
+triggerall = (stateno = 3001)
+trigger1 = var(25)=1
+trigger1 = AnimElemTime(6)=0
+;trigger1=(Enemynear,Time=12)&&(Enemynear,Movetype=H)
+value = 3000, 7;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ 水龍飛翔拳パターン3技名]
+type = PlaySnd
+triggerall = (stateno = 3001)
+trigger1 = var(25)=2
+trigger1 = AnimElemTime(6)=0
+;trigger1=(Enemynear,Time=12)&&(Enemynear,Movetype=H)
+value = 3000, 8;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+;これのみやられチャンネルで流し、ダウンボイスで叫びを上書きする
+[State -3, セリフ 水龍飛翔拳失敗ボイス]
+type = PlaySnd
+triggerall = (stateno = 3004)
+trigger1 = AnimElemTime(1)=1
+;trigger1=(Enemynear,Time=12)&&(Enemynear,Movetype=H)
+value = 3000, 9;
+volume = 0
+channel = 2          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+
+
+[State -3, 天馬流転ボイス割り振りランダム]
+type = varset
+triggerall = (stateno = 3100)
+trigger1 = var(55)!=1&&var(55)!=2&&var(55)!=3;ランダムモード時のみ使用
+trigger1 = time =1
+var(25)=random%3;0or1or2
+
+[State -3, 天馬流転ボイス割り振り指定]
+type = varset
+triggerall = (stateno = 3100)
+triggerall = time =1
+trigger1 = var(55)=1||var(55)=2||var(55)=3
+var(25)=ifelse(var(55)=1,0,ifelse(var(55)=2,1,ifelse(var(55)=3,2,0)));0or1or2。想定外の数字のときは0
+
+
+[State -3, セリフ 天馬流転パターン1]
+type = PlaySnd
+triggerall =  (stateno = 3100)
+trigger1 = var(25)=0
+trigger1 = time =65
+value = 3100, 0
+volume = 100
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ 天馬流転パターン2_1]
+type = PlaySnd
+triggerall =  (stateno = 3100)
+trigger1 = var(25)=1
+trigger1 = time =62
+value = 3100, 1
+volume = 100
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ 天馬流転パターン2_2]
+type = PlaySnd
+triggerall =  (stateno = 3100)
+trigger1 = var(25)=1
+trigger1 = time =112
+value = 3100, 2
+volume = 100
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ 天馬流転パターン3_1]
+type = PlaySnd
+triggerall =  (stateno = 3100)
+trigger1 = var(25)=2
+trigger1 = time =62
+value = 3100, 3
+volume = 100
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, セリフ 天馬流転パターン3_2]
+type = PlaySnd
+triggerall =  (stateno = 3100)
+trigger1 = var(25)=2
+trigger1 = time =112
+value = 3100, 4
+volume = 100
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -3, 神天墜ボイス割り振りランダム]
+type = varset
+triggerall = (stateno = 3200)
+trigger1 = var(56)!=1&&var(56)!=2&&var(56)!=3;ランダムモード時のみ使用
+trigger1 = time =1
+var(25)=random%3;0or1or2
+
+[State -3, 神天墜ボイス割り振り指定]
+type = varset
+triggerall = (stateno = 3200)
+triggerall = time =1
+trigger1 = var(56)=1||var(56)=2||var(56)=3
+var(25)=ifelse(var(56)=1,0,ifelse(var(56)=2,1,ifelse(var(56)=3,2,0)));0or1or2。想定外の数字のときは0
+
+[State -3, セリフ 神天墜パターン1]
+type = PlaySnd
+triggerall = (stateno = 3200)
+trigger1 = var(25)=0
+trigger1 = AnimElemTime(7)=0
+value = 3200, 2;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ 神天墜パターン2]
+type = PlaySnd
+triggerall = (stateno = 3200)
+trigger1 = var(25)=1
+trigger1 = AnimElemTime(7)=0
+value = 3200, 3;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ 神天墜パターン3]
+type = PlaySnd
+triggerall = (stateno = 3200)
+trigger1 = var(25)=2
+trigger1 = AnimElemTime(7)=0
+value = 3200, 4;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+
+[State -3, アルティメットフォースボイス割り振りランダム]
+type = varset
+triggerall = (stateno = 3300)
+trigger1 = var(57)!=1&&var(57)!=2&&var(57)!=3;ランダムモード時のみ使用
+trigger1 = time =1
+var(25)=random%3;0or1or2
+
+[State -3, アルティメットフォースボイス割り振り指定]
+type = varset
+triggerall = (stateno = 3300)
+triggerall = time =1
+trigger1 = var(57)=1||var(57)=2||var(57)=3
+var(25)=ifelse(var(57)=1,0,ifelse(var(57)=2,1,ifelse(var(57)=3,2,0)));0or1or2。想定外の数字のときは0
+
+[State -3, セリフ アルティメットフォースパターン1_1]
+type = PlaySnd
+triggerall = (stateno = 3300)
+trigger1 = var(25)=0
+trigger1 = time=1
+value = 3301, 0;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ アルティメットフォースパターン1_2]
+type = PlaySnd
+triggerall = (stateno = 3301)
+trigger1 = var(25)=0
+;trigger1 = animelemtime(2)=0
+trigger1=time=12
+value = 3301, 1;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ アルティメットフォースパターン1_3]
+type = PlaySnd
+triggerall = (stateno = 3301)
+trigger1 = var(25)=0
+;trigger1 = animelemtime(11)=0
+trigger1=time=66
+value = 3301, 2;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+
+[State -3, セリフ アルティメットフォースパターン1_4]
+type = PlaySnd
+triggerall = (stateno = 3301)
+trigger1 = var(25)=0
+;trigger1 = animelemtime(16)=0
+trigger1=time=102
+value = 3301, 3;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+
+[State -3, セリフ アルティメットフォースパターン1_5]
+type = PlaySnd
+triggerall = (stateno = 3301)
+trigger1 = var(25)=0
+trigger1 = time=228
+value = 3301, 4;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ アルティメットフォースパターン2_1]
+type = PlaySnd
+triggerall = (stateno = 3300)
+trigger1 = var(25)=1
+trigger1 = time=1
+value = 3302, 0;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ アルティメットフォースパターン2_2]
+type = PlaySnd
+triggerall = (stateno = 3301)
+trigger1 = var(25)=1
+trigger1 = time=12
+value = 3302, 1;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ アルティメットフォースパターン2_3]
+type = PlaySnd
+triggerall = (stateno = 3301)
+trigger1 = var(25)=1
+trigger1 = time=66
+value = 3302, 2;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ アルティメットフォースパターン2_4]
+type = PlaySnd
+triggerall = (stateno = 3301)
+trigger1 = var(25)=1
+trigger1 = time=108
+value = 3302, 3;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ アルティメットフォースパターン2_5]
+type = PlaySnd
+triggerall = (stateno = 3301)
+trigger1 = var(25)=1
+trigger1 = time=236
+value = 3302, 4;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+
+[State -3, セリフ アルティメットフォースパターン3_1]
+type = PlaySnd
+triggerall = (stateno = 3300)
+trigger1 = var(25)=2
+trigger1 = time=1
+value = 3303, 0;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ アルティメットフォースパターン3_2]
+type = PlaySnd
+triggerall = (stateno = 3301)
+trigger1 = var(25)=2
+trigger1 = time=12
+value = 3303, 1;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ アルティメットフォースパターン3_3]
+type = PlaySnd
+triggerall = (stateno = 3301)
+trigger1 = var(25)=2
+trigger1 = time=66
+value = 3303, 2;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ アルティメットフォースパターン3_4]
+type = PlaySnd
+triggerall = (stateno = 3301)
+trigger1 = var(25)=2
+trigger1 = time=106
+value = 3303, 3;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+;[State -3, セリフ アルティメットフォースパターン3_5]
+;type = PlaySnd
+;triggerall = (stateno = 3301)
+;trigger1 = var(25)=2
+;trigger1 = time=224
+;value = 3303, 6;
+;volume = 0
+;channel = 0          ;0=セリフ、1=システム用ボイス
+;lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+;persistent = 0
+;ignorehitpause = 1
+
+[State -3, セリフ アルティメットフォースパターン3_5]
+type = PlaySnd
+triggerall = (stateno = 3301)
+trigger1 = var(25)=2
+trigger1 = time=222
+value = 3303, 4;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+
+[State -3, セリフ アルティメットフォースパターン3_5]
+type = PlaySnd
+triggerall = (stateno = 3301)
+trigger1 = var(25)=2
+trigger1 = time=286
+value = 3303, 5;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -3, セリフ アルティメットフォース失敗ボイス]
+type = PlaySnd
+triggerall = (stateno = 3303)
+trigger1 = animelemtime(1)=24
+value = 3304, random%2;
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+
+
+
+;---------------------------------------------------------------------------
+; ■最後に『コモンステート』について■
+; コモンステートとは、全キャラ共通の基本動作のステートです。
+; 通常は特に変更しない限り、M.U.G.E.N本体のdataフォルダにある
+;「common1.cns（コモンステートファイル）」を使います。
+;
+; しかし、もしもあなたのキャラのステートファイルでcommon1.cnsと同じ番号の
+; 基本動作のステートを作った場合は処理が上書きされ、
+; common1.cns側の同じ番号のステートは無効になります。
+;
+; common1.cnsのプログラム優先度は最低に属しているので、
+; ステートの作成には番号に注意しないといけません。
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------

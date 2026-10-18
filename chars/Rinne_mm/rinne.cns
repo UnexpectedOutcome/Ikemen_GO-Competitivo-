@@ -1,0 +1,941 @@
+
+;---------------------------------------------------------------------------
+[Data]
+life              = 1000   ;ライフ（体力ゲージ）最大値
+power             = 3000   ;パワーゲージ最大値（オプション・デフォルトは3000=Lv.3）
+attack            = 100    ;攻撃力（デフォルトは１００％）
+defence           = 100    ;防御力（デフォルトは１００％）
+fall.defence_up   = 50     ;横に倒れている時に一時的に加える防御力（％）
+liedown.time      = 30     ;横に倒れている時間（フレーム）
+airjuggle         = 15     ;ジャグルポイント限界値（「小ネタ.txt」参照）
+sparkno           = 2      ;デフォルトのヒットスパーク（fightfxから）
+guard.sparkno     = 40     ;デフォルトのガードスパーク（fightfxから）
+KO.echo           = 0      ;ＫＯ時の音声（11,0）にエコーを掛けるか否か（0=掛けない,1=掛ける）
+volume            = 255      ;キャラの標準の音量（最小-255・最大255）
+IntPersistIndex   = 43,44,45,46,48,50,51,52,53,54,55,56,59;次のラウンドへ持ち越せる「Var」のアドレスの範囲を決める（※１）
+FloatPersistIndex = 40     ;次のラウンドへ持ち越せる「FVar」のアドレスの範囲を決める（※１）
+
+;---------------------------------------------------------------------------
+[Size]
+xscale           = 1       ;キャラの横の大きさ（絶対値・float）
+yscale           = 1       ;キャラの縦の大きさ（絶対値・float）
+ground.back      = 15      ;地上にいる時の「後方の物理的な幅」
+ground.front     = 15      ;地上にいる時の「前方の物理的な幅」
+air.back         = 12      ;空中にいる時の「後方の物理的な幅」
+air.front        = 12      ;空中にいる時の「前方の物理的な幅」
+height           = 60      ;キャラの物理的な高さ（高いほど相手は飛び越しにくくなる）
+attack.dist      = 160     ;相手がガード態勢に入る最低の距離
+proj.attack.dist = 90      ;自分の「Projectile」に対して相手がガード態勢に入る最低の距離
+proj.doscale     = 0       ;xscaleとyscaleを「Projectile」にも影響させるか否か（0=させない・1=させる）
+head.pos         = 0,-88  ;キャラの標準の頭の座標（Bind系で適用される）
+mid.pos          = 0,-60  ;キャラの標準の体中心の座標（Bind系で適用される）
+shadowoffset     = 0       ;影のＹ軸方向の位置座標
+draw.offset      = 0,0     ;キャラの表示座標（Ｘ軸,Ｙ軸）
+
+;---------------------------------------------------------------------------
+; 移動速度
+;---------------------------------------------------------------------------
+[Velocity]
+walk.fwd     = 2.2        ;前進速度（Ｘ軸・[Statedef 20]に適用される）
+walk.back    = -2.2        ;後退速度（Ｘ軸・[Statedef 20]に適用される）
+run.fwd      = 4.6,0       ;前方に走る速度（Ｘ軸,Ｙ軸・[Statedef 100]に適用される）
+run.back     = -4.5,-3.8   ;後方に走る速度（Ｘ軸,Ｙ軸・[Statedef 105]に適用される）
+jump.neu     = 0,-6.5      ;垂直ジャンプの速度（Ｘ軸,Ｙ軸・[Statedef 40]に適用される）
+jump.back    = -2.5       ;後方ジャンプの速度（Ｘ軸・[Statedef 40]に適用される）
+jump.fwd     = 2.5         ;前方ジャンプの速度（Ｘ軸・[Statedef 40]に適用される）
+runjump.back = -2.55,-8.1  ;後方に走ってからのジャンプ速度（Ｘ軸,Ｙ軸・[Statedef 40]に適用される）
+runjump.fwd  = 4,-8.1      ;前方に走ってからのジャンプ速度（Ｘ軸,Ｙ軸・[Statedef 40]に適用される）
+airjump.neu  = 0,-8.1      ;空中垂直ジャンプ速度（Ｘ軸,Ｙ軸・[Statedef 45]に適用される）
+airjump.back = -2.55       ;空中後方ジャンプ速度（Ｘ軸・[Statedef 45]に適用される）
+airjump.fwd  = 2.5         ;空中前方ジャンプ速度（Ｘ軸・[Statedef 45]に適用される）
+
+;---------------------------------------------------------------------------
+; 運動関係
+;---------------------------------------------------------------------------
+[Movement]
+airjump.num     = 1        ;空中ジャンプが出来る回数
+airjump.height  = 35       ;空中ジャンプが出来る最低の高度（Ｙ軸）
+yaccel          = .44      ;Ｙ軸加速度（重力）
+stand.friction  = .85      ;立っている時の摩擦係数（ステートのPhysicsが「S」の時）
+crouch.friction = .82      ;しゃがんでいる時の摩擦係数（ステートのPhysicsが「C」の時）
+
+;---------------------------------------------------------------------------
+;タイムオーバー（負けた時）
+[Statedef 170]
+type = S
+ctrl = 0
+anim = 170
+velset = 0,0
+
+[State 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;---------------------------------------------------------------------------
+;勝利分岐
+[Statedef 180]
+type = S
+
+[State 1];2度目のKOで移行;ディナー勝利
+type = ChangeState
+trigger1 = Time = 0
+trigger1 = var(56) >= 1
+trigger1 = var(49) >= 1
+value = 185
+
+[State 1];2度目のKOで移行;遅刻;辛勝
+type = ChangeState
+trigger1 = Time = 0
+trigger1 = life <= 250
+trigger1 = var(56) >= 1
+value = 183
+
+[State 1];2度目のKOで移行;うっとうしい;楽勝
+type = ChangeState
+trigger1 = Time = 0
+trigger1 = var(56) >= 1
+trigger1 = life >= 850
+value = 184
+
+[State 1];2度目のKOで移行;コウモリたくさん;通常勝利
+type = ChangeState
+trigger1 = Time = 0
+trigger1 = var(56) >= 1
+value = 182
+
+[State 1];勝利条件;1勝分
+type = Varadd
+trigger1 = Time = 0
+var(56) = 1
+
+[State 1];
+type = ChangeState
+trigger1 = life <= 250
+trigger1 = Time = 0
+value = 186
+
+[State 1]
+type = ChangeState
+trigger1 = Time = 0
+value = 181
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;勝利6 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[Statedef 186]
+type = S
+movetype = I
+physics = S
+ctrl = 0
+anim = 186
+velset = 0,0
+sprpriority = 2
+
+[State 1];セリフ
+type = PlaySnd
+trigger1 = time = 0
+value = 186,0
+channel = 1
+
+[State 1]
+type = null;PlaySnd
+trigger1 = animelem = 1
+value = 1500,0
+channel = 2
+
+[State 1];鞄
+type = PlaySnd
+trigger1 = animelem = 12
+value = 6100,2
+
+[State 1];血
+type = Explod
+trigger1 = animelem = 12
+anim = 7020
+id = 7020
+sprpriority = 3
+postype = p1
+pos = 5,-66
+supermove = 0
+facing = -1
+removeongethit = 1
+
+[State 1]
+type = PlaySnd
+trigger1 = animelem = 12
+value = 410,2
+
+[State 1];セリフ
+type = PlaySnd
+trigger1 = AnimElemtime(14) = 15
+value = 186,1
+channel = 1
+
+[State 1]
+type = AssertSpecial
+trigger1 = time <= 240
+flag = roundnotover
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;勝利5 ディナー勝利
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[Statedef 185]
+type = S
+ctrl = 0
+anim = 2511
+velset = 0,0
+
+[State 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 1];セリフ;ぶざまね
+type = PlaySnd
+trigger1 = time = 0
+value = 185,0
+
+[State 1]
+type = Changeanim
+trigger1 = Time = 90
+trigger1 = anim = 2511
+value = 2512
+
+[State 1];死体の部品
+type = Helper
+triggerall = numhelper(185)= 0
+trigger1 = enemy,anim != 37568
+trigger1 = AnimElemtime(1) = 2
+trigger1 = anim = 2512
+id = 185
+name = "buhin"
+postype = p1
+pos = 14,-66
+sprpriority = 10
+stateno = 15023
+helpertype = normal
+keyctrl = 0
+ownpal = 1
+
+[State 1];衝撃
+type = Explod;null;
+trigger1 = enemy,anim = 37569
+anim = 2492;7015
+pos = 0,0
+postype = P2
+sprpriority = -10
+bindtime = 1
+ownpal = 1
+ignorehitpause = 1
+persistent = 0
+
+[State 5100, 10];衝撃
+type = PlaySnd
+trigger1 = enemy,anim = 37569
+value = 250,0;850,0;
+persistent = 0
+
+
+[State 1]
+type = AssertSpecial
+trigger1 = time <= 240
+flag = roundnotover
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;勝利4
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[Statedef 184]
+type = S
+ctrl = 0
+anim = 2482
+velset = 0,0
+
+[State 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 1];セリフ;うっとうしい
+type = PlaySnd
+trigger1 = time = 0
+value = 184,0
+
+[State 1]
+type = AssertSpecial
+trigger1 = time <= 180
+flag = roundnotover
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;勝利3
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[Statedef 183]
+type = S
+ctrl = 0
+anim = 2480
+velset = 0,0
+
+[State 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 1];満足して
+type = PlaySnd
+trigger1 = time = 12
+value = 183,0
+
+[State 1];チャイム
+type = PlaySnd
+trigger1 = time = 80
+value = 183,1
+channel = 4
+persistent=0
+
+[State 1]
+type = ChangeAnim
+trigger1 = time = 180
+value = 2481
+elem = 1
+
+[State 1];セリフ;驚く
+type = PlaySnd
+trigger1 = time = 180
+value = 5100,1
+channel = 1
+persistent=0
+
+[State 1]
+type = ChangeAnim
+trigger1 = time = 250
+trigger1 = Anim = 2481
+value = 100
+elem = 1
+
+[State 1]
+type = ScreenBound
+trigger1 = 1
+trigger1 = Anim = 100
+value = 0
+movecamera = 0,0
+
+[State 1]
+type = velset
+trigger1 = Anim = 100
+x = 4.6
+
+[State 1];ダッシュ
+type = PlaySnd
+trigger1 = time = 250
+value = 100,0
+loop = 1
+channel = 2
+pan = 1
+
+[State 1];ダッシュ止め
+type = stopSnd
+trigger1 = time = 480
+trigger2 = FrontEdgeDist <= -150
+channel = 2
+
+[State 1];セリフ;ああもう
+type = PlaySnd
+trigger1 = time = 260
+value = 183,2
+channel = 1
+persistent=0
+
+[State 1]
+type = AssertSpecial
+trigger1 = time >= 80
+flag = nomusic
+
+[State 1]
+type = AssertSpecial
+trigger1 = time <= 480;180
+flag = roundnotover
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;勝利2
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[Statedef 182]
+type = S
+ctrl = 0
+anim = 905
+velset = 0,0
+
+[State 1];ま、これでゆるしてあげます
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 182,0
+
+[State 181, 無敵]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+[State 1999, 51]
+type = Helper
+triggerall = time <= 160
+trigger1 = anim = 905
+trigger1 = AnimElem = 6,1
+trigger2 = anim = 906
+trigger2 = AnimElem = 1,1
+helpertype = normal
+name = "koumorisyouri"
+id = 182
+;bindtime = -1
+postype = p1
+pos = 10,-50
+stateno = 910
+keyctrl = 0
+facing = 1
+ownpal = 1
+supermovetime = 999999999
+pausemovetime = 999999999
+
+[State 1999, 51]
+type = Helper
+triggerall = time <= 160
+trigger1 = anim = 905
+trigger1 = AnimElem = 7
+trigger2 = anim = 906
+trigger2 = AnimElem = 2
+helpertype = normal
+name = "koumorisyouri"
+id = 182
+;bindtime = -1
+postype = p1
+pos = 10,-50
+stateno = 910
+keyctrl = 0
+facing = 1
+ownpal = 1
+supermovetime = 999999999
+pausemovetime = 999999999
+
+[State 1999, 51]
+type = Helper
+triggerall = time <= 160
+trigger1 = anim = 905
+trigger1 = AnimElem = 8
+trigger2 = anim = 906
+trigger2 = AnimElem = 3
+helpertype = normal
+name = "koumorisyouri"
+id = 183
+;bindtime = -1
+postype = p1
+pos = 10,-50
+stateno = 911
+keyctrl = 0
+facing = 1
+ownpal = 1
+supermovetime = 999999999
+pausemovetime = 999999999
+
+[State 1999, 51]
+type = Helper
+triggerall = time <= 160
+trigger1 = anim = 905
+trigger1 = AnimElem = 9
+trigger2 = anim = 906
+trigger2 = AnimElem = 4
+helpertype = normal
+name = "koumorisyouri"
+id = 183
+;bindtime = -1
+postype = p1
+pos = 10,-50
+stateno = 911
+keyctrl = 0
+facing = 1
+ownpal = 1
+supermovetime = 999999999
+pausemovetime = 999999999
+
+[State explod];煙
+type = Explod
+trigger1 = time = 140
+anim = 2297
+id = 2297
+sprpriority = 11
+postype = p1
+pos = 0,-80
+supermove = 0
+facing = 1
+scale = 1.1,1.1
+;bindtime = 10000
+
+[State explod];煙
+type = Explod
+trigger1 = time = 140
+anim = 2297
+id = 2297
+sprpriority = 11
+postype = p1
+pos = 0,-20
+supermove = 0
+facing = 1
+scale = 1.1,1.1
+;bindtime = 10000
+
+[State explod];煙
+type = Explod
+triggerall = anim = 906
+triggerall = time <= 160
+trigger1 = AnimElem = 1,1
+trigger2 = AnimElem = 3
+anim = 2297
+id = 2297
+sprpriority = 11
+postype = p1
+pos = 0,-30
+random = 40,60
+supermove = 0
+facing = 1
+scale = 1.1,1.1
+;bindtime = 10000
+
+[State 2000, 6]
+type = ChangeAnim
+trigger1 = time = 140
+value = 906
+elem = 1
+
+[State 2000, 6]
+type = AssertSpecial
+trigger1 = time <= 180
+flag = roundnotover
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;勝利1
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[Statedef 181]
+type = S
+ctrl = 0
+anim = 181
+velset = 0,0
+
+[State 1];あっけないわね
+type = PlaySnd
+trigger1 = AnimElem = 4
+value = 181,0
+
+[State 1]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;イントロ
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[Statedef 190]
+type = S
+ctrl = 0
+anim = 190
+velset = 0,0
+
+[State 1];対 雀
+type = ChangeState
+trigger1 = Time = 0
+trigger1 = p2name = "Suzume_Gentourou" || p4name = "Suzume_Gentourou"
+trigger1 = enemy,authorname ="mm"
+value = 194
+
+[State 1]
+type = VarRandom
+trigger1 = Time = 0
+v = 7
+range = 0,2;00
+
+[State 1];八つ当たり
+type = ChangeState
+triggerall = Time = 0
+trigger1 = var(7) = 1
+value = 191
+
+[State 1];コウモリで登場
+type = ChangeState
+triggerall = Time = 0
+trigger1 = var(7) = 2
+value = 193
+
+[State 1]
+type = ChangeAnim
+trigger1 = RoundState = 0
+value = 190
+
+[State 1]
+type = AssertSpecial
+trigger1 = 1
+flag = Intro;イントロの状態
+
+[State 1];あなたの血おいしいかしら
+type = PlaySnd
+trigger1 = time = 30
+value = 190,0
+channel = 30
+
+[State 1]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;コウモリで登場；見えない本体
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[Statedef 193]
+type = S
+ctrl = 0
+anim = 192
+velset = 0,0
+
+[State 1]
+type = AssertSpecial
+trigger1 = 1
+flag = Intro
+
+[state a];見せ掛けのコウモリ
+type = Helper
+trigger1 = time = 0
+id = 15014
+name = "misekakenozibun"
+pos = -178,-90
+postype = p1
+stateno = 15014
+helpertype = normal
+keyctrl = 0 
+ownpal = 1
+size.xscale = 1
+size.yscale = 1
+Pausemovetime = 99999
+facing = 1
+
+[State 1]
+type = ChangeState
+trigger1 = Time = 149
+value = 0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;八つ当たり；見えない本体
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[Statedef 191]
+type = S
+ctrl = 0
+anim = 192
+velset = 0,0
+
+[state a];バナナの皮
+type = Helper
+trigger1 = time = 0
+id = 15010
+name = "banananokawa"
+pos = 0,0
+postype = p1
+stateno = 15010
+helpertype = normal
+keyctrl = 0 
+ownpal = 1
+size.xscale = 1;.7
+size.yscale = 1;.7
+Pausemovetime = 99999
+facing = -1
+
+[state a];見せ掛けの自分
+type = Helper
+trigger1 = time = 0
+id = 15012
+name = "misekakenozibun"
+pos = -180,0;-178,0
+postype = p1
+stateno = 15012
+helpertype = normal
+keyctrl = 0 
+ownpal = 1
+size.xscale = 1
+size.yscale = 1
+Pausemovetime = 99999
+facing = 1
+
+[State 1]
+type = AssertSpecial
+trigger1 = 1
+flag = Intro
+
+[State 1]
+type = ChangeState
+trigger1 = Time = 120;90
+value = 192
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;八つ当たり;転ぶ；見えない本体
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[Statedef 192]
+type = S
+ctrl = 0
+anim = 192
+velset = 0,0
+
+[State 1]
+type = AssertSpecial
+trigger1 = 1
+flag = Intro
+
+[State 1]
+type = ChangeState
+trigger1 = Time = 120
+value = 0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;対　雀
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[Statedef 194]
+type = S
+ctrl = 0
+anim = 192
+velset = 0,0
+
+[State 1];歩いてくるリンネ
+type = Explod
+trigger1 = time = 60
+anim = 20
+id = 186
+sprpriority = 5
+postype = p1
+pos = -178,0
+facing = 1
+scale = 1,1
+bindtime = 1
+removetime = 115
+shadow = -1
+vel = 1.5,0
+
+[State 1];付いて来るコウモリ
+type = Explod
+trigger1 = time = 60
+anim = 208
+id = 186
+sprpriority = 5
+postype = p1
+pos = -213,-80
+facing = 1
+scale = 1,1
+bindtime = 1
+removetime = 115
+shadow = -1
+vel = 1.5,0
+
+[State 1];コウモリ
+type = Explod
+trigger1 = time = 175
+anim = 208
+id = 186
+sprpriority = 5
+postype = p1
+pos = -35,-80
+facing = 1
+scale = 1,1
+bindtime = 1
+removetime = 4
+shadow = -1
+vel = 0,0
+
+[State 1]
+type = AssertSpecial
+trigger1 = 1
+flag = Intro
+
+[State 1]
+type = Changeanim
+trigger1 = Time = 175
+value = 194
+
+[State 1]
+type = Changeanim
+trigger1 = Anim = 194
+trigger1 = animTime = 0
+value = 195
+
+[State 1];セリフ1
+type = PlaySnd
+trigger1 = Time = 165
+value = 191,1
+channel = 1
+
+[State 1];セリフ2
+type = PlaySnd
+trigger1 = Anim = 195
+trigger1 = AnimElemtime(1) = 0
+value = 191,2
+channel = 1
+
+[state a];不意打ち コウモリ 1
+type = Helper
+trigger1 = Anim = 194
+trigger1 = AnimElemtime(2) = 0
+id = 102
+name = "huiuti"
+pos = -35,-80
+postype = p1
+stateno = 15016
+helpertype = normal
+keyctrl = 0 
+ownpal = 1
+size.xscale = 1
+size.yscale = 1
+facing = 1
+
+[state a];不意打ち コウモリ 2 真後ろ
+type = Helper
+trigger1 = Anim = 194
+trigger1 = AnimElemtime(5) = 0
+id = 102
+name = "huiuti"
+pos = -100,-80
+postype = p2
+stateno = 15017
+helpertype = normal
+keyctrl = 0 
+ownpal = 1
+size.xscale = 1
+size.yscale = 1
+facing = 1
+
+[state a];不意打ち コウモリ 3 後ろ 上
+type = Helper
+trigger1 = Anim = 194
+trigger1 = AnimElemtime(5) = 0
+id = 102
+name = "huiuti"
+pos = -80,-120
+postype = p2
+stateno = 15018
+helpertype = normal
+keyctrl = 0 
+ownpal = 1
+size.xscale = 1
+size.yscale = 1
+facing = 1
+
+[state a];不意打ち コウモリ 4 後ろ 下
+type = Helper
+trigger1 = Anim = 194
+trigger1 = AnimElemtime(5) = 0
+id = 102
+name = "huiuti"
+pos = -80,-40
+postype = p2
+stateno = 15019
+helpertype = normal
+keyctrl = 0 
+ownpal = 1
+size.xscale = 1
+size.yscale = 1
+facing = 1
+
+[state a];不意打ち コウモリ 5 前　上
+type = Helper
+trigger1 = Anim = 194
+trigger1 = AnimElemtime(5) = 0
+id = 102
+name = "huiuti"
+pos = 80,-120
+postype = p2
+stateno = 15020
+helpertype = normal
+keyctrl = 0 
+ownpal = 1
+size.xscale = 1
+size.yscale = 1
+facing = -1
+
+[state a];不意打ち コウモリ 6 前　下
+type = Helper
+trigger1 = Anim = 194
+trigger1 = AnimElemtime(5) = 0
+id = 102
+name = "huiuti"
+pos = 80,-40
+postype = p2
+stateno = 15021
+helpertype = normal
+keyctrl = 0 
+ownpal = 1
+size.xscale = 1
+size.yscale = 1
+facing = -1
+
+[state a];不意打ち コウモリ 7 前
+type = Helper
+trigger1 = Anim = 194
+trigger1 = AnimElemtime(5) = 0
+id = 102
+name = "huiuti"
+pos = 100,-80
+postype = p2
+stateno = 15022
+helpertype = normal
+keyctrl = 0 
+ownpal = 1
+size.xscale = 1
+size.yscale = 1
+facing = -1
+
+[State 1]
+type = ChangeState
+trigger1 = Anim = 195
+trigger1 = animTime = 0
+value = 0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;挑発1
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[Statedef 195]
+type = S
+movetype = I
+physics = S
+ctrl = 0
+anim = 2448
+velset = 0,0
+sprpriority = 2
+
+[State 1]
+type = PlaySnd
+trigger1 = Time = 0
+value = 195,0
+channel = 1
+
+;---------------------[AI用タイマー]
+[state a]
+type = varset
+triggerall = var(59) = 1
+trigger1 = Time = 0
+v = 55
+value = 1200
+
+[State 1]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

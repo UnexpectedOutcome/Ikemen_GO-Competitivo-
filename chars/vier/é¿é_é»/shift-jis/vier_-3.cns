@@ -1,0 +1,420 @@
+;===========================================================================
+; 準常時監視ステート（‐３）
+;===========================================================================
+;---------------------------------------------------------------------------
+; こちらは通常の食らい状態以外の「P2StateNo」や「TargetState」等で制御された、
+; 作成者が任意に指定した相手側の食らいステートに限り、
+; 登録したステートコントローラが有効にはなりません。
+; ‐１や‐２と上手く使い分けて行きましょう。
+;---------------------------------------------------------------------------
+
+[Statedef -3]
+
+
+;-----------------------------------
+;先行入力認識用ヘルパー暴走防止
+[state -3, ステートリセット]
+type = changestate
+trigger1 = ishelper(99999)
+value = 99999
+ignorehitpause = 1
+
+[state -3, ステートリセット]
+type = changestate
+trigger1 = ishelper(99998)
+value = 99999
+ignorehitpause = 1
+
+;-----------------------------------
+
+;先行入力認識用ヘルパー
+[state -3, 先行入力認識用ヘルパー地上]
+type = helper
+trigger1 = !numhelper(99999);helper(99999)の数が0だったら発動
+trigger1 = !ishelper
+helpertype = normal
+name = "commandhelper"
+stateno = 99999
+ID = 99999
+postype = p1
+pos = 0,9999
+keyctrl = 1
+pausemovetime = 2147483647
+supermovetime = 2147483647
+
+
+[state -3, 空中コマンド認識用ヘルパー]
+type = helper
+trigger1 = !numhelper(99998);helper(99999)の数が0だったら発動
+trigger1 = !ishelper
+trigger1 = alive
+helpertype = normal
+name = "commandhelperA"
+stateno = 99999;同じく99999で管理
+ID = 99998;ただしIDは地上と変えること
+postype = p1
+pos = 0,9999
+keyctrl = 1
+pausemovetime = 2147483647
+supermovetime = 2147483647
+
+;-----------------------------------
+
+
+; 先行入力用ステート奪取感知
+[State -3, gametime取得]
+type = varset
+trigger1 = 1
+var(18) = gametime
+ignorehitpause = 1
+
+;-----------------------------------
+
+
+;AI--------------------------------------------------------------------------
+;人には出来ないコマンドが入力されたらAIスイッチをオンにする
+;AI Command Check
+[State -3, AI_CommandによるAI起動]
+Type = VarSet
+TriggerAll = Var(59)=0;AIがまだ起動してなければ
+TriggerAll = RoundState = [1,2];イントロ中や戦闘中に確認
+trigger1 = command = "AI_01" || command = "AI_02" || command = "AI_03" || command = "AI_04"
+trigger2 = command = "AI_05" || command = "AI_06" || command = "AI_07" || command = "AI_08"
+trigger3 = command = "AI_09" || command = "AI_10" || command = "AI_11" || command = "AI_12"
+trigger4 = command = "AI_13" || command = "AI_14" || command = "AI_15" || command = "AI_16"
+trigger5 = command = "AI_17" || command = "AI_18" || command = "AI_19" || command = "AI_20"
+Trigger6 = Command = "AI_21" || Command = "AI_22" || Command = "AI_23" || Command = "AI_24"
+Trigger7 = Command = "AI_24" || Command = "AI_26" || Command = "AI_27" || Command = "AI_28"
+Trigger8 = Command = "AI_29" || Command = "AI_30" || Command = "AI_31" || Command = "AI_32"
+Trigger9 = Command = "AI_33" || Command = "AI_34" || Command = "AI_35" || Command = "AI_36"
+Trigger10 = Command = "AI_37" || Command = "AI_38" || Command = "AI_39" || Command = "AI_40"
+Trigger11 = Command = "AI_41" || Command = "AI_42" || Command = "AI_43" || Command = "AI_44"
+Trigger12 = Command = "AI_45" || Command = "AI_46" || Command = "AI_47" || Command = "AI_48"
+Trigger13 = Command = "AI_49" || Command = "AI_50" || Command = "AI_51" || Command = "AI_52"
+Trigger14 = Command = "AI_53" || Command = "AI_54" || Command = "AI_55" || Command = "AI_56"
+Trigger15 = Command = "AI_57" || Command = "AI_58" || Command = "AI_59" || Command = "AI_60"
+Trigger16 = Command = "AI_61" || Command = "AI_62" || Command = "AI_63" || Command = "AI_64"
+Trigger17 = Command = "AI_65" || Command = "AI_66" || Command = "AI_67" || Command = "AI_68"
+Trigger18 = Command = "AI_69" || Command = "AI_70" || Command = "AI_71" || Command = "AI_72"
+Trigger19 = Command = "AI_73" || Command = "AI_74" || Command = "AI_75" || Command = "AI_76"
+Trigger20 = Command = "AI_77" || Command = "AI_78" || Command = "AI_79" || Command = "AI_00"
+;Trigger21 = RoundState = 2;AI常時起動スイッチ（プレイヤー操作は不可能になる）
+var(59)=1
+IgnoreHitPause = 1
+
+[State -3, ラウンドが終わったら一度AIをオフにする]
+Type = VarSet
+TriggerAll = Var(59) >= 1;AI発動中
+Trigger1 = RoundState >= 3;戦闘後にvarスイッチを切る。
+var(59)=0
+
+
+;以下実際のAIの挙動-------------------------------------------------------------------
+[State -3, 5A]
+type = ChangeState
+value = 200
+triggerall = var(59)=1;AI専用
+;立ち状態でコントロール可能な時
+triggerall = statetype = S
+trigger1 = ctrl;最低条件。以下のtrigger1で行動制限
+trigger1 = P2StateType!=A;相手が空中にいなければ
+trigger1 = P2moveType!=A;相手攻撃中じゃなければ
+trigger1 = P2BodyDist x=[0,40];相手との距離が近ければ
+trigger1 = random =[0,200];ランダム値が0から200であれば
+;攻撃が当たったときキャンセル
+trigger2 = (stateno = 200) && MoveContact=[1,8]
+trigger2 = P2BodyDist x=[0,40]
+trigger2 = random =[0,200];ランダム値が0から200であれば
+
+[State -1, 5B]
+type = ChangeState
+value = 210
+triggerall = var(59)=1;AI専用
+triggerall = roundstate = 2
+triggerall = statetype = S;立ち状態でコントロール可能な時
+trigger1 = ctrl
+trigger1 = P2moveType!=A;相手攻撃中じゃなければ
+trigger1 = P2BodyDist x=[20,120];相手との距離が近ければ
+trigger1 = random =[201,500];ランダム値が0から200であれば
+;5Aがヒットしたらキャンセルできる
+trigger2 =(stateno = 200) && MoveContact=[1,8]
+trigger2 = random =[201,800]
+;2Aがヒットしたらキャンセルできる
+trigger3 =(stateno = 400) && MoveContact=[1,8]
+trigger3 = random =[801,999]
+
+
+[State -1, 5C]
+type = ChangeState
+value = 230
+triggerall = var(59)=1;AI専用
+triggerall = roundstate = 2
+;立ち状態でコントロール可能な時
+trigger1 = statetype = S
+trigger1 = ctrl
+trigger1 = P2moveType!=A;相手攻撃中じゃなければ
+trigger1 = P2BodyDist x=[40,180];相手との距離が近ければ
+trigger1 = random =[501,800];ランダム値が0から200であれば
+;5Bがヒットしたらキャンセルできる
+trigger2 = P2StateType!=A;相手が空中にいなければ
+trigger2 =(stateno = 210) && MoveContact=[1,8]
+trigger2 =(stateno = 210) &&AnimElem = 4 >=1
+trigger2 = random =[0,800]
+;2Bがヒットしたらキャンセルできる
+trigger3 = P2StateType!=A;相手が空中にいなければ
+trigger3 =(stateno = 410) && MoveContact=[1,8]
+trigger3 =(stateno = 410) && AnimElem = 3 >=1
+trigger3 = random =[801,999]
+
+[State -1, 5X]
+type = ChangeState
+value = 240
+triggerall = var(59)=1;AI専用
+triggerall = roundstate = 2
+;立ち状態でコントロール可能な時
+trigger1 = statetype = S
+trigger1 = ctrl 
+trigger1 = P2moveType!=A;相手攻撃中じゃなければ
+trigger1 = P2BodyDist x=[20,120];相手との距離が近ければ
+trigger1 = random =[801,999];ランダム値が0から200であれば
+;5Bがヒットしたらキャンセルできる
+trigger2 = P2StateType=A;相手が空中にいれば
+trigger2 =(stateno = 210) && MoveContact=[1,8] 
+trigger2 =(stateno = 210) &&AnimElem = 4 >=1
+
+;------------------------------------------------------------------------------
+
+
+
+[State -1, 2A]
+type = ChangeState
+value = 400
+triggerall = var(59)=1;AI専用
+triggerall = roundstate = 2
+;しゃがみ状態でコントロール可能な時
+trigger1 = statetype = C
+trigger1 = ctrl
+trigger1 = P2StateType!=A;相手が空中にいなければ
+trigger1 = P2moveType!=A;相手攻撃中じゃなければ
+trigger1 = P2BodyDist x=[0,20];相手との距離が近ければ
+trigger1 = random =[201,500];ランダム値が0から200であれば
+;攻撃が当たったときキャンセル
+trigger2 = (stateno = 400) && MoveContact=[1,8]
+trigger2 = random =[0,200];ランダム値が0から200であれば
+
+[State -1, 2B]
+type = ChangeState
+value = 410
+triggerall = var(59)=1;AI専用
+triggerall = roundstate = 2
+;しゃがみ状態でコントロール可能な時
+trigger1 = statetype = C
+trigger1 = ctrl
+trigger1 = P2StateType!=A;相手が空中にいなければ
+trigger1 = P2moveType!=A;相手攻撃中じゃなければ
+trigger1 = P2BodyDist x=[10,80];相手との距離が近ければ
+trigger1 = random =[501,800];ランダム値が0から200であれば
+;5Aがヒットしたらキャンセルできる
+trigger2 =(stateno = 200) && MoveContact=[1,8]
+trigger2 = random =[801,999]
+;2Aがヒットしたらキャンセルできる
+trigger3 =(stateno = 400) && MoveContact=[1,8]
+trigger3 = random =[201,800]
+
+[State -1, 2C]
+type = ChangeState
+value = 430
+triggerall = var(59)=1;AI専用
+triggerall = roundstate = 2
+;しゃがみ状態でコントロール可能な時
+trigger1 = statetype = C
+trigger1 = ctrl
+trigger1 = P2StateType!=A;相手が空中にいなければ
+trigger1 = P2moveType!=A;相手攻撃中じゃなければ
+trigger1 = P2BodyDist x=[0,128];相手との距離が近ければ
+trigger1 = random =[801,900];ランダム値が0から200であれば
+;5Bがヒットしたらキャンセルできる
+trigger2 = P2BodyDist x=[0,100]
+trigger2 =(stateno = 210) && MoveContact=[1,8]
+trigger2 =(stateno = 210) &&AnimElem = 4 >=1
+trigger2 = random =[981,999]
+;2Bがヒットしたらキャンセルできる
+trigger3 =(stateno = 410) && MoveContact=[1,8]
+trigger3 =(stateno = 410) &&AnimElem = 3 >=1
+trigger3 = random =[0,980]
+
+
+[State -1, 2D]
+type = ChangeState
+value = 440
+triggerall = var(59)=1;AI専用
+triggerall = roundstate = 2
+;しゃがみ状態でコントロール可能な時
+trigger1 = statetype = C
+trigger1 = ctrl
+trigger1 = P2StateType=A;相手が空中にいれば
+trigger1 = P2moveType!=A;相手攻撃中じゃなければ
+trigger1 = P2BodyDist x=[0,40];相手との距離が近ければ
+trigger1 = random =[901,999];ランダム値が0から200であれば
+;------------------------------------------------------------------------------
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+;空中立ち回り技振り 
+;Ctrl Random EnemyNear,Movetype = I inguarddist P2bodyDist Y P2bodyDist X
+;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[State -1, 空中投げ];空中投げ技
+type = ChangeState
+value = 810
+triggerall = var(59)=1;AI専用
+triggerall = roundstate = 2
+triggerall = EnemyNear,StateType != L;直近の敵がダウンしてない
+;空中で操作可能なときステップ中でなければ可能
+triggerall = stateno != 110
+triggerall = statetype = A
+trigger1 = ctrl
+trigger1 = Random = [0,30]
+trigger1 = p2bodydist X <= 20
+trigger1 = p2bodydist Y = [-72,60]
+
+
+[State -1, 空レバー入れ投げ];後ろ入れ投げ技
+type = ChangeState
+value = 815
+triggerall = var(59)=1;AI専用
+triggerall = roundstate = 2
+triggerall = stateno != 110
+triggerall = statetype = A
+trigger1 = ctrl
+trigger1 = Random = [31,60]
+trigger1 = p2bodydist X <= 20
+trigger1 = p2bodydist Y = [-72,60]
+
+
+[State -1, JA]
+type = ChangeState
+value = 600
+triggerall = var(59)=1;AI専用
+triggerall = roundstate = 2
+;空中で操作できるなら出せる
+trigger1 = statetype = A
+trigger1 = ctrl
+trigger1 = P2StateType=A;相手が空中にいれば
+trigger1 = P2moveType!=A;相手攻撃中じゃなければ
+trigger1 = P2BodyDist x=[0,40];相手との距離が近ければ
+trigger1 = p2bodydist Y = [-80,70]
+trigger1 = random =[0,150];ランダム値が0から200であれば
+;攻撃が当たったときキャンセル
+trigger2 = (stateno = 600) && MoveContact=[1,8]
+trigger2 = P2BodyDist x=[0,30];相手との距離が近ければ
+trigger2 = p2bodydist Y = [-80,70]
+trigger2 = random =[0,50]
+;空ダ後
+trigger3 =  stateno = 110  && time>= 8
+trigger3 = P2BodyDist x=[0,40]
+trigger3 = random =[0,100]
+
+[State -1, JB]
+type = ChangeState
+value = 610
+triggerall = var(59)=1;AI専用
+triggerall = roundstate = 2 
+;空中で操作できるなら出せる
+trigger1 = statetype = A
+trigger1 = ctrl
+trigger1 = P2StateType=A;相手が空中にいれば
+trigger1 = P2moveType!=A;相手攻撃中じゃなければ
+trigger1 = P2BodyDist x=[0,120];相手との距離が近ければ
+trigger1 = random =[201,700];ランダム値が0から200であれば
+;JAがヒットしたらキャンセルできる
+trigger2 =(stateno = 600) && MoveContact=[1,8]
+trigger2 = P2BodyDist x=[0,120];相手との距離が近ければ
+trigger2 = random =[51,950]
+;空ダ後
+trigger3 =  stateno = 110  && time>= 8
+trigger3 = P2BodyDist x=[0,120]
+trigger3 = random =[101,600]
+;空バダ後
+trigger4 =  stateno = 115  && time>= 8
+trigger4 = random =[0,600]
+
+[State -1, JC]
+type = ChangeState
+value = 630
+triggerall = var(59)=1;AI専用
+triggerall = roundstate = 2
+;空中で操作できるなら出せる
+trigger1 = statetype = A
+trigger1 = ctrl
+trigger1 = P2StateType!=A;相手が空中にいなければ
+trigger1 = P2moveType!=A;相手攻撃中じゃなければ
+trigger1 = P2BodyDist x=[0,10];相手との距離が近ければ
+trigger1 = random =[701,800];ランダム値が0から200であれば
+;JBがヒットしたらキャンセルできる
+trigger2 =(stateno = 610) && MoveContact=[1,8]
+trigger2 =(stateno = 610) &&AnimElem = 3 >=1
+trigger2 = P2BodyDist x=[0,10];相手との距離が近ければ
+trigger2 = random =[0,100]
+;空ダ後
+trigger3 =  stateno = 110  && time>= 8
+trigger3 = P2BodyDist x=[0,10]
+trigger3 = random =[601,700]
+
+[State -1, JX]
+type = ChangeState
+value = 640
+triggerall = var(59)=1;AI専用
+;空中で操作できるなら出せる
+trigger1 = statetype = A
+trigger1 = ctrl
+trigger1 = P2moveType!=A;相手攻撃中じゃなければ
+trigger1 = P2BodyDist x=[0,90];相手との距離が近ければ
+trigger1 = random =[801,999];ランダム値が0から200であれば
+;JBがヒットしたらキャンセルできる
+trigger2 =(stateno = 610) && MoveContact=[1,8]
+trigger2 =(stateno = 610) &&AnimElem = 3 >=1
+trigger2 = P2BodyDist x=[0,90]
+;JCがヒットしたらキャンセルできる
+trigger3 =(stateno = 630) && MoveContact=[1,8] 
+trigger3 =(stateno = 630) &&AnimElem = 7 >=1
+trigger3 = P2BodyDist x=[0,90]
+;空ダ後
+trigger4 =  stateno = 110  && time>= 8
+trigger4 = P2BodyDist x=[0,90]
+trigger4 = random =[701,800]
+;空バダ後
+trigger5 =  stateno = 115  && time>= 8
+trigger5 = P2BodyDist x=[0,90]
+trigger5 = random =[601,700]
+
+;------------------------------------------------------------------------------
+[State -1, 挑発]
+type = ChangeState
+value = 195
+triggerall = var(59)=1;AI専用
+triggerall = roundstate = 2
+;空中以外の状態で操作できるとき
+trigger1 = statetype != A
+trigger1 = ctrl
+trigger1 = P2BodyDist x=[180,256]
+trigger1 = P2stateno=5110;相手がダウンしていたら
+trigger1 = random =999;1/1000の確率
+
+
+;AIここまで---------------------------------------------------------------------------
+
+
+
+;---------------------------------------------------------------------------
+; ■最後に『コモンステート』について■
+; コモンステートとは、全キャラ共通の基本動作のステートです。
+; 通常は特に変更しない限り、M.U.G.E.N本体のdataフォルダにある
+;「common1.cns（コモンステートファイル）」を使います。
+;
+; しかし、もしもあなたのキャラのステートファイルでcommon1.cnsと同じ番号の
+; 基本動作のステートを作った場合は処理が上書きされ、
+; common1.cns側の同じ番号のステートは無効になります。
+;
+; common1.cnsのプログラム優先度は最低に属しているので、
+; ステートの作成には番号に注意しないといけません。
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
