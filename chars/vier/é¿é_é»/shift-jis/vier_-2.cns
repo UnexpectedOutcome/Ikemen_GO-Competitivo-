@@ -1,0 +1,767 @@
+;===========================================================================
+; 常時監視ステート（‐２）
+;===========================================================================
+; 常時監視ステート（‐２）
+;===========================================================================
+;---------------------------------------------------------------------------
+; 通常の食らい状態（Statedef 5000～5199間）でも、
+; 相手に（「P2StateNo」や「TargetState」等で）制御を奪われても、
+; 常に登録したステートコントローラが有効になります。
+; サブシステム等を制御する時に重宝するでしょう。
+;---------------------------------------------------------------------------
+
+
+
+[Statedef -2]
+
+;先行入力認識用ヘルパー暴走防止
+[state -2, ステートリセット]
+type = changestate
+trigger1 = ishelper(99999)
+value = 99999
+ignorehitpause = 1
+
+
+[state -2, ステートリセット]
+type = changestate
+trigger1 = ishelper(99998)
+value = 99999
+ignorehitpause = 1
+
+
+
+;ダメージ乗算補正が万が一マイナスになったら0にするよ
+[State -2]
+type=Varset
+trigger1=fvar(1)<0.2
+fvar(1)=0.2
+ignorehitpause=1
+
+
+;やられじゃなくなったらかガード中は補正を1に戻すよ
+[State -2]
+type=Varset
+TriggerAll = NumEnemy > 0;敵がいるとき
+trigger1=enemy,movetype!=H
+trigger2=enemy,stateno=[120,155]
+fvar(1)=1.0
+ignorehitpause=1
+
+;ノックバック補正
+;[State -2]
+;type=Varset
+;TriggerAll = StateNo = [200,2999];超必以外の時にカウントするよ
+;Trigger1 = MoveHit = 1 
+;fv=2
+;Value = ifelse(var(3)=1,(Enemy,GetHitVar(HitCount)*0.12),(Enemy,GetHitVar(HitCount)*0.2));相手のHit*0.2の補正をかけるよ
+;IgnoreHitPause = 1 
+;persistent= 0
+
+
+
+;ノックバック補正キャンセル
+[State -2]
+type=Varset
+TriggerAll = NumEnemy > 0;敵がいるとき
+trigger1=enemy,movetype!=H
+trigger2=enemy,stateno=[120,155]
+;Trigger1 = FVar(2) != 0
+;Trigger1 = (enemynear(0),MoveType != H || (enemynear(0),StateNo != [120,155])) ;一番近い相手がやられじゃなくなったら
+fvar(2)=0
+IgnoreHitPause = 1
+;persistent= 1
+
+[State -2,空中ダッシュ回数リセット]
+type = Varset
+trigger1 = StateType != A
+var(8) = 0 
+
+;---------------------------------------------------------------------------
+
+;魔種アイコン関連
+
+[State -2, 魔種 開始時 苗状態]
+type = VarSet
+trigger1 = RoundNo = 1
+trigger1 = RoundState = 0
+var(58)=2;無=0,種=1,芽=2,花=3
+ignorehitpause = 1
+persistent = 0
+
+[State -2, 散華じゃない時チェックタイマー0]
+type = VarSet
+trigger1=var(3)=0;最初の1Fのみ実行
+var(2)=0
+ignorehitpause = 1
+persistent = 0
+
+;ラウンド終了時散華を消す。var(2)=1かつ散華タイマーがいると退化フラグが立つので散華タイマーが出ているときはvar(2)に1を入れてチェック
+[State -2, ラウンド終了時散華ならチェックタイマー1で散華を切る]
+type = VarSet
+trigger1 = Roundstate = 3
+trigger1=numhelper(7550) >= 1
+trigger1=var(2)>=0;最初の1Fのみ実行
+var(2)=1
+ignorehitpause = 1
+persistent = 0
+
+
+;[State -2, 万が一ラウンド終了時散華だったら退化]
+;type = Varadd
+;trigger1 = Roundstate = 4
+;trigger1 =var(3)=1
+;trigger1=time=1;最初の1Fのみ実行
+;v = 58  
+;value = -2
+;ignorehitpause = 1
+;persistent = 0
+
+;発芽まではラウンド終了で成長する
+[State -2, ラウンド終了後成長処理]
+type = VarAdd
+trigger1 = var(58) <= 1
+trigger1 = RoundState = 4
+trigger1=time=1;最初の1Fのみ実行
+v =58
+value = 1
+ignorehitpause = 1
+persistent = 0
+
+[State -2, 散華終了時 残像消去]
+type = AfterImageTime 
+;trigger1 = NumHelper(7550) > 0
+trigger1 = var(3) =0
+trigger1 = var(17) =0;散華以外の行動で残像をつけるときはこの限りでない
+time = 1
+
+;hitdefのdamageにかかる補正
+[State -2, 散華の時は攻撃アップ]
+type = varset
+trigger1 = var(3)=1
+fvar(3)=1.2
+ignorehitpause=1
+
+[State -2, 散華じゃなく種以上があるときは攻撃普通]
+type = varset
+trigger1 = var(3)=0
+trigger1 = var(58)>=1
+fvar(3)=1.0
+ignorehitpause=1
+
+
+[state -2, 花の時は体力自動回復]
+type = LifeAdd
+triggerall = RoundState = 2
+Triggerall = movetype != H
+Triggerall = Var(58) = 3
+trigger1 = ifelse(var(3)=1,gametime%10,gametime%20) = 0
+value = 1
+ignorehitpause = 1
+
+[State -2, 苗以上はの時は防御普通]
+type =  DefenceMulSet
+trigger1 = var(58) >=2
+value = 1
+
+[State -2, 種の時は防御ダウン]
+type =  DefenceMulSet
+trigger1 = var(58) =1
+value = 1.1
+
+
+[State -2, 無の時はさらに防御ダウン]
+type =  DefenceMulSet
+trigger1 = var(58) =0
+value = 1.2
+
+
+[State -2, 無の時はさらに加えて攻撃ダウン]
+type = varset
+trigger1 = var(58)=0
+fvar(3)=0.9
+ignorehitpause=1
+
+
+;万が一var(58)がマイナスになったら0にするよ
+[State -2]
+type=Varset
+trigger1=var(58)<=0
+var(58)=0
+ignorehitpause=1
+persistent = 0
+
+;万が一var(58)が4になったら3にするよ
+[State -2]
+type=Varset
+trigger1=var(58)>=3
+var(58)=3
+ignorehitpause=1
+persistent = 0
+
+[State -2, 種表示]
+type = Explod
+triggerALL =  NumExplod(8000) = 0
+trigger1 = var(58) = 1
+anim = 8000
+ID = 8000
+pos = ifelse(TeamSide=1,18,300), 50;1P側か2P側かで条件分岐
+postype = left  ;p2,front,back,left,right
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0,0
+accel = 0,0
+random = 0,0
+removetime = -1;永久表示
+scale = 0.5,0.5
+sprpriority = 5
+ontop = 1;すべてのスプライトより手前に
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 0
+ignorehitpause =1
+trans = default ;default,none,add,add2,sub,addalpha
+persistent =0
+supermovetime = 999999
+pausemovetime = 999999 ;supermove pausetimeを無視する時間
+
+[State -2, 種 消去]
+type = RemoveExplod
+triggerall = NumExplod(8000) = 1
+trigger1 = Var(58) != 1
+ID = 8000
+
+[State -2, 苗表示]
+type = Explod
+triggerALL =  NumExplod(8001) = 0
+trigger1 = var(58) = 2
+anim = 8001
+ID = 8001
+pos = ifelse(TeamSide=1,18,300), 50;1P側か2P側かで条件分岐
+postype = left  ;p2,front,back,left,right
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0,0
+accel = 0,0
+random = 0,0
+removetime = -1;永久表示
+scale = 0.5,0.5
+sprpriority = 5
+ontop = 1;すべてのスプライトより手前に
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 0
+ignorehitpause =1
+trans = default ;default,none,add,add2,sub,addalpha
+persistent =0
+supermovetime = 999999
+pausemovetime = 999999 ;supermove pausetimeを無視する時間
+
+[State -2, 苗 消去]
+type = RemoveExplod
+triggerall = NumExplod(8001) = 1
+trigger1 = Var(58) != 2
+ID = 8001
+
+[State -2, 花表示]
+type = Explod
+triggerALL =  NumExplod(8002) = 0
+trigger1 = var(58) = 3
+anim = 8002
+ID = 8002
+pos = ifelse(TeamSide=1,18,300), 50;1P側か2P側かで条件分岐
+postype = left  ;p2,front,back,left,right
+facing = 1
+vfacing = 1
+bindtime = -1
+vel = 0,0
+accel = 0,0
+random = 0,0
+removetime = -1;永久表示
+scale = 0.5,0.5
+sprpriority = 5
+ontop = 1;すべてのスプライトより手前に
+shadow = 0,0,0
+ownpal = 0
+removeongethit = 0
+ignorehitpause =1
+trans = default ;default,none,add,add2,sub,addalpha
+persistent =0
+supermovetime = 999999
+pausemovetime = 999999 ;supermove pausetimeを無視する時間
+
+[State -2, 花 消去]
+type = RemoveExplod
+triggerall = NumExplod(8002) = 1
+trigger1 = Var(58) != 3
+ID = 8002
+
+;---------------------------------------------------------------------------
+; 先行入力用暗転感知
+[State -2, gametime取得]
+type = varset
+trigger1 = 1
+var(19) = gametime
+ignorehitpause = 1
+
+;---------------------------------------------------------------------------
+;喰らい等、セリフ再生
+
+[State -2, あくび]
+type = playsnd
+triggerall = (stateno = 11)
+trigger1 = AnimElemTime(3)>=0
+value = 13,0
+channel = 1
+lowpriority = 1
+ignorehitpause = 1
+
+[State -2, 喰らいボイス弱]
+type = playsnd
+triggerall = alive && time = 1
+triggerall = stateno=5000 || stateno=5010 || stateno=5020
+trigger1 = gethitvar(animtype) = 0
+value = 5000,random%2
+channel = 2
+lowpriority = 1
+ignorehitpause = 1
+
+[State -2, 喰らいボイス中]
+type = playsnd
+triggerall = alive && time = 1
+triggerall = stateno=5000 || stateno=5010 || stateno=5020
+trigger1 = gethitvar(animtype) = 1
+value = 5010,random%3
+channel = 2
+lowpriority = 1
+ignorehitpause = 1
+
+[State -2, 喰らいボイス強]
+type = playsnd
+triggerall = alive && time = 1
+triggerall = stateno=5000 || stateno=5010 || stateno=5020
+trigger1 = gethitvar(animtype) >= 2
+value = 5020,random%4
+channel = 2
+lowpriority = 1
+ignorehitpause = 1
+
+[State -2, 吹っ飛びボイス]
+type = playsnd
+triggerall = alive && time = 1
+trigger1 = (stateno = 5000 || stateno = 5010) && numenemy
+trigger1 = gethitvar(fall) || (enemynear, hitdefattr = SCA, SA, HA)
+trigger2 = (stateno = 5020 || stateno = 5070 || stateno = 5080)
+trigger3 = (stateno = 5050 || stateno = 5100) && (prevstateno != [5000, 5199])
+value = 5020,random%4
+channel = 2
+lowpriority = 1
+ignorehitpause = 1
+
+[State -2, ダウンボイス]
+type = playsnd
+triggerall = alive && time = 1
+trigger1 = stateno=5100
+value = 5020,4
+channel = 2
+lowpriority = 0
+ignorehitpause = 1
+
+[State -2, 起き上がりボイス]
+type = playsnd
+triggerall = alive && time = 1
+trigger1 = stateno=5120
+value = 5120,random%2
+channel = 2
+lowpriority = 0
+ignorehitpause = 1
+
+[State -2, 受身ボイス]
+type = playsnd
+triggerall = alive && time = 1
+trigger1 = stateno=5200
+value = 5120,random%2
+channel = 2
+lowpriority = 0
+ignorehitpause = 1
+
+[State -2, 気絶ボイス]
+type = playsnd
+triggerall = alive
+trigger1 = Anim = 5300
+trigger1 = AnimElem = 1, = 1
+value = 5000,2
+channel = 2
+lowpriority = 1
+ignorehitpause = 1
+
+
+[State -2, KOボイス]
+type = playsnd
+trigger1 = alive = 0
+trigger1 = Var(16) = 0
+value = 181,1
+channel = 2
+lowpriority = 0
+ignorehitpause = 1
+
+;KOボイスを出したあとに変数をオンにする（KOボイスの下に記述でOK）
+[State -2, 変数 KOボイス重複防止]
+type = VarSet
+trigger1 = Alive = 0
+var(16)=1
+ignorehitpause = 1
+
+;-----------------------------------
+;通常セリフ再生
+
+[State -2, セリフ 散華]
+type = PlaySnd
+triggerall =  time=1
+trigger1 = (stateno = 7500)
+value = 750, (Random%2)
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+
+[State -2, セリフ バースト]
+type = PlaySnd
+triggerall =  time=1
+trigger1 = (stateno = 7600)
+value = 760, 0
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ ステップ]
+type = PlaySnd
+triggerall =  time=1
+trigger1 = (stateno = 100)
+trigger2 = (stateno = 105)
+value = 100, (Random % 2)
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ タイムオーバー]
+type = PlaySnd
+triggerall =  (stateno = 170)
+trigger1 = time =20
+value = 170, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ 勝利（喜びの舞）]
+type = PlaySnd
+triggerall =  (stateno = 181)
+trigger1 = time =32
+value = 181, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ イントロ（宝箱）]
+type = PlaySnd
+triggerall =  (stateno = 191)
+trigger1 = RoundState =0
+trigger1 = time =1
+value = 190, 5
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+
+[State -2, セリフ イントロ（わるいすらいむ1）]
+type = PlaySnd
+triggerall =  (stateno = 192)
+trigger1 = RoundState =0
+trigger1 = time =1
+value = 191, 0
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ イントロ（わるいすらいむ2）]
+type = PlaySnd
+triggerall =  (stateno = 192)
+trigger1 = RoundState =1
+trigger1 = time =360
+value = 191, 1
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ イントロ（全力先輩）];ひひひ
+type = PlaySnd
+triggerall =  (stateno = 193)
+trigger1 = RoundState =0
+trigger1 = time =1
+value = 100, 1
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ イントロ（全力先輩）];ついてこれる？→全力先輩のセリフ
+type = PlaySnd
+triggerall =  (stateno = 193)
+trigger1 = RoundState =1
+trigger1 = time =60
+value = 100, 0
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ イントロ（全力先輩）];全力先輩と一緒に全力全開
+type = PlaySnd
+triggerall =  (stateno = 193)
+trigger1 = RoundState =1
+trigger1 = time =175
+value = 750, 0
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ イントロ（切奈）]
+type = PlaySnd
+triggerall =  (stateno = 6002)
+trigger1 = RoundState =1
+trigger1 = time =246
+value = 191, 0
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ イントロ（切奈）]
+type = PlaySnd
+triggerall =  (stateno = 6002)
+trigger1 = RoundState =1
+trigger1 = time =600
+value = 191, 1
+volume = 100
+channel = 3          ;0=セリフ、1=システム用ボイス、3=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+
+
+[State -2, セリフ イントロ（飛ばしたときセリフ止める）]
+type = StopSnd
+trigger1 = RoundState =2
+channel = 3 ;0=セリフ、1=システム用ボイス、3=イントロ用
+;ignorehitpause = 
+;persistent = 
+
+
+[State -2, セリフ 挑発]
+type = PlaySnd
+triggerall =  (stateno = 195)
+trigger1 = time =1
+value = 195, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ 弱攻撃]
+type = PlaySnd
+triggerall =  (stateno = 200) || (stateno = 400) || (stateno = 600)
+trigger1 = time =1
+value = 200, (Random % 3)
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ 中攻撃]
+type = PlaySnd
+triggerall =  (stateno = 210) || (stateno = 410) ||(stateno = 610)
+trigger1 = time =1
+value = 210, (Random % 3)
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+
+[State -2, セリフ 5C強攻撃]
+type = PlaySnd
+triggerall =  (stateno = 230)
+trigger1 = time =1
+value = 230, 2
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ 2C強攻撃]
+type = PlaySnd
+triggerall =  (stateno = 430)
+trigger1 = time =1
+value = 230, (Random % 2)
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ JC強攻撃]
+type = PlaySnd
+triggerall = (stateno = 630)
+trigger1 = time =1
+value = 230, 3
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ 5D強攻撃]
+type = PlaySnd
+triggerall =  (stateno = 240)
+trigger1 = time =1
+value = 240, 2
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ 2D強攻撃]
+type = PlaySnd
+triggerall =  (stateno = 440)
+trigger1 = time =1
+value = 240, 3
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ JD強攻撃]
+type = PlaySnd
+triggerall = (stateno = 640)
+trigger1 = time =1
+value = 240, (Random % 2)
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ ドリル]
+type = PlaySnd
+triggerall = (stateno = 700) || (stateno = 710) ||(stateno = 720)
+trigger1 = time =1
+value = 700, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ 投げ抜け]
+type = PlaySnd
+trigger1 =  (stateno = 891) 
+trigger1 = time =1
+trigger2 =  (stateno = 892) 
+trigger2 = time =1
+value = 5000, 2
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ 地上投げ]
+type = PlaySnd
+trigger1 =  (stateno = 801) 
+trigger1 = animelem =2
+trigger2 =  (stateno = 806) 
+trigger2 = animelem =2
+value = 805, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ 空中投げ]
+type = PlaySnd
+trigger1 =  (stateno = 811)
+trigger1 = animelem =2
+trigger2 =  (stateno = 816)
+trigger2 = animelem =2
+value = 805, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ 投げスカり]
+type = PlaySnd
+trigger1 =  (stateno = 800)||(stateno = 810)
+trigger1 = AnimElem=3
+trigger2 =  (stateno = 805)||(stateno = 815)
+trigger2 = AnimElem=3
+value = 800, 1
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+
+[State -2, セリフ キャノン]
+type = PlaySnd
+triggerall = (stateno = 1000) || (stateno = 1010) ||(stateno = 1020)
+trigger1 = time =1
+value = 1000, 1
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ ドルフィン]
+type = PlaySnd
+triggerall = (stateno = 1100) || (stateno = 1110) ||(stateno = 1120)
+trigger1 = time =1
+value = 1100, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ バルーン]
+type = PlaySnd
+triggerall = (stateno = 1200) || (stateno = 1210) ||(stateno = 1220)
+trigger1 = time =1
+value = 1200, 0
+volume = 0
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+[State -2, セリフ 水龍飛翔拳カットイン]
+type = PlaySnd
+triggerall = (stateno = 3000)||(stateno = 3100)
+trigger1 = time=1
+value = 10000, 1
+volume = 100
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+ignorehitpause = 1
+
+
+[State -2, セリフ 水龍飛翔拳]
+type = PlaySnd
+triggerall = (stateno = 3000)
+trigger1 = movehit=1
+trigger1 = AnimElemTime(3)>=0
+trigger1=(Enemynear,Time=12)&&(Enemynear,Movetype=H)
+value = 3000, 3
+volume = 100
+channel = 0          ;0=セリフ、1=システム用ボイス
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+persistent = 0
+ignorehitpause = 1
+
+[State -2, セリフ 天馬流転]
+type = PlaySnd
+triggerall =  (stateno = 3100)
+trigger1 = time =65
+value = 3100, 0
+volume = 100
+channel = 0          ;0=セリフ、1=システム用ボイス、2=イントロ用
+lowpriority = 0      ;0以外=音が鳴ってる場合は、PlaySndが実行されない
+
+
+;---------------------------------------------------------------------------
+;-----------------------------------
+;デバッグ時
+[State -2, クリップボード]
+type = DisplayToClipboard
+trigger1 = 1
+text = "C_hosei=%d,V_hosei=%d,S_hosei=%d,AICheck=%d\n"
+params = fvar(1),fvar(2),fvar(3),var(59)
+Ignorehitpause=1
+
+[State -2, クリップボード（追加専用）]
+type = AppendToClipboard
+trigger1 = 1
+text = "Pos_X=%d,Pos_Y=%d, Vel_X=%f,Vel_Y=%f, Hit=%d \n"
+params = P2bodydist x,Pos y,(Vel X),(Vel Y),(MoveHit)
+
+;---------------------------------------------------------------------------
