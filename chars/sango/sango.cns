@@ -1,0 +1,3071 @@
+; Sango by Lord-S && Shadowtak
+
+;Variaveis
+;v1 - Controle de intro/win/lose (personagens especiais)
+;v2 = random
+
+[Data]
+life = 1000
+attack = 100
+defence = 100
+fall.defence_up = 50
+liedown.time = 60
+airjuggle = 15
+sparkno = 2
+guard.sparkno = 40
+KO.echo = 0
+;volume = 10000
+;IntPersistIndex = 60
+;FloatPersistIndex = 40
+
+[Size]
+xscale = 1           ;Horizontal scaling factor.
+yscale = 1           ;Vertical scaling factor.
+ground.back = 17     ;Player width (back, ground)
+ground.front = 22    ;Player width (front, ground)
+air.back = 12        ;Player width (back, air)
+air.front = 12       ;Player width (front, air)
+height = 60          ;Height of player (for opponent to jump over)
+attack.dist = 160    ;Default attack distance
+proj.attack.dist = 90 ;Default attack distance for projectiles
+proj.doscale = 0     ;Set to 1 to scale projectiles too
+head.pos = -5, -82   ;Approximate position of head
+mid.pos = -5, -60    ;Approximate position of midsection
+shadowoffset = 0     ;Number of pixels to vertically offset the shadow
+draw.offset = 0,0    ;Player drawing offset in pixels (x, y)
+
+[Velocity]
+walk.fwd  = 3            ;velocidade caminhando...
+walk.back = -3             ;velocidade afastando...
+run.fwd  = 6,-4            ;dash para frente
+run.back = -6,-4            ;dash para tr·s
+jump.neu = 0,-10           ;velocidade neutra pulando... (x, y)
+jump.back = -2.3           ;velocidade pulando para tr·s (x, y)
+jump.fwd = 2.3             ;velocidade pulando para frente (x, y)
+runjump.back = 0,0         ;correndo e pulando - n„o faz isso no game
+runjump.fwd = 0,0   
+airjump.neu = 0,0
+airjump.back = 0,0
+airjump.fwd = 0,0 
+
+[Movement]
+airjump.num = 0            ;pulo ˙nico
+airjump.height = 35  
+yaccel = .44         
+stand.friction = .83 
+crouch.friction = .80 
+
+;---------------------------------------------------------------------------
+
+;--------------Deslocamento para frente
+[Statedef 100]
+type = S
+movetype = I
+physics = S
+anim = 100
+ctrl = 0
+velset = 0, 0
+
+;Spark do Dash 
+[State 100,poe]
+type = Helper
+trigger1 = animelem = 3
+helpertype = Normal
+name = "Poeirat"
+postype = P1
+pos = -10,0
+stateno = 1012
+ownpal = 1
+
+; personagem estÅEno ar (muda parametro)
+[State 100,p2noar]
+type = StateTypeSet
+trigger1 = AnimElem = 3, >0
+statetype = A
+physics = N
+
+[State 100,gravidade]
+type = VelAdd
+trigger1 = AnimElem = 3, > 0
+y = .39
+
+[State 100,constante]
+type = VelSet
+trigger1 = AnimElem = 3
+x = Const(velocity.run.fwd.x)
+y = Const(velocity.run.fwd.y)
+
+[State 100,som]
+type = PlaySnd
+trigger1 = AnimElem = 3
+value = 0,15
+
+[State 100,aterrizar]
+type = ChangeState
+trigger1 = AnimElem = 2,>=0
+trigger1 = Vel Y > 0 && Pos Y >= 0
+value = 101
+
+[State 100, dashFAtaque]
+type = ChangeState
+triggerall = RoundState = 2 && var(59) = 1
+trigger1 = animelem = 2, >0
+trigger1 = p2bodydist X < 60 && p2movetype != A && p2stateno != [505,506]
+value = 210
+
+[State 100, dashFAtaque]
+type = ChangeState
+triggerall = RoundState = 2 && var(59) = 0
+trigger1 = animelem = 2, >0
+trigger1 = command = "z" || command = "b"
+value = 210
+
+;-------------------aterrizando no ch„o
+[Statedef 101]
+type = S
+movetype = I
+physics = S
+anim = 101
+velset = 0, 0
+
+;sÅEevitar problemas do eixo y
+[State 101,Posy]
+type = PosSet
+trigger1 = Time = 0
+y = 0
+
+;escorregar um pouco
+[State 101,0]
+type = velset
+trigger1 = animelem = 1
+x = 3.5
+
+;brecar
+[State 101,0]
+type = velset
+trigger1 = animelem = 3
+x = 0
+
+;provisÛrio usar fumaÁa do jogo original
+[State 101,fumaca]
+type = MakeDust
+trigger1 = animelem = 1, >0
+pos = -25, 0
+
+[State 101,fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;--------------Deslocamento para tr·s
+[Statedef 105]
+type = S
+movetype = I
+physics = S
+anim = 105
+ctrl = 0
+velset = 0, 0
+
+;Spark do Dash 
+[State 105,pod]
+type = Helper
+trigger1 = animelem = 3
+helpertype = Normal
+name = "PoeiraD"
+postype = P1
+pos = 10,0
+stateno = 1011
+ownpal = 1
+
+; personagem estÅEno ar (muda parametro)
+[State 105,p2noar]
+type = StateTypeSet
+trigger1 = AnimElem = 3, >0
+statetype = A
+physics = N
+
+[State 105,gravidade]
+type = VelAdd
+trigger1 = AnimElem = 3, > 0
+y = .39
+
+[State 105,constante]
+type = VelSet
+trigger1 = AnimElem = 3
+x = Const(velocity.run.back.x)
+y = Const(velocity.run.back.y)
+
+[State 105,som]
+type = PlaySnd
+trigger1 = AnimElem = 3
+value = 0,15
+
+[State 105,aterrizar]
+type = ChangeState
+trigger1 = AnimElem = 2,>=0
+trigger1 = Vel Y > 0 && Pos Y >= 0
+value = 106
+
+[State 105, dashTAtaque]
+type = ChangeState
+triggerall = RoundState = 2 && var(59) = 1
+trigger1 = animelem = 2, >0
+trigger1 = p2bodydist X < 10 && p2movetype != A
+value = 211
+
+[State 105, dashTAtaque]
+type = ChangeState
+triggerall = RoundState = 2 && var(59) = 0
+trigger1 = animelem = 2, >0
+trigger1 = command = "c" || command = "y"
+value = 211
+
+;-------------------aterrizando no ch„o (apÛs deslocamento para tr·s)
+[Statedef 106]
+type = S
+movetype = I
+physics = S
+anim = 106
+velset = 0, 0
+
+;sÅEevitar problemas do eixo y
+[State 106,Posy]
+type = PosSet
+trigger1 = Time = 0
+y = 0
+
+;escorregar um pouco
+[State 106,0]
+type = velset
+trigger1 = animelem = 1
+x = -3.5
+
+;brecar
+[State 106,1]
+type = velset
+trigger1 = animelem = 3
+x = 0
+
+;provisÛrio usar fumaÁa do jogo original
+[State 106,fumaca]
+type = MakeDust
+trigger1 = animelem = 1, >0
+pos = 25, 0
+
+[State 106,fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;-----------------------------Lose && Draw
+[Statedef 170]
+type = S
+ctrl = 0
+velset = 0,0
+
+;random intro
+[State 171, 1]
+type = VarRandom
+triggerall = var(1) <=0
+trigger1 = Time = 0
+v = 2
+
+;-------Escolha da animaÁ„o requerida
+;Caindo
+[State 170, anim1]
+type = Changeanim
+triggerall = time = 0
+trigger1 = var(1) = [3,9]
+trigger2 = var(2) < 300
+value = 170
+
+;retirando a mascara
+[State 170, anim2]
+type = Changeanim
+triggerall = time = 0
+trigger1 = var(1) =[1,2]
+trigger2 = var(1) = [10,13]
+trigger3 = var(2) >= 300
+value = 171
+
+;-------Falas requeridas
+; Sango && Blob
+; Are you Narakus illusions?
+[State 170, Sango]
+type = playsnd
+triggerall = time = 0
+trigger1 = var(1) = 13 || var(1) = 2
+value = 170,1
+
+; Demon Inuyasha 
+; Are you really Inuyasha?
+[State 170, DInu]
+type = playsnd
+trigger1 = time = 0
+trigger1 = p2name = "Demon Inuyasha" || p2name = "Yokay Inuyasha"
+value =170,2
+
+; Naraku
+; Give Kahaku back!
+[State 170, Naraku]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 10
+value =170,3
+
+; Kagura
+; Mhy, can't defeat you
+[State 170, Kagura]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 11
+value =170,4
+
+; Sesshomaru && Dinos
+; You are Strong!
+[State 170, SesshoD]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1)= 1|| var(1) = 12
+value =170,5
+
+; Miroku
+; You went easy on me, didn't you
+[State 170, Miroku]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 6
+value =170,6
+
+; Inuyasha
+; You're preety good
+[State 170, Inuy]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 3
+value =170,7
+
+; Kikyo
+; You're good for the dead
+[State 170, Kikyo]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 8
+value =170,8
+
+; Koga
+; You're not to bad yourself
+[State 170, Koga]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 7
+value =170,9
+
+; Kagome
+; Kagome you're scary
+[State 170, Kagome]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1)= 4
+value =170,10
+
+; Shippo && Totosai
+; Kagome you're scary
+[State 170, St]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1)= 5 || var(1) = 9
+value =170,11
+
+;------------------Randonizar falas
+;--------Feh, you don't change you
+[State 170, 1a]
+type = playsnd
+triggerall = var(1) <=0
+triggerall = time = 0
+trigger1 = var(2) < 50
+value = 170,12
+
+;---------I can still do id
+[State 170, 2a]
+type = playsnd
+triggerall = var(1) <=0
+triggerall = time = 0
+trigger1 = var(2) >= 50 && var(2) < 100
+value = 170,13
+
+;---------It was a good test of skills
+[State 170, 3a]
+type = playsnd
+triggerall = var(1) <=0
+triggerall = time = 0
+trigger1 = var(2) >= 100 && var(2) < 150
+value = 170,14
+
+;--------- I won't accept this
+[State 170, 4a]
+type = playsnd
+triggerall = var(1) <=0
+triggerall = time = 0
+trigger1 = var(2) >= 150 && var(2) < 200
+value = 170,15
+
+;---------I can't back down now
+[State 170, 5a]
+type = playsnd
+triggerall = var(1) <=0
+triggerall = time = 0
+trigger1 = var(2) >= 200 && var(2) < 250
+value = 170,16
+
+;--------Mhy does if have to be this
+[State 170, 6a]
+type = playsnd
+triggerall = var(1) <=0
+triggerall = time = 0
+trigger1 = var(2) >= 250 && var(2) < 300
+value = 170,17
+
+;--------Tch, that was a bit f-hearted
+[State 170, 7a]
+type = playsnd
+triggerall = var(1) <=0
+triggerall = time = 0
+trigger1 = var(2) >= 300 && var(2) < 350
+value = 170,18
+
+;--------You barelly stand
+[State 170, 8a]
+type = playsnd
+triggerall = var(1) <=0
+triggerall = time = 0
+trigger1 = var(2) >= 350 && var(2) < 400
+value = 170,19
+
+;--------You're not that bad
+[State 170, 9a]
+type = playsnd
+triggerall = var(1) <=0
+triggerall = time = 0
+trigger1 = var(2) >= 400 && var(2) < 450
+value = 170,20
+
+;--------You're kidding me
+[State 170, 10a]
+type = playsnd
+triggerall = var(1) <=0
+triggerall = time = 0
+trigger1 = var(2) >= 450 && var(2) < 500
+value = 170,21
+
+;--------You're better than i Thought
+[State 170, 11a]
+type = playsnd
+triggerall = var(1) <=0
+triggerall = time = 0
+trigger1 = var(2) >= 500 && var(2) < 550
+value = 170,11
+
+;--------You are strong!
+[State 170, 12a]
+type = playsnd
+triggerall = var(1) <=0
+triggerall = time = 0
+trigger1 = var(2) >= 500 && var(2) < 800
+value = 170,5
+
+;--------Are you Naraku's Ilusions?
+[State 170, 13a]
+type = playsnd
+triggerall = var(1) <=0
+triggerall = time = 0
+trigger1 = var(2) >= 800
+value = 170,1
+
+[State 170, IntroAssert]
+type = AssertSpecial
+trigger1 = Time = [0,150]
+flag = Intro
+
+
+;-----------------------------Win!!!
+[Statedef 180]
+type = S
+ctrl = 0
+velset = 0,0
+
+;randonizados
+[State 180, change1]
+type = ChangeState
+trigger1 = var(1) <=0
+value = 181
+
+;prÅEchars
+[State 180, change2]
+type = ChangeState
+trigger1 = var(1) >=1
+value = 182
+
+;----------------Chars prÅEselecionados
+[Statedef 182]
+type = S
+ctrl = 0
+velset = 0,0
+
+;win1 - aldeÅE
+[State 180, animAp]
+type = Changeanim
+triggerall = time = 0
+trigger1 = var(1)= [3,9]
+value = 180
+
+;win2 - apontando
+[State 180, animBp]
+type = Changeanim
+triggerall = time = 0
+trigger1 = var(1) = [1,2] 
+trigger2 = var(1) = [10,13]
+value = 181
+
+;-------Falas requeridas
+; Sango && Blob
+; Your illusions won't work on me
+[State 180, Sango]
+type = playsnd
+triggerall = time = 0
+trigger1 = var(1) = 2 || var(1) = 13
+value =180,1
+
+; Naraku
+; I will avenge my people
+[State 180, Naraku]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 10
+value =180,6
+
+; Kagura
+; Naraku's incarnation get ready!
+[State 180, Kagura]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 11
+value =180,8
+
+; Sesshomaru && Dinos
+; Slaying demons is my profession
+[State 180, SesshoD]
+type = playsnd
+triggerall = time = 0 
+trigger1 = var(1) = 1 || var(1) =12
+value =180,9
+
+; Miroku
+; You're not that good
+[State 180, Miroku]
+type = playsnd
+triggerall = time = 0
+trigger1 = var(1)= 6
+value =180,11
+
+; Inuyasha
+; I defeat Inuyasha
+[State 180, Inuy]
+type = playsnd
+triggerall = time = 0
+trigger1 = var(1) = 3
+value =180,3
+
+; Kikyo
+; I don't want to kill you
+[State 170, Kikyo]
+type = playsnd
+triggerall = time = 0
+trigger1 = var(1) = 8
+value =180,4
+
+; Koga
+; You are demons? I won't go easy
+[State 180, Koga]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 7
+value =180,10
+
+; Kagome
+; Kagome, are you all right
+[State 180, Kagome]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 4
+value =180,7
+
+; Shippo 
+; I sorry, are you burt
+[State 180, St]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1)= 5 
+value =180,5
+
+; Totosai
+; Grandpa, are you all right?
+[State 180, St]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 9 
+value =180,2
+
+;----------------------Randonizar win && falas
+[Statedef 181]
+type = S
+ctrl = 0
+velset = 0,0
+
+;random intro
+[State 181, 1]
+type = VarRandom
+trigger1 = Time = 0
+v = 2
+
+;win1 - aldeÅE
+[State 181, animA]
+type = Changeanim
+triggerall = time = 0
+trigger1 = var(2) < 500
+value = 180
+
+;win2 - apontando
+[State 181, animB]
+type = Changeanim
+triggerall = time = 0
+trigger1 = var(2) >= 500
+value = 181
+
+;------------------Randonizar falas
+;--------I'll work for the fee
+[State 181, 1a]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(2) < 50
+value = 180,12
+channel=0
+
+;---------How' that
+[State 181, 2a]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(2) >= 50 && var(2) < 100
+value = 180,13
+channel=0
+
+;---------I wan't relax in a hot spring
+[State 181, 3a]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(2) >= 100 && var(2) < 150
+value = 180,14
+channel=0
+
+;--------- Are you geeting fat
+[State 181, 4a]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(2) >= 150 && var(2) < 200
+value = 180,15
+channel=0
+
+;---------See what a demon slayer can do
+[State 181, 5a]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(2) >= 200 && var(2) < 250
+value = 180,16
+channel=0
+
+;--------Yaay
+[State 181, 6a]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(2) >= 250 && var(2) < 300
+value = 180,17
+channel=0
+
+;--------You need better strategys
+[State 181, 7a]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(2) >= 300 && var(2) < 350
+value = 180,18
+channel=0
+
+;--------You're no match for me
+[State 181, 8a]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(2) >= 350 && var(2) < 400
+value = 180,19
+channel=0
+
+;--------You're notting
+[State 181, 9a]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(2) >= 400 && var(2) < 450
+value = 180,20
+channel=0
+
+;--------I'm a Demon Slayer!
+[State 181, 10a]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(2) >= 450 && var(2) < 500
+value = 3,3
+channel=0
+
+;--------We don't have times for this
+[State 181, 11a]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(2) >= 500 && var(2) < 550
+value = 4,8
+channel=0
+
+;--------Slaying demons is my profession
+[State 181, 12a]
+type = playsnd
+triggerall = var(1) !=1
+trigger1 = time = 0
+trigger1 = var(2) >= 500 && var(2) < 800
+value = 180,9
+channel=0
+
+;--------I don't want kill you
+[State 181, 13a]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(2) >= 800
+value = 180,4
+channel=0
+
+[State 181, IntroAssert]
+type = AssertSpecial
+trigger1 = Time = [0,150]
+flag = Intro
+
+;-----------------------------IntroduÁıes 
+[Statedef 190]
+type = S
+ctrl = 0
+velset = 0,0
+
+;Dinos do Lord
+[State 190,reservado1]
+type = varset
+trigger1 = p2name = "Talon by Lord Sinistro" 
+trigger2 = p2name = "Vertigo by Lord Sinistro"
+v = 1
+value = 1
+
+; Blob
+[State 190,reservado2]
+type = varset
+trigger1 = p2name = "The Blob"
+v = 1
+value = 2
+
+; Inuyasha
+[State 190,reservado3]
+type = varset
+trigger1 = p2name = "Inuyasha"
+v = 1
+value = 3
+
+; Kagome
+[State 190,reservado4]
+type = varset
+trigger1 = p2name = "Kagome"
+v = 1
+value = 4
+
+; Shippo
+[State 190,reservado5]
+type = varset
+trigger1 = p2name = "Shippo"
+v = 1
+value = 5
+
+; Miroku
+[State 190,reservado6]
+type = varset
+trigger1 = p2name = "Miroku" 
+v = 1
+value = 6
+
+; Koga
+[State 190,reservado7]
+type = varset
+trigger1 = p2name = "Koga" 
+v = 1
+value = 7
+
+; Kikyo
+[State 190,reservado8]
+type = varset
+trigger1 = p2name = "Kikyo"
+v = 1
+value = 8
+
+; totosai
+[State 190,reservado9]
+type = varset
+trigger1 = p2name = "Totosai" 
+v = 1
+value = 9
+
+; Naraku
+[State 190,reservado10]
+type = varset
+trigger1 = p2name = "Naraku"
+v = 1
+value = 10
+
+; Kagura
+[State 190,reservado11]
+type = varset
+trigger1 = p2name = "Kagura"
+v = 1
+value = 11
+
+;Sesshomaru
+[State 190,reservado12]
+type = varset
+trigger1 = p2name = "Sesshomaru"
+v = 1
+value = 12
+
+;Sango
+[State 190,reservado13]
+type = varset
+trigger1 = p2name= "Sango"
+trigger1 = facing = 1
+v = 1
+value = 13
+
+;random intro
+[State 190, 1]
+type = VarRandom
+triggerall = var(1) != 1
+trigger1 = Time = 0
+v = 2
+
+;-------Escolha da animaÁ„o requerida
+;trocando a roupa de aldeÅE
+[State 190, anim]
+type = Changeanim
+trigger1 = time = 0
+trigger1 = var(1) = [3,9]
+trigger2 = time = 0 && var(2) < 500
+value = 190
+
+;envocada
+[State 190, anim2]
+type = Changeanim
+triggerall = time = 0
+trigger1 = var(1) = [1,2]
+trigger2= var(1) = [10,13]
+trigger3 = var(2) >= 500
+value = 191
+
+;-------Falas requeridas
+;Inuyasha e Koga
+; I won't lose 
+[State 190, Inuko]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 3|| var(1) = 7
+value = 190,1
+
+;Miroku, Shippo, kagome ou Totosai
+; Let's start! 
+[State 190, Amigos]
+type = playsnd
+triggerall = time = 0
+trigger1 = var(1) = [4,6]
+trigger2= var(1) = 9
+value = 190,2
+
+; Kikyo
+; You're not getting off easy
+[State 190, Kikyo]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 8
+value = 190,3
+
+; Naraku, Kagura ou Sango(ilus„o)
+; There's no where to run
+[State 190, Mal]
+type = playsnd
+triggerall = time = 0
+trigger1 = var(1) = [10,11]
+trigger2= var(1) = 13
+value = 190,4
+
+; Sesshomaru
+; Let's finish this
+[State 190, Mal]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 12
+value = 190,5
+
+; Blob
+; Let's go!
+[State 190, Blob]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 2
+value = 190,13
+
+; Vertigo & Talon (dino ou demonio?)
+; I'll exterminate you!!!
+[State 190, Dinos]
+type = playsnd
+trigger1 = time = 0
+trigger1 = var(1) = 1
+value = 190,10
+
+;------------------Randonizar falas
+;--------I won't lose
+[State 190, 1a]
+type = playsnd
+triggerall = var(1) <=0
+trigger1 = time = 0
+trigger1 = var(2) < 50
+value = 190,1
+
+;---------Let's start
+[State 190, 2a]
+type = playsnd
+triggerall = var(1) <=0
+trigger1 = time = 0
+trigger1 = var(2) >= 50 && var(2) < 100
+value = 190,2
+
+;---------You're not getting off easy
+[State 190, 3a]
+type = playsnd
+triggerall = var(1) <=0
+trigger1 = time = 0
+trigger1 = var(2) >= 100 && var(2) < 150
+value = 190,3
+
+;---------There's no where to run
+[State 190, 4a]
+type = playsnd
+triggerall = var(1) <=0
+trigger1 = time = 0
+trigger1 = var(2) >= 150 && var(2) < 200
+value = 190,4
+
+;---------Let's finish this
+[State 190, 5a]
+type = playsnd
+triggerall = var(1) <=0
+trigger1 = time = 0
+trigger1 = var(2) >= 200 && var(2) < 250
+value = 190,5
+
+;--------Come on
+[State 190, 6a]
+type = playsnd
+triggerall = var(1) <=0
+trigger1 = time = 0
+trigger1 = var(2) >= 250 && var(2) < 300
+value = 190,6
+
+;--------Hum
+[State 190, 7a]
+type = playsnd
+triggerall = var(1) <=0
+trigger1 = time = 0
+trigger1 = var(2) >= 300 && var(2) < 350
+value = 190,7
+
+;--------I won't forgive you
+[State 190, 8a]
+type = playsnd
+triggerall = var(1) <=0
+trigger1 = time = 0
+trigger1 = var(2) >= 350 && var(2) < 400
+value = 190,8
+
+;--------I won't left you get away
+[State 190, 9a]
+type = playsnd
+triggerall = var(1) <=0
+trigger1 = time = 0
+trigger1 = var(2) >= 400 && var(2) < 450
+value = 190,9
+
+;--------I'll exterminate you!
+[State 190, 10a]
+type = playsnd
+triggerall = var(1) <=0
+trigger1 = time = 0
+trigger1 = var(2) >= 450 && var(2) < 700
+value = 190,10
+
+;--------I'll your opponet now!
+[State 190, 11a]
+type = playsnd
+triggerall = var(1) <=0
+trigger1 = time = 0
+trigger1 = var(2) >= 700 && var(2) < 750
+value = 190,11
+
+;--------I'll fiht you
+[State 190, 12a]
+type = playsnd
+triggerall = var(1) <=0
+trigger1 = time = 0
+trigger1 = var(2) >= 750 && var(2) < 800
+value = 190,12
+
+;--------Let's go
+[State 190, 13a]
+type = playsnd
+triggerall = var(1) <=0
+trigger1 = time = 0
+trigger1 = var(2) >= 800 && var(2) < 850
+value = 190,13
+
+;--------You're finished
+[State 190, 14a]
+type = playsnd
+triggerall = var(1) <=0
+trigger1 = time = 0
+trigger1 = var(2) >= 850 
+value = 190,14
+
+[State 190, fim]
+type = Changeanim
+trigger1 = animtime = 0
+value = 0
+
+[State 190, IntroAssert]
+type = AssertSpecial
+trigger1 = Time = [0,105]
+flag = Intro
+
+;---------------------------------------ProvocaÁ„o
+[Statedef 195]
+type = S
+movetype = I
+ctrl = 0
+anim = 195
+velset = 0,0
+sprpriority =2
+poweradd = 35
+
+[State 195, A]
+type = VarRandom
+trigger1 = Time = 0
+v = 2
+
+;I'll exterminate you!
+[State 195,1]
+type = playsnd
+trigger1 = var(2) < 250
+trigger1 = animelem = 9
+value = 190,10
+
+;come on!
+[State 195,2]
+type = playsnd
+trigger1 = var(2) >= 250 && var(2) < 500
+trigger1 = animelem = 9
+value = 190,6
+
+;Doun't touch me
+[State 195,3]
+type = playsnd
+trigger1 = var(2) >= 500 && var(2) < 750
+trigger1 = animelem = 9
+value = 4,3
+
+;Where you asleep?
+[State 195,6]
+type = playsnd
+trigger1 = var(2) >= 750 
+trigger1 = animelem = 9
+value = 4,10
+
+[State 195, 1]
+type = CtrlSet
+triggerall = RoundState = 2 && var(59) = 1
+trigger1 = animelem = 11, > 0
+trigger1 = p2movetype = A
+value = 1
+
+[State 195, 1]
+type = CtrlSet
+triggerall = RoundState = 2 && var(59) = 0
+trigger1 = animelem = 11, > 0
+value = 1
+
+;fim
+[State 195, fim]
+type = changestate
+trigger1 = animtime = 0
+value = 0
+ctrl = 1
+
+;--------------------------------------Soco
+[Statedef 200]
+type    = S                      
+movetype= A                      
+physics = S                      
+juggle  = 1                      
+velset = 0,0                     
+ctrl = 0                        
+anim = 200                       
+poweradd = 5                
+sprpriority = 2                 
+
+[State 200, 1]
+type = HitDef
+trigger1 = time = 0
+attr = S, NA                     
+damage = 10, 0                   
+animtype = medium                 
+guardflag = MA                   
+hitflag = MAF                    
+priority = 3, Hit                
+pausetime = 9, 9                 
+sparkno = S1015    
+guard.sparkno = S1018                 
+sparkxy = -5, -78               
+hitsound = S1,5                
+guardsound = S1,6                
+ground.type = High               
+ground.slidetime = 6             
+ground.hittime  = 14             
+ground.velocity = -4             
+airguard.velocity = -2,-1     
+air.type = High                  
+air.velocity = -2,-2           
+air.hittime = 14             
+
+[State 200, grito]
+type = PlaySnd
+trigger1 = animelem = 1
+value = 0,4
+
+[State 200, barulho]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 1,1
+channel = 2
+
+;agilizar :D
+[State 200, ctrl]
+type = CtrlSet
+trigger1 = animelem = 6, > 0
+value = 1
+
+[State 200,risco]
+type = Helper
+trigger1 = animelem = 4
+helpertype = Normal
+name = "risco"
+postype = P1
+pos = 15,-60
+stateno = 1000
+ownpal = 1
+
+[State 200,risco2]
+type = Helper
+trigger1 = animelem = 5
+helpertype = Normal
+name = "risco2"
+postype = P1
+pos = 40,-68
+stateno = 1001
+ownpal = 1
+
+[State 200,risco3]
+type = Helper
+trigger1 = animelem = 6
+helpertype = Normal
+name = "risco3"
+postype = P1
+pos = 42,-72
+stateno = 1002
+ownpal = 1
+
+[State 200,risco4]
+type = Helper
+trigger1 = animelem = 7
+helpertype = Normal
+name = "risco4"
+postype = P1
+pos = 40,-79
+stateno = 1003
+ownpal = 1
+
+[State 200,risco5]
+type = Helper
+trigger1 = animelem = 8
+helpertype = Normal
+name = "risco5"
+postype = P1
+pos = 32,-80
+stateno = 1004
+ownpal = 1
+
+[State 200, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+
+;------------------------------Arma (de PÅE
+[Statedef 201]
+type    = S
+movetype= A
+physics = S
+juggle  = 4
+poweradd= 10
+ctrl = 0
+velset = 0,0
+anim = 201
+sprpriority = 2
+
+[State 201, grito]
+type = PlaySnd
+trigger1 = Time = 0
+value = 0, 5
+
+[State 201, barulho]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 1,2
+channel = 2
+
+[State 201, hit]
+type = HitDef
+trigger1 = time = 0
+attr = S, NA
+animtype  = medium
+damage    = 20
+guardflag = MA
+pausetime = 10,12
+sparkno = S1016
+guard.sparkno = S1018
+sparkxy = -10,-65
+hitsound   = S1,5
+guardsound = S1,7
+ground.type = Low
+ground.slidetime = 12
+ground.hittime  = 14
+ground.velocity = -5
+air.velocity = -3,-4
+
+[State 201, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;------------------------------Arma (de PÅEhit2)
+[Statedef 202]
+type    = S
+movetype= A
+physics = S
+juggle  = 4
+poweradd= 15
+ctrl = 0
+velset = 0,0
+anim = 201
+sprpriority = 2
+
+
+[State 201, grito]
+type = PlaySnd
+trigger1 = Time = 0
+value = 0, 5
+
+[State 201, barulho]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 1,2
+channel = 2
+
+[State 202, hit]
+type = HitDef
+trigger1 = time = 0
+attr = S, NA
+animtype  = medium
+damage    = 25
+guardflag = MA
+pausetime = 8,10
+sparkno = S1016
+guard.sparkno = S1018
+sparkxy = -10,-65
+hitsound   = S1,5
+guardsound = S1,7
+ground.type = Low
+ground.slidetime = 10
+ground.hittime  = 12
+ground.velocity = -3
+air.velocity = -2.5,-3
+
+[State 202, velset]
+type = velset
+trigger1 = Time = 1
+x = 4
+
+[State 202, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;-----------------------Finalizador de combo com arma (3∫hit)
+[Statedef 203]
+type    = S
+movetype= A
+physics = S
+juggle  = 4
+poweradd= 30
+ctrl = 0
+velset = 0,0
+anim = 203
+sprpriority = 2
+
+[State 203, grito]
+type = PlaySnd
+trigger1 = Time = 0
+value = 0, 3
+
+[State 203, barulho]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 1,2
+channel = 2
+
+[State 203, hit]
+type = HitDef
+trigger1 = time = 0
+attr = S, NA
+animtype  = Hard
+damage    = 35
+guardflag = MA
+pausetime = 10,20
+sparkno = S1016
+guard.sparkno = S1018
+sparkxy = -10,-65
+hitsound   = S1,5
+guardsound = S1,7
+ground.type = High
+ground.slidetime = 14
+ground.hittime  = 20
+ground.velocity = -5.5
+air.velocity = -3,-4.5
+
+[State 203, velset]
+type = velset
+trigger1 = Time = 1
+x = 4
+
+[State 203, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;------------------------------Soco (2∫ golpe do combo com soco)
+[Statedef 204]
+type    = S                      
+movetype= A                      
+physics = S                      
+juggle  = 1                      
+velset = 0,0                     
+ctrl = 0                        
+anim = 200                       
+poweradd = 15                 
+sprpriority = 2                 
+
+[State 204, 1]
+type = HitDef
+trigger1 = time = 0
+attr = S, NA                     
+damage = 15, 0                   
+animtype = medium                 
+guardflag = MA                   
+hitflag = MAF                    
+priority = 3, Hit                
+pausetime = 9, 9                 
+sparkno = S1015      
+guard.sparkno = S1018               
+sparkxy = -5, -78               
+hitsound = S1,5                
+guardsound = S1,6                
+ground.type = High               
+ground.slidetime = 6             
+ground.hittime  = 14             
+ground.velocity = -4             
+airguard.velocity = -2,-1     
+air.type = High                  
+air.velocity = -2,-2           
+air.hittime = 14             
+
+[State 204, grito]
+type = PlaySnd
+trigger1 = animelem = 1
+value = 0,4
+
+[State 204, barulho]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 1,1
+channel = 2
+
+;agilizar :D
+[State 204, ctrl]
+type = CtrlSet
+trigger1 = animelem = 6, > 0
+value = 1
+
+[State 204,risco]
+type = Helper
+trigger1 = animelem = 4
+helpertype = Normal
+name = "risco"
+postype = P1
+pos = 15,-60
+stateno = 1000
+ownpal = 1
+
+[State 204,risco2]
+type = Helper
+trigger1 = animelem = 5
+helpertype = Normal
+name = "risco2"
+postype = P1
+pos = 40,-68
+stateno = 1001
+ownpal = 1
+
+[State 204,risco3]
+type = Helper
+trigger1 = animelem = 6
+helpertype = Normal
+name = "risco3"
+postype = P1
+pos = 42,-72
+stateno = 1002
+ownpal = 1
+
+[State 204,risco4]
+type = Helper
+trigger1 = animelem = 7
+helpertype = Normal
+name = "risco4"
+postype = P1
+pos = 40,-79
+stateno = 1003
+ownpal = 1
+
+[State 204,risco5]
+type = Helper
+trigger1 = animelem = 8
+helpertype = Normal
+name = "risco5"
+postype = P1
+pos = 32,-80
+stateno = 1004
+ownpal = 1
+
+[State 204, velset]
+type = velset
+trigger1 = Time = 1
+x = 5
+
+[State 204, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+
+;-----------------------Finalizador de combo com soco (3∫hit)
+[Statedef 205]
+type    = S
+movetype= A
+physics = S
+juggle  = 4
+poweradd= 25
+ctrl = 0
+velset = 0,0
+anim = 205
+sprpriority = 2
+
+[State 205, grito]
+type = PlaySnd
+trigger1 = Time = 0
+value = 0, 6
+
+[State 205, barulho]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 1,1
+channel = 2
+
+[State 205, hit]
+type = HitDef
+trigger1 = time = 0
+attr = S, NA
+animtype  = Hard
+damage    = 30,2
+guardflag = MA
+pausetime = 10,20
+sparkno = S1016
+guard.sparkno = S1018
+sparkxy = -10,-65
+hitsound   = S1,5
+guardsound = S1,7
+ground.type = High
+ground.slidetime = 14
+ground.hittime  = 20
+ground.velocity = -5.5
+air.velocity = -3,-4.5
+
+[State 205, velset]
+type = velset
+trigger1 = Time = 1
+x = 4
+
+[State 205, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;------------------------------Ataque Dash (frente com bumerangue)
+[Statedef 210]
+type    = A
+movetype= A
+physics = N
+juggle  = 4
+poweradd= 45
+ctrl = 0
+;velset = 0,0
+anim = 210
+sprpriority = 2
+
+[State 210, grito]
+type = PlaySnd
+trigger1 = Time = 0
+value = 0, 5
+
+[State 210, barulho]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 1,2
+channel = 2
+
+[State 210,derrapar]
+type = VelSet
+trigger1 = time >=0
+x = 4
+
+[State 210,gravidd]
+type = Veladd
+trigger1 = Pos Y <= -15
+y = 0.5
+
+[State 210,ndesce]
+type = Velset
+trigger1 = Vel Y > 0 && Pos Y >= 0
+y = 0
+
+[State 210, hit]
+type = HitDef
+trigger1 = time = 0
+attr = S, NA
+animtype  = Hard
+damage    = 40
+guardflag = MA
+pausetime = 4,12
+sparkno = S1016
+guard.sparkno = S1018
+sparkxy = -5,-65
+hitsound   = S1,5
+guardsound = S1,7
+ground.type = High
+ground.slidetime = 12
+ground.hittime  = 14
+ground.velocity = -6
+air.velocity = -2.5,-4.2
+
+[State 210, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 101
+
+;--------------------------------Ataque Dash com espada (para tr·s)
+[Statedef 211]
+type    = A
+movetype= A
+physics = N
+juggle  = 4
+poweradd= 40
+ctrl = 0
+;velset = 0,0
+anim = 211
+sprpriority = 2
+
+[State 211, grito]
+type = PlaySnd
+trigger1 = Time = 0
+value = 0, 5
+
+[State 211, barulho]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 1,2
+channel = 2
+
+[State 211,derrapar]
+type = VelSet
+trigger1 = time >=0
+x = -4 ;3
+
+[State 211,gravidd]
+type = Veladd
+trigger1 = Pos Y <= -15
+y = 0.5
+
+[State 211,ndesce]
+type = Velset
+trigger1 = Vel Y > 0 && Pos Y >= 0
+y = 0
+
+[State 211, hit]
+type = HitDef
+trigger1 = time = 0
+attr = S, NA
+animtype  = Hard
+damage    = 35
+guardflag = MA
+pausetime = 12,12
+sparkno = S1016
+guard.sparkno = S1018
+sparkxy = -5,-70
+hitsound   = S1,5
+guardsound = S1,7
+ground.type = Low
+ground.slidetime = 12
+ground.hittime  = 14
+ground.velocity = -6
+air.velocity = -2.5,-4.2
+
+[State 211, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 106
+
+;--------------------Soco Abaixada
+[Statedef 300]
+type    = C
+movetype= A
+physics = C
+juggle  = 1
+poweradd= 10
+ctrl = 0
+anim = 300
+sprpriority = 2
+
+[State 300, grito]
+type = PlaySnd
+trigger1 = animelem = 1
+value = 0,4
+
+[State 300, baruho]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 1,1
+channel = 2
+
+[State 300, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = C, NA
+damage    = 20
+priority  = 3
+animtype  = medium
+hitflag = MAF
+guardflag = ML
+pausetime = 9,9
+sparkno = S1015
+guard.sparkno = S1018
+sparkxy = -5,-42
+hitsound = S1,5                
+guardsound = S1,6    
+ground.type = Low
+ground.slidetime = 8
+ground.hittime  = 14
+ground.velocity = -4
+air.velocity = -2,-3.3
+
+[State 300,risco2]
+type = Helper
+trigger1 = animelem = 4
+helpertype = Normal
+name = "risco2"
+postype = P1
+pos = 37,-39
+stateno = 1001
+ownpal = 1
+
+[State 300,risco3]
+type = Helper
+trigger1 = animelem = 5
+helpertype = Normal
+name = "risco3"
+postype = P1
+pos = 41,-45
+stateno = 1002
+ownpal = 1
+
+[State 300,risco4]
+type = Helper
+trigger1 = animelem = 6
+helpertype = Normal
+name = "risco4"
+postype = P1
+pos = 38,-50
+stateno = 1003
+ownpal = 1
+
+[State 300,risco5]
+type = Helper
+trigger1 = animelem = 7
+helpertype = Normal
+name = "risco4"
+postype = P1
+pos = 30,-50
+stateno = 1004
+ownpal = 1
+
+[State 300, 3]
+type = CtrlSet
+trigger1 = animelem = 6, >0
+value = 1
+
+[State 300, 4]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 11
+
+;---------------------------------Arma (abaixada)
+[Statedef 301]
+type    = C
+movetype= A
+physics = C
+juggle  = 5
+poweradd= 25
+ctrl = 0
+anim = 301
+sprpriority = 2
+
+[State 301, grito]
+type = PlaySnd
+trigger1 = Time = 0
+value = 0,5
+
+[State 301, barulho]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 1,2
+channel = 2
+
+[State 301, hit]
+type = HitDef
+trigger1 = Time = 0
+attr = C, NA
+damage    = 30
+animtype  = medium
+hitflag = MAF
+guardflag = ML
+pausetime = 10,12
+sparkno = S1016
+guard.sparkno = S1018
+sparkxy = -10,-33
+hitsound   = s1,5
+guardsound = S1,7
+ground.type = Low
+ground.slidetime = 8
+ground.hittime  = 10
+ground.velocity = -6
+air.velocity = -2.5,-2.5
+down.velocity = -4,0
+down.hittime = 10
+
+[State 301, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 11
+ctrl = 1
+
+;--------------------2 hit do combo abaixada (igual ao primeiro sÅEmuda o damage)
+[Statedef 302]
+type    = C
+movetype= A
+physics = C
+juggle  = 5
+poweradd= 10
+ctrl = 0
+anim = 300
+sprpriority = 2
+
+[State 302, grito]
+type = PlaySnd
+trigger1 = animelem = 1
+value = 0,4
+
+[State 302, baruho]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 1,1
+channel = 2
+
+[State 302, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = C, NA
+damage    = 12
+priority  = 3
+animtype  = Light
+hitflag = MAF
+guardflag = ML
+pausetime = 6,9
+sparkno = S1015
+guard.sparkno = S1018
+sparkxy = -5,-42
+hitsound = S1,5                
+guardsound = S1,6    
+ground.type = Low
+ground.slidetime = 12
+ground.hittime  = 14
+ground.velocity = -4
+air.velocity = -2,-3.3
+
+[State 302,risco2]
+type = Helper
+trigger1 = animelem = 4
+helpertype = Normal
+name = "risco2"
+postype = P1
+pos = 37,-39
+stateno = 1001
+ownpal = 1
+
+[State 302,risco3]
+type = Helper
+trigger1 = animelem = 5
+helpertype = Normal
+name = "risco3"
+postype = P1
+pos = 41,-45
+stateno = 1002
+ownpal = 1
+
+[State 302,risco4]
+type = Helper
+trigger1 = animelem = 6
+helpertype = Normal
+name = "risco4"
+postype = P1
+pos = 38,-50
+stateno = 1003
+ownpal = 1
+
+[State 302,risco5]
+type = Helper
+trigger1 = animelem = 7
+helpertype = Normal
+name = "risco4"
+postype = P1
+pos = 30,-50
+stateno = 1004
+ownpal = 1
+
+[State 302, 3]
+type = CtrlSet
+trigger1 = animelem = 6, >0
+value = 1
+
+[State 302, velset]
+type = velset
+trigger1 = Time = 1
+x = 3
+
+[State 302, 4]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 11
+
+;---------------------------------Terceiro soco (combo abaixada com soco)
+[Statedef 303]
+type    = C
+movetype= A
+physics = C
+juggle  = 5
+poweradd= 30
+ctrl = 0
+anim = 303
+sprpriority = 2
+
+[State 303, grito]
+type = PlaySnd
+trigger1 = Time = 0
+value = 0,6
+
+[State 303, barulho]
+type = PlaySnd
+trigger1 = animelem = 5
+value = 1,1
+channel = 2
+
+[State 303, hit]
+type = HitDef
+trigger1 = Time = 0
+attr = C, NA
+damage    = 35
+animtype  = medium
+hitflag = MAF
+guardflag = L ; deixar assim para o ultimo hit pegar de surpresa
+pausetime = 4,15
+sparkno = S1016
+guard.sparkno = S1018
+sparkxy = -10,-33
+hitsound   = s1,5
+guardsound = S1,6
+ground.type = Low
+ground.slidetime = 15
+ground.hittime  = 20
+ground.velocity = -6
+air.velocity = -2.5,-2.5
+down.velocity = -4,0
+down.hittime = 10
+
+[State 303, velset]
+type = velset
+trigger1 = Time = 1
+x = 2
+
+[State 303, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 11
+ctrl = 1
+
+;---------------------------------"Bumerangada" (combo3 abaixada com arma)
+[Statedef 304]
+type    = C
+movetype= A
+physics = C
+juggle  = 5
+poweradd= 35
+ctrl = 0
+anim = 304
+sprpriority = 2
+
+[State 304, grito]
+type = PlaySnd
+trigger1 = Time = 0
+value = 0,3
+
+[State 304, barulho]
+type = PlaySnd
+trigger1 = animelem = 6
+value = 1,2
+channel = 2
+
+[State 304, hit]
+type = HitDef
+trigger1 = Time = 0
+attr = C, NA
+damage    = 45
+animtype  = hard
+hitflag = MAF
+guardflag = L ; pegar de supresa
+pausetime = 4,20
+sparkno = S1016
+guard.sparkno = S1018
+sparkxy = -10,-33
+hitsound   = s1,5
+guardsound = S1,7
+ground.type = Low
+ground.slidetime = 15
+ground.hittime  = 20
+ground.velocity = -6
+air.velocity = -2.5,-2.5
+down.velocity = -4,0
+down.hittime = 12 
+
+[State 304, velset]
+type = velset
+trigger1 = Time = 1
+x = 2
+
+[State 304, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 11
+ctrl = 1
+
+;---------------------------------Arma (abaixada)- Hit 2
+[Statedef 305]
+type    = C
+movetype= A
+physics = C
+juggle  = 5
+poweradd= 25
+ctrl = 0
+anim = 301
+sprpriority = 2
+
+[State 305, grito]
+type = PlaySnd
+trigger1 = Time = 0
+value = 0,5
+
+[State 305, barulho]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 1,2
+channel = 2
+
+[State 305, hit]
+type = HitDef
+trigger1 = Time = 0
+attr = C, NA
+damage    = 30
+animtype  = medium
+hitflag = MAF
+guardflag = ML
+pausetime = 9,12
+sparkno = S1016
+guard.sparkno = S1018
+sparkxy = -10,-33
+hitsound   = s1,5
+guardsound = S1,7
+ground.type = Low
+ground.slidetime = 12
+ground.hittime  = 14
+ground.velocity = -3
+air.velocity = -1.5,-1.5
+down.velocity = -2,0
+down.hittime = 10
+
+[State 305, velset]
+type = velset
+trigger1 = Time = 1
+x = 2
+
+[State 305, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 11
+ctrl = 1
+
+;--------------LanÁar projetil com fumaÁa
+[Statedef 500]
+type = S
+movetype = I
+physics = S
+anim = 500
+poweradd =50
+ctrl = 0
+velset = 0, 0
+
+; personagem estÅEno ar (muda parametro)
+[State 500,p2noar]
+type = StateTypeSet
+trigger1 = AnimElem = 6, >0
+statetype = A
+physics = N
+
+[State 500,gravidade]
+type = VelAdd
+trigger1 = AnimElem = 7, > 0
+y = .39
+
+[State 500,constante]
+type = VelSet
+trigger1 = AnimElem = 6
+x = Const(velocity.run.back.x)
+y = Const(velocity.run.back.y)
+
+[State 500,especi]
+type = PlaySnd
+trigger1 = AnimElem = 6
+value = 0,10
+
+[State 500,Proj]
+type = Helper
+trigger1 = animelem = 6
+helpertype = Normal
+name = "projetil"
+postype = P1
+pos = 0,-83
+stateno = 503
+ownpal = 1
+
+[State 500,aterrizar]
+type = ChangeState
+trigger1 = AnimElem = 7,>=0
+trigger1 = Vel Y > 0 && Pos Y >= 0
+value = 106
+
+;--------------Jogando o bumerangue
+[Statedef 510]
+type = S
+movetype = I
+physics = N
+anim = 510
+poweradd = 70
+ctrl = 0
+velset = 0, 0
+
+[State 510,vai]
+type = PlaySnd
+trigger1 = AnimElem = 6
+value = 0,11
+
+[State 510,Bumerangue]
+type = Helper
+trigger1 = animelem = 6
+helpertype = Normal
+name = "ossovoador"
+postype = P1
+pos = 0,-60
+stateno = 512
+ID = 512
+ownpal = 1
+
+[State 510,aterrizar]
+type = ChangeState
+triggerall = time >= 50; para evitar problemas
+trigger1 = Helper(512),RootDist X =  [-15, 15]
+trigger1 = Helper(512),RootDist Y = [-30, 60]
+value = 511
+
+;--------------Recuperando o bumerangue
+[Statedef 511]
+type = S
+movetype = I
+physics = S
+anim = 511
+poweradd = 70
+ctrl = 0
+velset = 0, 0
+
+[State 511,peguei];mudei o som 
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 0,8
+
+[State 511,aterrizar]
+type = ChangeState
+trigger1 = animtime =0
+value = 0
+ctrl = 1
+
+;---------------------------------Soco no Ar
+[Statedef 600]
+type    = A
+movetype= A
+physics = A
+juggle  = 1
+poweradd= 15
+ctrl = 0
+anim = 600
+sprpriority = 2
+
+[State 600, grito]
+type = PlaySnd
+trigger1 = animelem = 1
+value = 0,4
+
+[State 600, barulho]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 1,1
+channel = 2
+
+[State 600, 2]
+type = HitDef
+trigger1 = Time = 0
+attr = A, NA
+damage    = 25
+guardflag = HA
+priority = 3
+pausetime = 9,10
+sparkno = S1015
+guard.sparkno = S1018
+sparkxy = -10,-58
+hitsound = S1,5                
+guardsound = S1,6  
+ground.type = High
+ground.slidetime = 7
+ground.hittime  = 7
+ground.velocity = -4.5
+air.velocity = -2,-3.2
+
+;-------------- 
+;[State 600, 3];nulo, melhor fazer sÅEuma vez no ar
+;type = CtrlSet
+;trigger1 = animelem = 6, > 0
+;value = 1
+
+;-------------------------------Arma no Ar
+[Statedef 601]
+type    = A
+movetype= A
+physics = A
+juggle  = 4
+poweradd= 30
+ctrl = 0
+anim = 601
+sprpriority = 2
+
+[State 601, grito]
+type = PlaySnd
+trigger1 = Time = 0
+value = 0, 5
+
+[State 601, barulho]
+type = PlaySnd
+trigger1 = Time = 0
+value = 1,2
+channel = 2
+
+[State 601, hit]
+type = HitDef
+trigger1 = Time = 0
+attr = A, NA
+damage    = 55
+guardflag = HA
+priority = 4
+pausetime = 12,12
+sparkno = S1016
+guard.sparkno = S1018
+sparkxy = -10,-40
+hitsound   = S1,5
+guardsound = S1,7
+animtype = Hard
+ground.type = High
+ground.slidetime = 16
+ground.hittime  = 15
+ground.velocity = -6
+air.velocity = -3.5,-4.5
+
+;-----------------------------Primeiro Arremesso (Contra amigos no psx)
+[Statedef 800]
+type    = S
+movetype= A
+physics = S
+juggle  = 5
+velset = 0,0
+poweradd = 20
+anim = 800
+ctrl = 0
+
+[State 800, hit] 
+type = HitDef
+trigger1 = AnimElem = 1
+attr = S, NT
+hitflag = M
+animtype  = low
+damage    = 0
+guardflag =
+pausetime = 0,0
+sparkxy = 0, 260
+hitsound   = S1,6
+ground.type = low
+p1stateno = 801
+p2stateno = 802
+
+[State 800, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;-----------------------p1 em aÁ„o
+[Statedef 801]
+type    = S
+movetype= A
+physics = S
+juggle  = 5
+poweradd= 50
+velset = 0,0
+anim = 801
+ctrl = 0
+
+[State 801,som]
+type = playsnd
+trigger1 = animelem = 4
+value = 0,7
+
+[State 801, arrasta]
+type = TargetBind
+
+trigger1 = animelem = 1
+time = 20
+pos = 40,0
+
+[State 801, arrasta2]
+type = TargetBind
+trigger1 = animelem = 2
+time = 20
+pos = 35,0
+
+[State 801, arrasta3]
+type = TargetBind
+trigger1 = animelem = 3
+time = 20
+pos = 27,0
+
+[State 801, nohit]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 801, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;------------------- P2 sendo jogado
+[Statedef 802]
+type    = A
+movetype= H 
+physics = N
+ctrl = 0
+velset = 0,0
+
+[State 802,spr]
+type = sprpriority
+trigger1 = time >=0
+value = -2
+
+[State 802, anim2]
+type = ChangeAnim2
+Trigger1 = Time = 0
+value = 802
+
+[State 802, life]
+type = lifeadd
+trigger1  = animelem = 4
+value = -60
+
+[State 802, vel]
+type = velset
+trigger1  = animelem = 4
+x = -4
+y = -4.5
+
+[State 802, gravdd]
+type = veladd
+trigger1  = animelem =5,>0
+y = .8
+
+[State 802, cair]
+type = SelfState
+trigger1 = Vel Y > 0
+trigger1 = Pos Y >= 0
+value = 5110
+
+
+;-----------------------------Segundo Arremesso (Contra inimigos no psx)
+[Statedef 810]
+type    = S
+movetype= A
+physics = S
+juggle  = 5
+velset = 0,0
+poweradd = 20
+anim = 810
+ctrl = 0
+
+[State 810, hit] 
+type = HitDef
+trigger1 = AnimElem = 1
+attr = S, NT
+hitflag = M
+animtype  = low
+damage    = 0
+guardflag =
+pausetime = 0,0
+sparkxy = 0, 260
+hitsound   = S1,6
+ground.type = low
+p1stateno = 811
+p2stateno = 812
+p2facing = 1
+
+[State 810, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;-----------------------p1 em aÁ„o
+[Statedef 811]
+type    = S
+movetype= A
+physics = S
+juggle  = 5
+poweradd= 50
+velset = 0,0
+anim = 811
+ctrl = 0
+
+[State 811,som]
+type = playsnd
+trigger1 = animelem = 3
+value = 0,16
+
+[State 811, vel]
+type = velset
+trigger1 = time = 6
+y = -6
+
+[State 811,velp]
+type = veladd
+trigger1 = Pos Y <= -20
+y = .8
+x = -.1
+
+[State 811, velx]
+type = velset
+trigger1 = time = 15
+x = -7
+y = -6
+
+[State 811,pos]
+type = velset
+trigger1 = time >= 25
+trigger1 = Vel Y > 0 && Pos Y >= 0
+y = 0
+
+[State 811, pega]
+type = TargetBind
+trigger1 = time =1
+time = 15
+pos = 5,0
+
+[State 811, nohit]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 811, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+trigger2 = time >=30 && pos Y >=0
+trigger3 = time >= 2 && p2stateno != 812
+value = 50
+ctrl = 1
+
+;------------------- P2 sendo jogado
+[Statedef 812]
+type    = A
+movetype= H 
+physics = N
+ctrl = 0
+velset = 0,0
+
+[State 812,spr]
+type = sprpriority
+trigger1 = time >=0
+value = -2
+
+[State 812, anim2]
+type = ChangeAnim2
+Trigger1 = Time = 0
+value = 812
+
+[State 812, life]
+type = lifeadd
+trigger1  = time = 18
+value = -60
+
+[State 812, vel]
+type = velset
+trigger1  = time = 16
+x = -6
+y = 3
+
+[State 812, gravdd]
+type = veladd
+trigger1  = time >= 16
+y = .6
+
+[State 812, cair]
+type = SelfState
+trigger1 = Vel Y > 0
+trigger1 = Pos Y >= 0
+value = 5100
+
+[State 812, evitabug]
+type = SelfState
+trigger1 = time >= 3 && p2stateno != 811
+value = 50
+
+;-----------------------------Arremesso AÈrio 
+[Statedef 820]
+type    = A
+movetype= A
+physics = A
+juggle  = 5
+velset = 0,0
+poweradd = 20
+anim = 810
+ctrl = 0
+
+[State 820, hit] 
+type = HitDef
+trigger1 = AnimElem = 1
+attr = A, NT
+hitflag = A
+animtype  = low
+damage    = 0
+guardflag =
+pausetime = 0,0
+sparkxy = 0, 260
+hitsound   = S1,6
+ground.type = low
+p1stateno = 821
+p2stateno = 822
+p2facing = 1
+
+[State 820, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 50
+ctrl = 1
+
+;-----------------------p1 em aÁ„o
+[Statedef 821]
+type    = A
+movetype= A
+physics = N
+juggle  = 1
+poweradd= 50
+velset = 0,0
+anim = 821
+ctrl = 0
+
+[State 821,som]
+type = playsnd
+trigger1 = animelem = 3
+value = 0,16
+
+[State 821, velset]
+type = velset
+trigger1 = time = 1
+x = 0.1
+y = -0.5
+
+[State 821, velset]
+type = velset
+trigger1 = time = 11
+x = 2
+y = 9
+
+[State 821, veladd]
+type = veladd
+trigger1 = time >= 15
+trigger1 = pos Y <= -30
+x = -.1
+y = .9
+
+[State 821, velset]
+type = velset
+trigger1 = pos Y >= 0
+trigger1 = time <= 30
+x = -3
+y = -6
+
+[State 821, pega]
+type = TargetBind
+trigger1 = animelem = 1
+time = 15
+pos = 0,0
+
+[State 821, nohit]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+
+[State 821, fim]
+type = ChangeState
+trigger1 = Vel Y > 0 && Pos Y >= 0
+value = 101
+ctrl = 1
+
+[State 821, fim]
+type = ChangeState
+trigger1 = time >= 2 && p2stateno != 822
+value = 50
+ctrl = 1
+
+;------------------- P2 sendo jogado
+[Statedef 822]
+type    = A
+movetype= H 
+physics = N
+ctrl = 0
+velset = 0,0
+
+[State 822,spr]
+type = sprpriority
+trigger1 = time >=0
+value = -2
+
+[State 822, anim2]
+type = ChangeAnim2
+Trigger1 = Time = 0
+value = 822
+
+[State 822, life]
+type = lifeadd
+trigger1  = time = 16
+value = -80
+
+[State 822, vel]
+type = velset
+trigger1  = animelem = 4
+x = -5
+y = 5
+
+[State 822, treme]
+type = EnvShake
+trigger1 = Pos Y >= 0
+time = 10
+ampl = -3 
+freq = 90
+phase = 90
+
+[State 822, cair]
+type = SelfState
+trigger1 = Vel Y > 0
+trigger1 = Pos Y >= 0
+value = 5100
+
+[State 822, cair]
+type = SelfState
+trigger1 = time >= 2
+trigger1 = p2stateno != 821
+value = 50
+
+;-----------------------Super Arremesso-------------------------
+[Statedef 830]
+type    = S
+movetype= A
+physics = S
+juggle  = 5
+velset = 0,0
+poweradd = 20
+anim = 830
+ctrl = 0
+
+[State 830,som]
+type = playsnd
+trigger1 = animelem = 7
+value = 0,1
+
+[State 830, hit]
+type = HitDef
+trigger1 = AnimElem = 1
+attr = S, ST
+hitflag = MA
+animtype  = low
+damage    = 0
+guardflag =
+pausetime = 0,0
+;snap = 60, floor (p2dist Y)
+sparkxy = 0, 260
+hitsound   = S1,4
+ground.type = low
+p1stateno = 831
+p2stateno = 832
+p2facing = 1
+
+[State 830, spark]
+type = explod
+Trigger1=animelem=8
+anim = 1006
+pos = 85,-90
+postype = p1
+ontop = 1
+supermove = 1
+velset = 0.2, -0.2
+removeongethit = 1
+
+[State 830, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;-----------------------p1 em aÁ„o
+[Statedef 831]
+type    = S
+movetype= A
+physics = S
+juggle  = 5
+poweradd= 50
+velset = 0,0
+anim = 831
+ctrl = 0
+
+[State 831,som]
+type = playsnd
+trigger1 = animelem = 4
+value = 0,7
+
+[State 831, corrigebug]
+type = velset
+trigger1 = p2bodydist X <= 40
+trigger1 = time <= 10 && frontedgedist <= 100
+x = -8
+
+[State 831, fim]
+type = ChangeState
+trigger1 = AnimTime = 0
+trigger2 = p2stateno != 832 && time = [3,40]
+value = 0
+ctrl = 1
+
+;------------------- P2 sendo jogado
+[Statedef 832]
+type    = A
+movetype= H
+physics = N
+ctrl = 0
+velset = 0,0
+
+[State 832, anim2]
+type = ChangeAnim2
+
+Trigger1 = Time = 0
+value = 832
+
+[State 832, life]
+type = lifeadd
+trigger1  = animelem = 4
+value = -60
+
+[State 832, vel]
+type = velset
+trigger1 = pos Y >= -117 && time <=20
+x = -15;-10
+y = -20;-15
+
+[State 832, vel]
+type = velset
+trigger1 = pos Y <= -118 && time <=21
+x = 0
+y = 0
+
+[State 832, vel] ; corrige bug
+type = velset
+trigger1 = p2bodydist X >= 118 && time <=25
+x = 3
+
+[State 832, posadd]
+type = posadd
+trigger1 = time = 29
+x = 47
+y = 3
+
+[State 832, posadd]
+type = posadd
+trigger1 = time = 32
+trigger2 = time = 35
+trigger3 = time = 38
+x = 30
+y = 4
+
+[State 832, posadd]
+type = posadd
+trigger1 = time = 41
+x = 25
+y = 40
+
+[State 832, posadd]
+type = posadd
+trigger1 = time = 44
+x = 35
+y = -45
+
+[State 832, posadd]
+type = posadd
+trigger1 = time = 47
+x = 35
+y = 90
+
+[State 832, velfinal]
+type = velset
+trigger1 = time = 49
+x = 3
+
+[State 832, treme]
+type = EnvShake
+trigger1 = Time = 50
+time = 15
+ampl = -4
+freq = 80
+phase = 80
+
+[State 832, spark]
+type = explod
+Trigger1=time=50
+anim = f62
+pos = 0,0
+postype = p1
+ontop = 1
+supermove = 1
+
+[State 832, cair]
+type = SelfState
+trigger1 = time = 50
+value = 5100
+
+[State 832, evitabug]
+type = SelfState
+trigger1 = time >= 2 && p2stateno != 831
+value = 5050
+
+;----------------------- Defeza EX Stand/Crouch -------------------------
+;Snago EX GUARD
+[Statedef 507]
+type    = U
+movetype = A
+physics = S
+anim = ifelse ((command !="holddown" ||statetype = S), 507,505)
+velset = 0,0,0
+ctrl = 0
+
+[State 507, 0]
+type = NotHitBy
+trigger1 = time >= 0
+value = SCA
+time = 1
+
+[State 507,helperbody]
+type = Helper
+trigger1 = time = 0
+helpertype = Normal
+name = "hitme"
+ID=57
+postype = P1
+pos = 0,0
+stateno = 508
+ownpal = 1
+
+[State 507, 1]
+type = ChangeAnim
+trigger1 = numhelper(57) = 0 && time = [1,32]
+persistent = 0
+value = ifelse (anim =507, 508,506)
+
+[State 507, hit Inu]
+type = HitDef
+trigger1 = AnimElem = 1
+trigger1 = var(1)=[3,13]
+attr = S, NA
+hitflag = MA
+animtype  = low
+damage    = 0
+guardflag =
+pausetime = 0,0
+sparkno = S1017
+sparkxy = 0, -60
+snap = floor(p2dist X) ,0
+hitsound   = S1,6
+ground.type = low
+p2stateno = 505
+
+[State 507, hit normal]
+type = HitDef
+trigger1 = AnimElem = 1
+trigger1 = var(1)!=[3,13]
+attr = S, NA
+hitflag = MA
+animtype  = low
+damage    = 0
+guardflag =
+pausetime = 0,0
+sparkno = S1017
+sparkxy = 0, -60
+snap = floor(p2dist X) ,0
+hitsound   = S1,6
+ground.type = low
+p2stateno = 506
+
+[State 507, 1]
+type = ChangeState
+trigger1 = animtime = 0 && p2stateno != [505,506]
+triggerall = RoundState = 2 && var(59) = 1
+triggerall = p2bodydist X = [-10,70]
+triggerall = p2statetype != A && enemynear,vel X <= 0
+value = 500
+
+[State 507, 1]
+type = ChangeState
+trigger1 = animtime = 0
+value = ifelse (anim >= 507, 0,11)
+ctrl = 1
+
+;------------------- P2 pulando
+[Statedef 506]
+type    = S
+movetype= H
+physics = N
+ctrl = 0
+anim = 5000
+velset = 0,0
+
+[State 506, invisible]
+type = assertspecial
+trigger1 = time <= 93
+trigger1 = Const(size.xscale) = 1 && Const(size.yscale) = 1
+flag=invisible
+
+[State 506, spark]
+type = explod
+Trigger1=time=0||time=19||time=38||time=57||time=76
+trigger1 = Const(size.xscale) = 1 && Const(size.yscale) = 1
+anim = 5000
+pos = 0,0
+postype = p1
+removeongethit = 1
+removetime = 19
+vel = -0.4, -3.4
+accel = -0.0001, .4
+
+[State 506, velup]
+type = velset
+trigger1 = Time = 0
+trigger2 = pos Y >= 0
+x = -0.4
+;Y = -3.5
+
+[State 506, velstop]
+type = velset
+trigger1 = Time >= 95
+trigger1 = Pos Y >= 0
+x = 0
+Y = 0
+
+[State 506, cair]
+type = SelfState
+trigger1 = time >= 96
+;trigger1 = Pos Y >= 0
+value = 50
+
+;---------------- Inuyasha characters
+[Statedef 505]
+type    = S
+movetype= I
+physics = S
+ctrl = 0
+anim = 5000
+velset = 0,0,0
+
+[State 505, required]
+type = ChangeAnim
+trigger1 = SelfAnimExist(4987)
+trigger1 = time = 1
+value = 4987
+
+[State 505, posset]
+type = posset
+trigger1 = Time = 1
+trigger2 = pos Y != 0
+Y = 0
+
+[State 505, velup]
+type = velset
+trigger1 = Time = 0
+trigger2 = pos Y >= 0
+x = -0.4
+;Y = -3.5
+
+[State 505, velstop]
+type = velset
+trigger1 = Time >= 95
+trigger1 = Pos Y >= 0
+x = 0
+Y = 0
+
+[State 505, cair]
+type = SelfState
+trigger1 = time >= 96
+;trigger1 = Pos Y >= 0
+value = 50
+
+
+;---------Helper da defeza especial - em pÅE
+[Statedef 508]
+type    = S
+movetype= I
+physics = N
+poweradd= 0
+ctrl = 0
+anim = Ifelse (root, anim !=507, 505,507)
+spriority = -5
+
+[State 508, assert]
+type = assertspecial
+trigger1 = time >= 0
+flag = noshadow
+flag2 = invisible
+
+[State 508, DestroySelf]
+type = DestroySelf
+trigger1 = animtime = 0
+
+[State 508, siga o mestre]
+type = posadd
+trigger1 = parentdist X != 0
+x = ifelse (parentdist X <= 1, -3,3)
+
+[State 508, 5]
+type = HitOverride
+trigger1 = time = 0
+time = -1
+attr = SCA, AA, AT, AP
+slot = 0
+stateno = 509
+
+;---------Destroi Helper da defeza especial
+[Statedef 509]
+type    = U
+physics = U
+poweradd= 0
+ctrl = 0
+
+[State 509, DestroySelf]
+type = DestroySelf
+trigger1 = time = 0
