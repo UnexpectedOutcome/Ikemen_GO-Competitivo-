@@ -1,0 +1,9116 @@
+;===========================================================================
+; 超必殺技
+;===========================================================================
+
+;---------------------------------------------------------------------------
+; ホウキスピン
+;---------------------------------------------------------------------------
+; 通常
+[Statedef 2400]
+type     = U
+movetype = A
+physics  = N
+ctrl     = 0
+anim     = 2400
+velset   = 0, 0
+facep2   = 0
+hitdefpersist = 1
+movehitpersist = 1
+hitcountpersist = 1
+
+[State 2400, クールタイムアイコン表示(1P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 1
+trigger1 = var(5) = 0
+ID = 21700
+anim = 21700
+pos = ceil(fvar(6) + 120), ceil(fvar(5) + 15)
+postype = left
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 2400, クールタイムアイコン表示(2P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 2
+trigger1 = var(5) = 0
+ID = 21700
+anim = 21700
+pos = ceil(-fvar(6) - 14), ceil(fvar(5) + 15)
+postype = right
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 2400, 開始エフェクト]
+type = Explod
+trigger1 = Time = 0
+anim = 31300
+pos = 0, 0
+postype = p1
+sprpriority = 1
+ownpal = 1
+supermovetime = 9999
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 2400, 暗転一時停止]
+type = SuperPause
+trigger1 = Time = 0
+anim = -1
+pos = 0, 0
+sound = s8,24   ; とりあえず
+time = 10
+darken = 1
+poweradd = -1000
+unhittable = 0  ; 無敵なんてない
+
+[State 2400, 場所移動]
+type = PosAdd
+trigger1 = AnimElemTime(3) = 0
+x = 8 * const(size.xscale)
+y = -45 * const(size.yscale)
+
+[State 2400, 速度設定(ノーマル)]
+type = VelSet
+trigger1 = AnimElemTime(3) = 0
+trigger1 = PrevStateNo != 101
+x = 2
+y = 4
+
+[State 2400, 速度設定(ダッシュ)]
+type = VelSet
+trigger1 = AnimElemTime(3) = 0
+trigger1 = PrevStateNo = [101,102]
+x = 5
+y = 1.2
+
+[State 2400, やっほー]
+type = PlaySnd
+trigger1 = AnimElemTime(3) = 0
+channel = 0
+value = 2, 9
+
+[State 2400, ホウキ音]
+type = PlaySnd
+trigger1 = AnimElemTime(3) > 2
+trigger1 = (Time % 2) = 0
+channel = 1
+value = 7, 12
+
+[State 2400, 回転エフェクト用ヘルパー呼び出し]
+type = Helper
+triggerall = (NumHelper(31301) = 0)
+trigger1 = AnimElemTime(3) = 0
+name = "BroomSpinEffect"
+stateno = 31301
+ID = 31301
+pos = 0, 0
+postype = p1
+ownpal = 1
+size.xscale = const(size.xscale) * 1
+size.yscale = const(size.yscale) * 1
+supermovetime = 99999999
+pausemovetime = 99999999
+ignoreHitPause = 1
+Persistent = 0
+
+[State 2400, 魔法ダメージ倍率 初期値設定]
+type = VarSet
+trigger1 = (Time % 6 = 0)
+fvar(7) = 1
+
+[State 2400, 魔法ダメージ倍率計算１ 古代の記憶]
+type = VarAdd
+trigger1 = (Time % 6 = 0)
+trigger1 = var(2) <= fvar(10) ;古代の記憶効果時間中の場合
+fvar(7) = 0.5
+
+[State 2400, 魔法ダメージ倍率計算２ 古代の図書館]
+type = VarAdd
+trigger1 = (Time % 6 = 0)
+trigger1 = var(2) <= fvar(11) ;古代の図書館効果時間中の場合
+fvar(7) = 0.2
+
+[State 2400, 魔法ダメージ倍率計算３ シュルル]
+type = VarAdd
+trigger1 = (Time % 6 = 0)
+trigger1 = NumEnemy > 0
+trigger1 = NumHelper(27020) > 0
+trigger1 = (enemynear(0),ID = Helper(27020),var(38)) || (enemynear(0),ID = Helper(27020),var(39))
+fvar(7) = 0.1
+
+[State 2400, ダメージ計算 基本ダメージ] 
+type = VarSet
+trigger1 = (Time % 6 = 0)
+fvar(2) = 15 ;基本ダメージ
+
+[State 2400, ダメージ計算 倍率加算]
+type = VarSet
+trigger1 = (Time % 6 = 0)
+fvar(2) = fvar(2) * fvar(7)
+
+[State 2400, ヒット定義]
+type = HitDef
+trigger1 = (Time % 6 = 0)
+attr = A, HA
+animtype = Back
+hitflag = MAFD
+damage = ceil(fvar(2)), 0
+guardflag = MA
+pausetime = 4,10
+guard.pausetime = 3,5
+sparkno = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno = s(IfElse(Facing = -1, 30021, 30020))
+sparkxy = 0, 0
+hitsound = s8, IfElse(Random < 334, 20, IfElse(Random < 500, 21, 22))
+guardsound = s8, 3
+ground.type = High
+ground.slidetime = 20
+guard.slidetime = 3
+ground.hittime = 20
+guard.hittime = 3
+air.hittime = 20
+guard.dist = 150
+ground.velocity = (Vel X * -1), (Vel Y)
+air.velocity = (Vel X * -1), (Vel Y)
+airguard.velocity = -2, 0
+air.fall = 1
+fall = 1
+fall.recovertime = 10
+down.velocity = -1, -3
+
+
+[State 2400, 2P感電付与]
+type = VarSet
+triggerall = Time % 6 = 0
+triggerall = Target,ID = Enemy(0),ID
+trigger1 = Random < fvar(22)
+var(16) = var(2) + 180 ; ３秒
+
+[State 2400, 4P感電付与]
+type = VarSet
+triggerall = Time % 6 = 0
+triggerall = NumEnemy > 1
+triggerall = Target,ID = Enemy(1),ID
+trigger1 = Random < fvar(22)
+var(17) = var(2) + 180 ; ３秒
+
+
+[State 2400, 一定時間経過ステート変更]
+type = ChangeState
+trigger1 = Time >= 65
+value = 2430
+
+[State 2400, 着地時ステート変更]
+type = ChangeState
+trigger1 = Pos Y >= 0
+value = 2450
+
+
+
+; 攻撃判定なくなる
+[Statedef 2430]
+type     = A
+movetype = I
+physics  = U
+anim     = 2430
+hitdefpersist = 1
+movehitpersist = 1
+hitcountpersist = 1
+ctrl = 0
+sprpriority = 2
+
+[State 2430, きゃー]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 0
+value = 2, 10
+
+[State 2430, 着地時ステート変更]
+type = ChangeState
+trigger1 = Pos Y >= 0
+value = 2450
+
+
+
+; 着地
+[Statedef 2450]
+type     = C
+movetype = A
+physics  = N
+ctrl     = 0
+anim     = 2450
+velset   = 0, 0
+hitdefpersist = 1
+movehitpersist = 1
+hitcountpersist = 1
+
+[State 2450, SE(ビターン)]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 1
+value = 6, 9
+
+[State 2450, ぐわぁ]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 0
+value = 2, 11
+
+[State 2450, 混乱判定変数]
+type = VarSet
+trigger1 = Time = 0
+fvar(0) = Random
+
+[State 2450, 混乱音]
+type = PlaySnd
+trigger1 = Time = 0
+trigger1 = fvar(0) < fvar(24)
+channel = 8
+value = 7, 13
+
+[State 2450, 混乱時間設定]
+type = VarSet
+trigger1 = Time = 0
+trigger1 = fvar(0) < fvar(24)
+var(36) = var(2) + 300 ; ５秒
+
+[State 2450, 回復音]
+type = PlaySnd
+trigger1 = Time = 0
+trigger1 = fvar(0) < fvar(24)
+channel = 9
+value = 6, 17
+
+[State 2450, ちょっとライフ回復]
+type = LifeAdd
+trigger1 = Time = 0
+trigger1 = fvar(0) < fvar(24)
+value = 10
+
+[State 2450, 混乱エフェクト1]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) < fvar(24)
+anim = 30150
+ID = 30150
+pos = 0, 0
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+bindtime = -1
+removetime = -1
+
+[State 2450, 混乱エフェクト2]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) < fvar(24)
+anim = 30151
+ID = 30150
+pos = 0, 0
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+bindtime = -1
+removetime = -1
+
+
+[State 2450, 衝撃波１]
+type = Explod
+trigger1 = Time = 0
+anim = 31303
+pos = 0, 0
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 2450, 衝撃波２奥]
+type = Explod
+trigger1 = Time = 0
+anim = 31304
+pos = 0, 0
+postype = p1
+sprpriority = -1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 2450, 衝撃波２前]
+type = Explod
+trigger1 = Time = 0
+anim = 31305
+pos = 0, 0
+postype = p1
+sprpriority = 3
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 2450, ダスト]
+type = Explod
+trigger1 = Time = 0
+anim = 31307
+pos = 0, 0
+postype = p1
+sprpriority = 2
+ownpal = 1
+scale = const(size.xscale) * 1.5, const(size.yscale) * 1
+
+[State 2450, 衝撃波３]
+type = Explod
+trigger1 = Time = 0
+anim = 31306
+pos = 0, 0
+postype = p1
+sprpriority = -2
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 0.3
+
+[State 2450, 魔法ダメージ倍率 初期値設定]
+type = VarSet
+trigger1 = AnimElemTime(1) = 0
+fvar(7) = 1
+
+[State 2450, 魔法ダメージ倍率計算１ 古代の記憶]
+type = VarAdd
+trigger1 = AnimElemTime(1) = 0
+trigger1 = var(2) <= fvar(10) ;古代の記憶効果時間中の場合
+fvar(7) = 0.5
+
+[State 2450, 魔法ダメージ倍率計算２ 古代の図書館]
+type = VarAdd
+trigger1 = AnimElemTime(1) = 0
+trigger1 = var(2) <= fvar(11) ;古代の図書館効果時間中の場合
+fvar(7) = 0.2
+
+[State 2450, 魔法ダメージ倍率計算３ シュルル]
+type = VarAdd
+trigger1 = AnimElemTime(1) = 0
+trigger1 = NumEnemy > 0
+trigger1 = NumHelper(27020) > 0
+trigger1 = (enemynear(0),ID = Helper(27020),var(38)) || (enemynear(0),ID = Helper(27020),var(39))
+fvar(7) = 0.1
+
+[State 2450, ダメージ計算 基本ダメージ] 
+type = VarSet
+trigger1 = AnimElemTime(1) = 0
+fvar(2) = 50 ;基本ダメージ
+
+[State 2450, ダメージ計算 倍率加算]
+type = VarSet
+trigger1 = AnimElemTime(1) = 0
+fvar(2) = fvar(2) * fvar(7)
+
+[State 2450, ヒット定義]
+type = HitDef
+trigger1 = AnimElemTime(1) = 0
+attr = C, HA
+animtype = Back
+hitflag = MAFD
+damage = ceil(fvar(2)), 0
+guardflag = L
+pausetime = 3,10
+guard.pausetime = 3,3
+sparkno = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno = s(IfElse(Facing = -1, 30021, 30020))
+sparkxy = -10, -20
+hitsound = s8, IfElse(Random < 334, 20, IfElse(Random < 500, 21, 22))
+guardsound = s8, 3
+ground.type = High
+ground.slidetime = 50
+guard.slidetime = 3
+ground.hittime = 50
+guard.hittime = 3
+air.hittime = 50
+guard.dist = 250
+ground.velocity = -1.5, 0
+air.velocity = -2,-2
+airguard.velocity = -2, 0
+air.juggle = 1
+fall = 1
+fall.recovertime = 56
+down.velocity = -1, -3
+ground.cornerpush.veloff = 0
+air.cornerpush.veloff = 0
+down.cornerpush.veloff = 0
+guard.cornerpush.veloff = 0
+
+
+[State 2450, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 5120
+ctrl = 1
+
+
+
+
+
+;---------------------------------------------------------------------------
+; アシッドクラウド
+;---------------------------------------------------------------------------
+[Statedef 2600]
+type     = U
+movetype = A
+physics  = S
+ctrl     = 0
+anim     = IfElse(var(2) <= fvar(19), 2610, 2600)
+velset   = 0, 0
+facep2   = 0
+
+[State 2600, クールタイムアイコン表示(1P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 1
+trigger1 = var(5) = 0
+ID = 21900
+anim = IfElse(var(2) <= fvar(19), 21950 ,21900)
+pos = ceil(fvar(6) + 75), ceil(fvar(5) + 15)
+postype = left
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 2600, クールタイムアイコン表示(2P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 2
+trigger1 = var(5) = 0
+ID = 21900
+anim = IfElse(var(2) <= fvar(19), 21950 ,21900)
+pos = ceil(-fvar(6) - 59), ceil(fvar(5) + 15)
+postype = right
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 2600, 暗転一時停止]
+type = SuperPause
+trigger1 = Time = 0
+anim = -1
+pos = 0, 0
+sound = s8,24   ; とりあえず
+time = 10
+darken = 1
+poweradd = -1000
+unhittable = 0  ; 無敵なんてない
+
+[State 2600, 声]
+type = PlaySnd
+trigger1 = AnimElemTime(6) = 0
+channel = 0
+value = 2, 7
+
+[State 2600, アシッドクラウド用ヘルパー呼び出し]
+type = Helper
+trigger1 = AnimElemTime(6) = 0
+name = "AcidCloud"
+stateno = 27200
+ID = 27200
+pos = ceil(80 * const(size.xscale)), ceil(-190 * const(size.yscale))
+postype = p1
+ownpal = 1
+size.xscale = const(size.xscale) * 0.5
+size.yscale = const(size.yscale) * 0.7
+supermovetime = 99999999
+pausemovetime = 99999999
+ignoreHitPause = 1
+Persistent = 0
+
+[State 2600, キャンディ数字入れ替え]
+type = RemoveExplod
+trigger1 = AnimElemTime(7) = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+ID = 24110
+
+[State 2600, キャンディ使用時]
+type = VarAdd
+trigger1 = AnimElemTime(7) = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+var(8) = -1
+
+[State 2600, 数値表示(1P側)]
+type = Explod
+trigger1 = AnimElemTime(7) = 0
+trigger1 = var(4) = 1
+trigger1 = var(2) <= fvar(16)
+anim = (24110 + var(8))
+ID = 24110
+pos = ceil(fvar(28) + 40), ceil(fvar(29) - 4)
+postype = left
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 2600, 数値表示(2P側)]
+type = Explod
+trigger1 = AnimElemTime(7) = 0
+trigger1 = var(4) = 2
+trigger1 = var(2) <= fvar(16)
+anim = (24110 + var(8))
+ID = 24110
+pos = ceil(-fvar(28) - 15), ceil(fvar(29) - 4)
+postype = right
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 2600, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+
+;---------------------------------------------------------------------------
+; マグマポーション
+;---------------------------------------------------------------------------
+[Statedef 2500]
+type     = U
+movetype = A
+physics  = S
+ctrl     = 0
+anim     = IfElse(var(2) <= fvar(19), 2510, 2500)
+velset   = 0, 0
+facep2   = 0
+
+[State 2500, クールタイムアイコン表示(1P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 1
+trigger1 = var(5) = 0
+ID = 21800
+anim = IfElse(var(2) <= fvar(19), 21850 ,21800)
+pos = ceil(fvar(6) + 60), ceil(fvar(5) + 15)
+postype = left
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 2500, クールタイムアイコン表示(2P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 2
+trigger1 = var(5) = 0
+ID = 21800
+anim = IfElse(var(2) <= fvar(19), 21850 ,21800)
+pos = ceil(-fvar(6) - 74), ceil(fvar(5) + 15)
+postype = right
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 2500, 成否判定用乱数発生]
+type = VarSet
+trigger1 = Time = 0
+fvar(0) = Random
+
+[State 2500, キャンディ使用時]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+fvar(0) = 100
+
+[State 2500, 成功の予感発動]
+type = VarSet
+triggerall = Time = 0
+triggerall = fvar(0) > 199
+triggerall = PalNo > 6
+trigger1 = Random <= 399
+fvar(9) = var(2) + 360
+
+[State 2500, 成功の予感反映]
+type = VarAdd
+triggerall = Time = 0
+triggerall = fvar(9) > var(2)
+trigger1 = PalNo > 6
+fvar(0) = 50
+
+
+;失敗
+[State 2500, SE]
+type = PlaySnd
+trigger1 = Time = 0
+trigger1 = fvar(0) <= 199
+channel = 2
+value = 7, 0
+
+[State 2500, 失敗発生エフェクト]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) <= 199
+anim = 25420
+pos = ceil(40 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 2500, 失敗ランタン]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) <= 199
+anim = 25200
+pos = ceil(40 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 2500, 失敗ランタン枠]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) <= 199
+anim = 25201
+pos = ceil(40 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 2500, 失敗時パーツ]
+type = Explod
+trigger1 = Time = 3
+trigger1 = fvar(0) <= 199
+anim = 25400
+pos = ceil(40 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+
+[State 2500, 失敗時パーツ]
+type = Explod
+trigger1 = Time = 3
+trigger1 = fvar(0) <= 199
+anim = 25401
+pos = ceil(40 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+
+
+
+; 成功
+[State 2500, SE]
+type = PlaySnd
+trigger1 = Time = 0
+trigger1 = fvar(0) = [200,799]
+channel = 2
+value = 7, 1
+
+[State 2500, 成功発生エフェクト]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) = [200,799]
+anim = 25421
+pos = ceil(40 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 2500, 成功発生エフェクト２]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) = [200,799]
+anim = 25423
+pos = ceil(45 * const(size.xscale)), ceil(-70 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 2500, 成功ランタン]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) = [200,799]
+anim = 25210
+pos = ceil(40 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 2500, 成功ランタン枠]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) = [200,799]
+anim = 25211
+pos = ceil(40 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+
+;大成功
+[State 2500, SE]
+type = PlaySnd
+trigger1 = Time = 0
+trigger1 = fvar(0) >= 800
+channel = 2
+value = 7, 2
+
+[State 2500, 大成功発生エフェクト]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) >= 800
+anim = 25422
+pos = ceil(40 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 2500, 大成功発生エフェクト２]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) >= 800
+anim = 25423
+pos = ceil(45 * const(size.xscale)), ceil(-70 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 2500, 大成功ランタン]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) >= 800
+anim = 25220
+pos = ceil(40 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 2500, 大成功ランタン枠]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) >= 800
+anim = 25221
+pos = ceil(40 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 2500, 大成功時パーツ]
+type = Explod
+trigger1 = Time = 3
+trigger1 = fvar(0) >= 800
+anim = 25410
+pos = ceil(40 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+
+[State 2500, 大成功時パーツ]
+type = Explod
+trigger1 = Time = 3
+trigger1 = fvar(0) >= 800
+anim = 25411
+pos = ceil(40 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+
+[State 2500, 暗転一時停止]
+type = SuperPause
+trigger1 = Time = 0
+anim = -1
+pos = 0, 0
+sound = s8,24   ; とりあえず
+time = 5
+darken = 1
+poweradd = -1000
+unhittable = 0  ; 無敵なんてない
+
+
+[State 2500, 投擲準備エフェクト]
+type = Explod
+trigger1 = AnimElemTime(3) = 4
+anim = 24200
+ID = 2500
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+removetime = -1
+removeongethit = 1
+
+[State 2500, 投擲準備エフェクト枠]
+type = Explod
+trigger1 = AnimElemTime(3) = 4
+anim = 24201
+ID = 2500
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+removetime = -1
+removeongethit = 1
+
+[State 2500, 投擲準備エフェクト消去]
+type = RemoveExplod
+trigger1 = AnimElemTime(4) = 0
+ID = 2500
+
+[State 2500, 声]
+type = PlaySnd
+trigger1 = AnimElemTime(4) = 0
+channel = 0
+value = 2, 8
+
+[State 2500, キャラの幅変更]
+type = Width
+triggerall = (StateType != A)
+trigger1 = (AnimElemTime(4) > 0) && (AnimElemTime(8) < 0)
+player = ceil(30 * const(size.xscale)), ceil(0 * const(size.yscale))
+edge = ceil(45 * const(size.xscale)), ceil(0 * const(size.yscale))
+
+[State 2500, マグマポーション用ヘルパー呼び出し]
+type = Helper
+trigger1 = AnimElemTime(4) = 0
+name = "RavaPotion"
+stateno = 27100
+ID = 27100
+pos = ceil(40 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+ownpal = 1
+size.xscale = const(size.xscale) * IfElse(fvar(0) >= 800, 1.5, 1)
+size.yscale = const(size.yscale) * 1
+supermovetime = 99999999
+pausemovetime = 99999999
+ignoreHitPause = 1
+Persistent = 0
+
+[State 2500, キャンディ数字入れ替え]
+type = RemoveExplod
+trigger1 = AnimElemTime(5) = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+ID = 24110
+
+[State 2500, キャンディ使用時]
+type = VarAdd
+trigger1 = AnimElemTime(5) = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+var(8) = -1
+
+[State 2500, 数値表示(1P側)]
+type = Explod
+trigger1 = AnimElemTime(5) = 0
+trigger1 = var(4) = 1
+trigger1 = var(2) <= fvar(16)
+anim = (24110 + var(8))
+ID = 24110
+pos = ceil(fvar(28) + 40), ceil(fvar(29) - 4)
+postype = left
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 2500, 数値表示(2P側)]
+type = Explod
+trigger1 = AnimElemTime(5) = 0
+trigger1 = var(4) = 2
+trigger1 = var(2) <= fvar(16)
+anim = (24110 + var(8))
+ID = 24110
+pos = ceil(-fvar(28) - 15), ceil(fvar(29) - 4)
+postype = right
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 2500, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+
+
+
+;---------------------------------------------------------------------------
+; 燃え盛る炎の加熱炉
+;---------------------------------------------------------------------------
+[Statedef 2900]
+type     = U
+movetype = A
+physics  = N
+ctrl     = 0
+anim     = IfElse(var(2) <= fvar(19), 2910, 2900)
+velset   = 0, 0
+facep2   = 0
+sprpriority = -2
+
+[State 2900, クールタイムアイコン表示(1P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 1
+trigger1 = var(5) = 0
+ID = 22100
+anim = 22100
+pos = ceil(fvar(6) + 45), ceil(fvar(5) + 15)
+postype = left
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 2900, クールタイムアイコン表示(2P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 2
+trigger1 = var(5) = 0
+ID = 22100
+anim = 22100
+pos = ceil(-fvar(6) - 89), ceil(fvar(5) + 15)
+postype = right
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 2900, 魔法ダメージ倍率 初期値設定]
+type = VarSet
+trigger1 = Time = 0
+fvar(7) = 1
+
+[State 2900, 魔法ダメージ倍率計算１ 古代の記憶]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(2) <= fvar(10) ;古代の記憶効果時間中の場合
+fvar(7) = 0.5
+
+[State 2900, 魔法ダメージ倍率計算２ 古代の図書館]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(2) <= fvar(11) ;古代の図書館効果時間中の場合
+fvar(7) = 0.2
+
+[State 2900, 成否判定用乱数発生]
+type = VarSet
+trigger1 = Time = 0
+fvar(0) = Random
+
+[State 2900, キャンディ使用時]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+fvar(0) = 100
+
+[State 2900, 成功の予感発動]
+type = VarSet
+triggerall = Time = 0
+triggerall = fvar(0) > 299
+triggerall = PalNo > 6
+trigger1 = Random <= 399
+fvar(9) = var(2) + 900
+
+[State 2900, 成功の予感反映]
+type = VarAdd
+triggerall = Time = 0
+triggerall = fvar(9) > var(2)
+trigger1 = PalNo > 6
+fvar(0) = 50
+
+[State 2900, 声]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 0
+value = 2, 12
+
+[State 2900, 暗転一時停止]
+type = SuperPause
+trigger1 = Time = 0
+anim = -1
+pos = 0, 0
+sound = s8,24   ; とりあえず
+time = 10
+darken = 1
+poweradd = -2000
+unhittable = 0  ; 無敵なんてない
+
+[State 2900, キャンディ数字入れ替え]
+type = RemoveExplod
+trigger1 = Time = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+ID = 24110
+
+[State 2900, キャンディ使用時]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+var(8) = -1
+
+[State 2900, 数値表示(1P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 1
+trigger1 = var(2) <= fvar(16)
+anim = (24110 + var(8))
+ID = 24110
+pos = ceil(fvar(28) + 40), ceil(fvar(29) - 4)
+postype = left
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 2900, 数値表示(2P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 2
+trigger1 = var(2) <= fvar(16)
+anim = (24110 + var(8))
+ID = 24110
+pos = ceil(-fvar(28) - 15), ceil(fvar(29) - 4)
+postype = right
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+
+;失敗
+[State 2900, SE]
+type = PlaySnd
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) <= 299
+channel = 2
+value = 7, 0
+
+[State 2900, 失敗発生エフェクト]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) <= 299
+anim = 25420
+pos = ceil(100 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 2900, 失敗ランタン]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) <= 299
+anim = 25200
+pos = ceil(100 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 2900, 失敗ランタン枠]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) <= 299
+anim = 25201
+pos = ceil(100 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 2900, 失敗時パーツ]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) <= 299
+anim = 25400
+pos = ceil(100 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+
+[State 2900, 失敗時パーツ]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) <= 299
+anim = 25401
+pos = ceil(100 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+
+
+; 成功
+[State 2900, SE]
+type = PlaySnd
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) = [300,799]
+channel = 2
+value = 7, 1
+
+[State 2900, 成功発生エフェクト]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) = [300,799]
+anim = 25421
+pos = ceil(100 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 2900, 成功発生エフェクト２]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) = [300,799]
+anim = 25423
+pos = ceil(105 * const(size.xscale)), ceil(-70 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 2900, 成功ランタン]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) = [300,799]
+anim = 25210
+pos = ceil(100 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 2900, 成功ランタン枠]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) = [300,799]
+anim = 25211
+pos = ceil(100 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+
+;大成功
+[State 2900, SE]
+type = PlaySnd
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) >= 800
+channel = 2
+value = 7, 2
+
+[State 2900, 大成功発生エフェクト]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) >= 800
+anim = 25422
+pos = ceil(100 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 2900, 大成功発生エフェクト２]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) >= 800
+anim = 25423
+pos = ceil(105 * const(size.xscale)), ceil(-70 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 2900, 大成功ランタン]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) >= 800
+anim = 25220
+pos = ceil(100 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 2900, 大成功ランタン枠]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) >= 800
+anim = 25221
+pos = ceil(100 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 2900, 大成功時パーツ]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) >= 800
+anim = 25410
+pos = ceil(100 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+
+[State 2900, 大成功時パーツ]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) >= 800
+anim = 25411
+pos = ceil(100 * const(size.xscale)), ceil(-65 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+
+
+[State 2900, 加熱炉本体発生]
+type = Explod
+trigger1 = AnimElemTime(2) = 13
+anim = 24400
+ID = 24400
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -4
+removeongethit = 1
+
+[State 2900, 加熱炉ふいご発生]
+type = Explod
+trigger1 = AnimElemTime(2) = 13
+anim = 24401
+ID = 24400
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+sprpriority = -5
+bindtime = -1
+removetime = -1
+removeongethit = 1
+
+[State 2900, 乗り込み状態]
+type = VarSet
+trigger1 = AnimTime = 0
+var(9) = 1
+
+[State 2900, 設置被ダメージ初期化]
+type = VarSet
+trigger1 = AnimTime = 0
+var(24) = 0
+
+[State 2900, 失敗ステートへ]
+type = ChangeState
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) <= 299
+value = 2901
+
+[State 2900, 成功ステートへ]
+type = ChangeState
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) = [300,799]
+value = 2902
+
+[State 2900, 大成功ステートへ]
+type = ChangeState
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) >= 800
+value = 2903
+
+
+
+; 失敗ステート
+[Statedef 2901]
+Type      = S
+movetype  = A
+physics   = S
+anim      = 2950
+facep2    = 0
+sprpriority = -2
+
+[State 2901, 特殊]
+type = AssertSpecial
+trigger1 = 1
+flag = noautoturn
+
+[State 2901, ぶつかり判定消滅]
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 2901, 被ダメージ加算]
+type = VarAdd
+trigger1 = GetHitVar(damage) > 0
+var(24) = GetHitVar(damage)
+
+[State 2901, 基本ダメージ設定]
+type = VarSet
+trigger1 = Time = 0
+fvar(2) = 30
+
+[State 2901, SE]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 10
+value = 7, 30
+loop = 1
+
+[State 2901, 雲発生]
+type = Explod
+trigger1 = Time = 0
+anim = 32400
+pos = 0, 0
+postype = p1
+sprpriority = 2
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+bindtime = -1
+
+[State 2901, メーター表示]
+type = Explod
+trigger1 = Time = 0
+anim = 24402
+ID = 24400
+pos = 0, 0
+postype = p1
+sprpriority = -3
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = -1
+bindtime = -1
+removeongethit = 1
+
+[State 2901, 声1]
+type = PlaySnd
+trigger1 = Time = 0
+trigger2 = (Time % 120) = 0
+channel = 0
+value = 2, 13
+
+[State 2901, 声2]
+type = PlaySnd
+trigger1 = Time = 60
+trigger2 = (Time % 120) = 60
+channel = 0
+value = 2, 14
+
+[State 2901, ダスト]
+type = Explod
+trigger1 = Time = 33
+trigger2 = (Time % 60) = 30
+anim = 24403
+ID = 24400
+pos = 0, 0
+postype = p1
+bindtime = -1
+sprpriority = -4
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 2901, ふいご音]
+type = PlaySnd
+trigger1 = Time = 33
+trigger2 = (Time % 60) = 30
+channel = 8
+value = 7, 29
+
+[State 2901, 黒煙]
+type = Explod
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+anim = 24408
+pos = 0, 0
+postype = p1
+sprpriority = -3
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+bindtime = -1
+
+[State 2901, 蒸気1]
+type = Explod
+trigger1 = Time = 153
+anim = 24404
+ID = 24400
+pos = 0, 0
+postype = p1
+sprpriority = -2
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = -1
+bindtime = -1
+removeongethit = 1
+
+[State 2901, 蒸気2]
+type = Explod
+trigger1 = Time = 153
+anim = 24405
+ID = 24400
+pos = 0, 0
+postype = p1
+sprpriority = -2
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = -1
+bindtime = -1
+removeongethit = 1
+
+[State 2901, 蒸気3]
+type = Explod
+trigger1 = Time = 153
+anim = 24406
+ID = 24400
+pos = 0, 0
+postype = p1
+sprpriority = -2
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = -1
+bindtime = -1
+removeongethit = 1
+
+[State 2901, 蒸気4]
+type = Explod
+trigger1 = Time = 153
+anim = 24407
+ID = 24400
+pos = 0, 0
+postype = p1
+sprpriority = -2
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = -1
+bindtime = -1
+removeongethit = 1
+
+[State 2901, 蒸気音]
+type = PlaySnd
+trigger1 = Time >= 153
+trigger1 = (Time % 40) = 33
+channel = 9
+value = 7, 22
+
+
+
+[State 2901, 石発生1]
+type = Projectile
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 30
+projID           = 2901
+projanim         = IfElse(Random < 499, 24420, 24421)
+projhitanim      = 24422
+projremanim      = 24422
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 27
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = High
+ground.slidetime = 10
+ground.hittime   = 15
+velocity         = 5, -10
+accel            = 0, 1
+offset           = 100, -110
+
+[State 2901, 石発生2]
+type = Projectile
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 30
+projID           = 2901
+projanim         = IfElse(Random < 499, 24420, 24421)
+projhitanim      = 24422
+projremanim      = 24422
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 27
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = High
+ground.slidetime = 10
+ground.hittime   = 15
+velocity         = 3, -10
+accel            = 0, 1
+offset           = 100, -110
+
+[State 2901, 石発生3]
+type = Projectile
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 30
+projID           = 2901
+projanim         = IfElse(Random < 499, 24420, 24421)
+projhitanim      = 24422
+projremanim      = 24422
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 27
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = High
+ground.slidetime = 10
+ground.hittime   = 15
+velocity         = 0, -10
+accel            = 0, 1
+offset           = 100, -110
+
+[State 2901, 石発生4]
+type = Projectile
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 30
+projID           = 2901
+projanim         = IfElse(Random < 499, 24420, 24421)
+projhitanim      = 24422
+projremanim      = 24422
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 27
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = High
+ground.slidetime = 10
+ground.hittime   = 15
+velocity         = -3, -10
+accel            = 0, 1
+offset           = 100, -110
+
+[State 2901, 石発生5]
+type = Projectile
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 30
+projID           = 2901
+projanim         = IfElse(Random < 499, 24420, 24421)
+projhitanim      = 24422
+projremanim      = 24422
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 27
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = High
+ground.slidetime = 10
+ground.hittime   = 15
+velocity         = -5, -10
+accel            = 0, 1
+offset           = 100, -110
+
+
+
+[State 2901, 爆発ステートへ]
+type = ChangeState
+trigger1 = Time >= 300
+trigger2 = Life <= 0
+trigger3 = var(59) = 0
+trigger3 = Time >= 0
+trigger3 = command = "b"
+trigger4 = var(24) > 500
+trigger5 = var(59) > 0
+trigger5 = var(56) = -1
+trigger6 = RoundState >= 3
+value = 2905
+
+
+
+; 成功
+[Statedef 2902]
+Type      = S
+movetype  = A
+physics   = S
+anim      = 2950
+facep2    = 0
+sprpriority = -2
+
+[State 2902, 特殊]
+type = AssertSpecial
+trigger1 = 1
+flag = noautoturn
+
+[State 2902, ぶつかり判定消滅]
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 2902, 場所固定]
+type = PosFreeze
+trigger1 = 1
+value = 1
+
+[State 2902, 被ダメージ加算]
+type = VarAdd
+trigger1 = GetHitVar(damage) > 0
+var(24) = GetHitVar(damage)
+
+[State 2902, 基本ダメージ設定]
+type = VarSet
+trigger1 = Time = 0
+fvar(2) = 70
+
+[State 2902, SE]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 10
+value = 7, 31
+loop = 1
+
+[State 2902, 雲発生]
+type = Explod
+trigger1 = Time = 0
+anim = 32400
+pos = 0, 0
+postype = p1
+sprpriority = 2
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+bindtime = -1
+
+[State 2902, メーター表示]
+type = Explod
+trigger1 = Time = 0
+anim = 24402
+ID = 24400
+pos = 0, 0
+postype = p1
+sprpriority = -3
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = -1
+bindtime = -1
+removeongethit = 1
+
+[State 2902, 発光]
+type = Explod
+trigger1 = Time = 0
+anim = 24409
+ID = 24400
+pos = 0, 0
+postype = p1
+sprpriority = -2
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = -1
+bindtime = -1
+removeongethit = 1
+
+[State 2901, 蒸気音]
+type = PlaySnd
+trigger1 = Time >= 153
+trigger1 = (Time % 40) = 33
+channel = 9
+value = 7, 22
+
+
+[State 2902, 声1]
+type = PlaySnd
+trigger1 = Time = 0
+trigger2 = (Time % 120) = 0
+channel = 0
+value = 2, 13
+
+[State 2902, 声2]
+type = PlaySnd
+trigger1 = Time = 60
+trigger2 = (Time % 120) = 60
+channel = 0
+value = 2, 14
+
+[State 2902, ダスト]
+type = Explod
+trigger1 = Time = 33
+trigger2 = (Time % 60) = 30
+anim = 24403
+ID = 24400
+pos = 0, 0
+postype = p1
+bindtime = -1
+sprpriority = -3
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 2902, ふいご音]
+type = PlaySnd
+trigger1 = Time = 33
+trigger2 = (Time % 60) = 30
+channel = 8
+value = 7, 29
+
+[State 2902, 石発生1]
+type = Projectile
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 15
+projID           = 2902
+projanim         = IfElse(Random < 499, 24423, 24424)
+projhitanim      = 24425
+projremanim      = 24425
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 27
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 19
+guardsound       = s8, 3
+ground.type      = High
+ground.slidetime = 10
+ground.hittime   = 15
+velocity         = 5, -10
+accel            = 0, 1
+offset           = 100, -110
+
+[State 2902, 石発生2]
+type = Projectile
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 15
+projID           = 2902
+projanim         = IfElse(Random < 499, 24423, 24424)
+projhitanim      = 24425
+projremanim      = 24425
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 27
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = High
+ground.slidetime = 10
+ground.hittime   = 15
+velocity         = 3, -10
+accel            = 0, 1
+offset           = 100, -110
+
+[State 2902, 石発生3]
+type = Projectile
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 15
+projID           = 2902
+projanim         = IfElse(Random < 499, 24423, 24424)
+projhitanim      = 24425
+projremanim      = 24425
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 27
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = High
+ground.slidetime = 10
+ground.hittime   = 15
+velocity         = 0, -10
+accel            = 0, 1
+offset           = 100, -110
+
+[State 2902, 石発生4]
+type = Projectile
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 15
+projID           = 2902
+projanim         = IfElse(Random < 499, 24423, 24424)
+projhitanim      = 24425
+projremanim      = 24425
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 27
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = High
+ground.slidetime = 10
+ground.hittime   = 15
+velocity         = -3, -10
+accel            = 0, 1
+offset           = 100, -110
+
+[State 2902, 石発生5]
+type = Projectile
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 15
+projID           = 2902
+projanim         = IfElse(Random < 499, 24423, 24424)
+projhitanim      = 24425
+projremanim      = 24425
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 27
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = High
+ground.slidetime = 10
+ground.hittime   = 15
+velocity         = -5, -10
+accel            = 0, 1
+offset           = 100, -110
+
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(240 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0, .3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(240 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = -0.3, -0.3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(240 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0.3, -0.3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27034
+pos = ceil(240 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27035
+pos = ceil(240 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27036
+pos = ceil(240 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 4
+
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(180 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0, .3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(180 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = -0.3, -0.3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(180 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0.3, -0.3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27034
+pos = ceil(180 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27035
+pos = ceil(180 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27036
+pos = ceil(180 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 4
+
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(100 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0, .3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(100 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = -0.3, -0.3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(100 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0.3, -0.3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27034
+pos = ceil(100 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27035
+pos = ceil(100 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27036
+pos = ceil(100 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 4
+
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(20 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0, .3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(20 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = -0.3, -0.3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(20 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0.3, -0.3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27034
+pos = ceil(20 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27035
+pos = ceil(20 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27036
+pos = ceil(20 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 4
+
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(-40 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0, .3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(-40 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = -0.3, -0.3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(-40 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0.3, -0.3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27034
+pos = ceil(-40 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27035
+pos = ceil(-40 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2902, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27036
+pos = ceil(-40 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 4
+
+
+[State 2902, 爆発音1]
+type = PlaySnd
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+channel = 1
+value = 8, 19
+
+[State 2902, 石爆発判定1]
+type = Projectile
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 30
+projID           = 2902
+projanim         = 24429
+projhitanim      = 24430
+projremanim      = 24430
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = Trip
+ground.slidetime = 10
+ground.hittime   = 15
+offset           = 240, -20
+projheightbound  = -240, 200
+fall = 1
+
+[State 2902, 爆発音2]
+type = PlaySnd
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+channel = 1
+value = 8, 19
+
+[State 2902, 石爆発判定2]
+type = Projectile
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 30
+projID           = 2902
+projanim         = 24429
+projhitanim      = 24430
+projremanim      = 24430
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = Trip
+ground.slidetime = 10
+ground.hittime   = 15
+offset           = 180, -20
+projheightbound  = -240, 200
+fall = 1
+
+[State 2902, 爆発音3]
+type = PlaySnd
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+channel = 1
+value = 8, 19
+
+[State 2902, 石爆発判定3]
+type = Projectile
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 30
+projID           = 2902
+projanim         = 24429
+projhitanim      = 24430
+projremanim      = 24430
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = Trip
+ground.slidetime = 10
+ground.hittime   = 15
+offset           = 100, -20
+projheightbound  = -240, 200
+fall = 1
+
+[State 2902, 爆発音4]
+type = PlaySnd
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+channel = 1
+value = 8, 19
+
+[State 2902, 石爆発判定4]
+type = Projectile
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 30
+projID           = 2902
+projanim         = 24429
+projhitanim      = 24430
+projremanim      = 24430
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = Trip
+ground.slidetime = 10
+ground.hittime   = 15
+offset           = 20, -20
+projheightbound  = -240, 200
+fall = 1
+
+[State 2902, 爆発音5]
+type = PlaySnd
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+channel = 1
+value = 8, 19
+
+[State 2902, 石爆発判定5]
+type = Projectile
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 30
+projID           = 2902
+projanim         = 24429
+projhitanim      = 24430
+projremanim      = 24430
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = Trip
+ground.slidetime = 10
+ground.hittime   = 15
+offset           = -40, -20
+projheightbound  = -240, 200
+fall = 1
+
+[State 2902, 爆発ステートへ]
+type = ChangeState
+trigger1 = Time >= 300
+trigger2 = Life <= 0
+trigger3 = var(59) = 0
+trigger3 = Time >= 0
+trigger3 = command = "b"
+trigger4 = var(24) > 500
+trigger5 = var(59) > 0
+trigger5 = var(56) = -1
+trigger6 = RoundState >= 3
+value = 2905
+
+
+
+; 大成功
+[Statedef 2903]
+Type      = S
+movetype  = A
+physics   = S
+anim      = 2950
+facep2    = 0
+sprpriority = -2
+
+[State 2903, 特殊]
+type = AssertSpecial
+trigger1 = 1
+flag = noautoturn
+
+[State 2903, ぶつかり判定消滅]
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 2903, 被ダメージ加算]
+type = VarAdd
+trigger1 = GetHitVar(damage) > 0
+var(24) = GetHitVar(damage)
+
+[State 2903, 基本ダメージ設定]
+type = VarSet
+trigger1 = Time = 0
+fvar(2) = 120
+
+[State 2903, SE]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 10
+value = 7, 32
+loop = 1
+
+[State 2903, 雲発生]
+type = Explod
+trigger1 = Time = 0
+anim = 32400
+pos = 0, 0
+postype = p1
+sprpriority = 2
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+bindtime = -1
+
+[State 2903, メーター表示]
+type = Explod
+trigger1 = Time = 0
+anim = 24402
+ID = 24400
+pos = 0, 0
+postype = p1
+sprpriority = -3
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = -1
+bindtime = -1
+removeongethit = 1
+
+[State 2903, 発光]
+type = Explod
+trigger1 = Time = 0
+anim = 24410
+ID = 24400
+pos = 0, 0
+postype = p1
+sprpriority = -2
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = -1
+bindtime = -1
+removeongethit = 1
+
+[State 2903, 火]
+type = Explod
+trigger1 = Time = 0
+anim = 24411
+ID = 24400
+pos = 0, 0
+postype = p1
+sprpriority = -1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = -1
+bindtime = -1
+removeongethit = 1
+
+[State 2901, 蒸気音]
+type = PlaySnd
+trigger1 = Time >= 153
+trigger1 = (Time % 40) = 33
+channel = 9
+value = 7, 22
+
+[State 2903, 声1]
+type = PlaySnd
+trigger1 = Time = 0
+trigger2 = (Time % 120) = 0
+channel = 0
+value = 2, 13
+
+[State 2903, 声2]
+type = PlaySnd
+trigger1 = Time = 60
+trigger2 = (Time % 120) = 60
+channel = 0
+value = 2, 14
+
+[State 2903, ダスト]
+type = Explod
+trigger1 = Time = 33
+trigger2 = (Time % 60) = 30
+anim = 24403
+ID = 24400
+pos = 0, 0
+postype = p1
+bindtime = -1
+sprpriority = -3
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 2903, ふいご音]
+type = PlaySnd
+trigger1 = Time = 33
+trigger2 = (Time % 60) = 30
+channel = 8
+value = 7, 29
+
+[State 2903, 石発生1]
+type = Projectile
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 15
+projID           = 2903
+projanim         = IfElse(Random < 499, 24426, 24427)
+projhitanim      = 24428
+projremanim      = 24428
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 27
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 19
+guardsound       = s8, 3
+ground.type      = High
+ground.slidetime = 10
+ground.hittime   = 15
+velocity         = 5, -10
+accel            = 0, 1
+offset           = 100, -110
+
+[State 2903, 石発生2]
+type = Projectile
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 15
+projID           = 2903
+projanim         = IfElse(Random < 499, 24426, 24427)
+projhitanim      = 24428
+projremanim      = 24428
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 27
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = High
+ground.slidetime = 10
+ground.hittime   = 15
+velocity         = 3, -10
+accel            = 0, 1
+offset           = 100, -110
+
+[State 2903, 石発生3]
+type = Projectile
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 15
+projID           = 2903
+projanim         = IfElse(Random < 499, 24426, 24427)
+projhitanim      = 24428
+projremanim      = 24428
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 27
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = High
+ground.slidetime = 10
+ground.hittime   = 15
+velocity         = 0, -10
+accel            = 0, 1
+offset           = 100, -110
+
+[State 2903, 石発生4]
+type = Projectile
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 15
+projID           = 2903
+projanim         = IfElse(Random < 499, 24426, 24427)
+projhitanim      = 24428
+projremanim      = 24428
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 27
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = High
+ground.slidetime = 10
+ground.hittime   = 15
+velocity         = -3, -10
+accel            = 0, 1
+offset           = 100, -110
+
+[State 2903, 石発生5]
+type = Projectile
+trigger1 = Time = 40
+trigger2 = (Time % 60) = 40
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 15
+projID           = 2903
+projanim         = IfElse(Random < 499, 24426, 24427)
+projhitanim      = 24428
+projremanim      = 24428
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 27
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = High
+ground.slidetime = 10
+ground.hittime   = 15
+velocity         = -5, -10
+accel            = 0, 1
+offset           = 100, -110
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(240 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0, .3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(240 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = -0.3, -0.3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(240 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0.3, -0.3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27034
+pos = ceil(240 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27035
+pos = ceil(240 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27036
+pos = ceil(240 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 4
+
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(180 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0, .3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(180 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = -0.3, -0.3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(180 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0.3, -0.3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27034
+pos = ceil(180 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27035
+pos = ceil(180 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27036
+pos = ceil(180 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 4
+
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(100 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0, .3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(100 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = -0.3, -0.3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(100 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0.3, -0.3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27034
+pos = ceil(100 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27035
+pos = ceil(100 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27036
+pos = ceil(100 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 4
+
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(20 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0, .3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(20 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = -0.3, -0.3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(20 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0.3, -0.3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27034
+pos = ceil(20 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27035
+pos = ceil(20 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27036
+pos = ceil(20 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 4
+
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(-40 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0, .3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(-40 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = -0.3, -0.3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27033
+pos = ceil(-40 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+accel = 0.3, -0.3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27034
+pos = ceil(-40 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27035
+pos = ceil(-40 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 3
+
+[State 2903, 爆発]
+type = Explod
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+anim = 27036
+pos = ceil(-40 * const(size.yscale)), ceil(-20 * const(size.yscale))
+postype = p1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+sprpriority = 4
+
+[State 2903, 爆発音1]
+type = PlaySnd
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+channel = 1
+value = 8, 19
+
+[State 2903, 石爆発判定1]
+type = Projectile
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 30
+projID           = 2903
+projanim         = 24429
+projhitanim      = 24430
+projremanim      = 24430
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = Trip
+ground.slidetime = 10
+ground.hittime   = 15
+offset           = 240, -20
+projheightbound  = -240, 200
+fall = 1
+
+[State 2903, 爆発音2]
+type = PlaySnd
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+channel = 1
+value = 8, 19
+
+[State 2903, 石爆発判定2]
+type = Projectile
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 30
+projID           = 2903
+projanim         = 24429
+projhitanim      = 24430
+projremanim      = 24430
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = Trip
+ground.slidetime = 10
+ground.hittime   = 15
+offset           = 180, -20
+projheightbound  = -240, 200
+fall = 1
+
+[State 2903, 爆発音3]
+type = PlaySnd
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+channel = 1
+value = 8, 19
+
+[State 2903, 石爆発判定3]
+type = Projectile
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 30
+projID           = 2903
+projanim         = 24429
+projhitanim      = 24430
+projremanim      = 24430
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = Trip
+ground.slidetime = 10
+ground.hittime   = 15
+offset           = 100, -20
+projheightbound  = -240, 200
+fall = 1
+
+[State 2903, 爆発音4]
+type = PlaySnd
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+channel = 1
+value = 8, 19
+
+[State 2903, 石爆発判定4]
+type = Projectile
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 30
+projID           = 2903
+projanim         = 24429
+projhitanim      = 24430
+projremanim      = 24430
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = Trip
+ground.slidetime = 10
+ground.hittime   = 15
+offset           = 20, -20
+projheightbound  = -240, 200
+fall = 1
+
+[State 2903, 爆発音5]
+type = PlaySnd
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+channel = 1
+value = 8, 19
+
+[State 2903, 石爆発判定5]
+type = Projectile
+trigger1 = Time = 67
+trigger2 = Time > 67
+trigger2 = (Time % 60) = 7
+attr             = S, HP
+damage           = fvar(2) * fvar(7), 0
+getpower         = 0, 0
+givepower        = 0, 0
+animtype         = Back
+pausetime        = 0, 30
+projID           = 2903
+projanim         = 24429
+projhitanim      = 24430
+projremanim      = 24430
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = 4
+hitflag          = MAFD
+guardflag        = MA
+priority         = 5
+sparkno          = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno    = s(IfElse(Facing = -1, 30021, 30020))
+hitsound         = s8, 21
+guardsound       = s8, 3
+ground.type      = Trip
+ground.slidetime = 10
+ground.hittime   = 15
+offset           = -40, -20
+projheightbound  = -240, 200
+fall = 1
+
+[State 2903, 爆発ステートへ]
+type = ChangeState
+trigger1 = Time >= 300
+trigger2 = Life <= 0
+trigger3 = var(59) = 0
+trigger3 = Time >= 0
+trigger3 = command = "b"
+trigger4 = var(24) > 500
+trigger5 = var(59) > 0
+trigger5 = var(56) = -1
+trigger6 = RoundState >= 3
+value = 2905
+
+
+
+
+; 爆発
+[Statedef 2905]
+type      = S
+movetype  = A
+physics   = S
+anim      = 0
+
+[State 2905, 音止め]
+type = StopSnd
+trigger1 = Time = 0
+channel = 9
+
+[State 2905, 音止め]
+type = StopSnd
+trigger1 = Time = 0
+channel = 10
+
+[State 2905, 加熱炉削除]
+type = RemoveExplod
+trigger1 = Time = 0
+ID = 24400
+
+[State 2905, SE]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 1
+value = 8, 19
+
+[State 2905, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27033
+pos = ceil(100 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0, .3
+
+[State 2905, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27033
+pos = ceil(100 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = -0.3, -0.3
+
+[State 2905, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27033
+pos = ceil(100 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0.3, -0.3
+
+[State 2905, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27034
+pos = ceil(100 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 2905, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27035
+pos = ceil(100 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 2905, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27036
+pos = ceil(100 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 2
+
+[State 27101, ヒット定義]
+type = Projectile
+trigger1 = Time = 0
+attr = S, HP
+damage = IfElse(fvar(0) <= 800, 50, 70) * fvar(7), 0
+getpower = 0, 0
+givepower = 0, 0
+animtype = Back
+projID           = 27101
+projanim         = 27038
+projhitanim      = 27038
+projremanim      = 27038
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = -1
+guardflag = MA
+pausetime = 0, 20
+sparkno = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno = s(IfElse(Facing = -1, 30021, 30020))
+hitsound = s8, 21
+guardsound = s8, 3
+ground.type = High
+ground.slidetime = 10
+guard.slidetime = 10
+ground.hittime = 10
+guard.hittime = 4
+fall = 1
+hitflag = MAFD
+offset = ceil(100 * const(size.xscale)), ceil(-50 * const(size.yscale))
+
+[State 2905, バラバラパーツ1]
+type = Explod
+trigger1 = Time = 0
+anim = 24412
+pos = ceil(100 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -8 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 2905, バラバラパーツ2]
+type = Explod
+trigger1 = Time = 0
+anim = 24413
+pos = ceil(100 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -8 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 2905, バラバラパーツ3]
+type = Explod
+trigger1 = Time = 0
+anim = 24414
+pos = ceil(100 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -8 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 2905, バラバラパーツ4]
+type = Explod
+trigger1 = Time = 0
+anim = 24415
+pos = ceil(100 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -8 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 2905, バラバラパーツ5]
+type = Explod
+trigger1 = Time = 0
+anim = 24416
+pos = ceil(100 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -8 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 2905, バラバラパーツ6]
+type = Explod
+trigger1 = Time = 0
+anim = 24417
+pos = ceil(100 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -8 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 2905, バラバラパーツ7]
+type = Explod
+trigger1 = Time = 0
+anim = 24418
+pos = ceil(100 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -8 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 2905, 乗り込み状態解除]
+type = VarSet
+trigger1 = Time = 0
+var(9) = 0
+
+[State 2905, ステート変更]
+type = ChangeState
+trigger1 = Time = 1
+value = 0
+ctrl = 1
+
+
+
+
+;---------------------------------------------------------------------------
+; 反重力マシーン
+;---------------------------------------------------------------------------
+[Statedef 3000]
+type     = U
+movetype = A
+physics  = N
+ctrl     = 0
+anim     = IfElse(var(2) <= fvar(19), 3010, 3000)
+velset   = 0, 0
+facep2   = 0
+
+[State 3000, クールタイムアイコン表示(1P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 1
+trigger1 = var(5) = 0
+ID = 22200
+anim = 22200
+pos = ceil(fvar(6) + 90), ceil(fvar(5) + 15)
+postype = left
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 3000, クールタイムアイコン表示(2P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 2
+trigger1 = var(5) = 0
+ID = 22200
+anim = 22200
+pos = ceil(-fvar(6) - 44), ceil(fvar(5) + 15)
+postype = right
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 3000, 成否判定用乱数発生]
+type = VarSet
+trigger1 = Time = 0
+fvar(0) = Random
+
+[State 3000, キャンディ使用時]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+fvar(0) = 100
+
+[State 3000, 成功の予感発動]
+type = VarSet
+triggerall = Time = 0
+triggerall = fvar(0) > 299
+triggerall = PalNo > 6
+trigger1 = Random <= 399
+fvar(9) = var(2) + 360
+
+[State 3000, 成功の予感反映]
+type = VarAdd
+triggerall = Time = 0
+triggerall = fvar(9) > var(2)
+trigger1 = PalNo > 6
+fvar(0) = 50
+
+
+[State 3000, 声]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 0
+value = 2, 15
+
+[State 3000, 暗転一時停止]
+type = SuperPause
+trigger1 = Time = 0
+anim = -1
+pos = 0, 0
+sound = s8,24   ; とりあえず
+time = 5
+darken = 1
+poweradd = -2000
+unhittable = 0  ; 無敵なんてない
+
+[State 3000, キャンディ数字入れ替え]
+type = RemoveExplod
+trigger1 = Time = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+ID = 24110
+
+[State 3000, キャンディ使用時]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+var(8) = -1
+
+[State 3000, 数値表示(1P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 1
+trigger1 = var(2) <= fvar(16)
+anim = (24110 + var(8))
+ID = 24110
+pos = ceil(fvar(28) + 40), ceil(fvar(29) - 4)
+postype = left
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 3000, 数値表示(2P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 2
+trigger1 = var(2) <= fvar(16)
+anim = (24110 + var(8))
+ID = 24110
+pos = ceil(-fvar(28) - 15), ceil(fvar(29) - 4)
+postype = right
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+
+
+;失敗
+[State 3000, SE]
+type = PlaySnd
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) <= 299
+channel = 2
+value = 7, 0
+
+[State 3000, 失敗発生エフェクト]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) <= 299
+anim = 25420
+pos = ceil(60 * const(size.xscale)), ceil(-85 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 3000, 失敗プルート]
+type = Explod
+trigger1 = AnimElemTime(2) = 6
+trigger1 = fvar(0) <= 299
+anim = 25000
+pos = ceil(60 * const(size.xscale)), ceil(-85 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 3000, 失敗プルート枠]
+type = Explod
+trigger1 = AnimElemTime(2) = 6
+trigger1 = fvar(0) <= 299
+anim = 25001
+pos = ceil(60 * const(size.xscale)), ceil(-85 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 3000, 失敗時パーツ]
+type = Explod
+trigger1 = AnimElemTime(2) = 6
+trigger1 = fvar(0) <= 299
+anim = 25400
+pos = ceil(60 * const(size.xscale)), ceil(-85 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+
+[State 3000, 失敗時パーツ]
+type = Explod
+trigger1 = AnimElemTime(2) = 6
+trigger1 = fvar(0) <= 299
+anim = 25401
+pos = ceil(60 * const(size.xscale)), ceil(-85 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+
+
+; 成功
+[State 3000, SE]
+type = PlaySnd
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) = [300,799]
+channel = 2
+value = 7, 1
+
+[State 3000, 成功発生エフェクト]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) = [300,799]
+anim = 25421
+pos = ceil(60 * const(size.xscale)), ceil(-85 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 3000, 成功発生エフェクト２]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) = [300,799]
+anim = 25423
+pos = ceil(65 * const(size.xscale)), ceil(-90 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 3000, 成功プルート]
+type = Explod
+trigger1 = AnimElemTime(2) = 6
+trigger1 = fvar(0) = [300,799]
+anim = 25010
+pos = ceil(60 * const(size.xscale)), ceil(-85 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 3000, 成功プルート枠]
+type = Explod
+trigger1 = AnimElemTime(2) = 6
+trigger1 = fvar(0) = [300,799]
+anim = 25011
+pos = ceil(60 * const(size.xscale)), ceil(-85 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+
+;大成功
+[State 3000, SE]
+type = PlaySnd
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) >= 800
+channel = 2
+value = 7, 2
+
+[State 3000, 大成功発生エフェクト]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) >= 800
+anim = 25422
+pos = ceil(60 * const(size.xscale)), ceil(-85 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 3000, 大成功発生エフェクト２]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) >= 800
+anim = 25423
+pos = ceil(65 * const(size.xscale)), ceil(-90 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 3000, 大成功プルート]
+type = Explod
+trigger1 = AnimElemTime(2) = 6
+trigger1 = fvar(0) >= 800
+anim = 25020
+pos = ceil(60 * const(size.xscale)), ceil(-85 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 3000, 大成功プルート枠]
+type = Explod
+trigger1 = AnimElemTime(2) = 6
+trigger1 = fvar(0) >= 800
+anim = 25021
+pos = ceil(60 * const(size.xscale)), ceil(-85 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 3000, 大成功時パーツ]
+type = Explod
+trigger1 = AnimElemTime(2) = 6
+trigger1 = fvar(0) >= 800
+anim = 25410
+pos = ceil(60 * const(size.xscale)), ceil(-85 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+
+[State 3000, 大成功時パーツ]
+type = Explod
+trigger1 = AnimElemTime(2) = 6
+trigger1 = fvar(0) >= 800
+anim = 25411
+pos = ceil(60 * const(size.xscale)), ceil(-85 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+
+[State 3000, 反重力マシーンヘルパー]
+type = Helper
+trigger1 = AnimElemTime(2) = 15
+name = "AntigravityStater"
+stateno = 27300
+ID = 27300
+pos = ceil(60 * const(size.xscale)), ceil(10 * const(size.yscale))
+postype = p1
+ownpal = 1
+size.xscale = const(size.xscale) * 1
+size.yscale = const(size.yscale) * 1
+supermovetime = 99999999
+pausemovetime = 99999999
+ignoreHitPause = 1
+Persistent = 0
+
+[State 3000, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+
+
+
+;---------------------------------------------------------------------------
+; フローレカライダー
+;---------------------------------------------------------------------------
+[Statedef 3100]
+type     = U
+movetype = A
+physics  = N
+ctrl     = 0
+anim     = IfElse(var(2) <= fvar(19), 3110, 3100)
+velset   = 0, 0
+facep2   = 0
+
+[State 3100, クールタイムアイコン表示(1P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 1
+trigger1 = var(5) = 0
+ID = 22300
+anim = 22300
+pos = ceil(fvar(6) + 30), ceil(fvar(5) + 15)
+postype = left
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 3100, クールタイムアイコン表示(2P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 2
+trigger1 = var(5) = 0
+ID = 22300
+anim = 22300
+pos = ceil(-fvar(6) - 104), ceil(fvar(5) + 15)
+postype = right
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 3100, 魔法ダメージ倍率 初期値設定]
+type = VarSet
+trigger1 = Time = 0
+fvar(7) = 1
+
+[State 3100, 魔法ダメージ倍率計算１ 古代の記憶]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(2) <= fvar(10) ;古代の記憶効果時間中の場合
+fvar(7) = 0.5
+
+[State 3100, 魔法ダメージ倍率計算２ 古代の図書館]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(2) <= fvar(11) ;古代の図書館効果時間中の場合
+fvar(7) = 0.2
+
+[State 3100, 成否判定用乱数発生]
+type = VarSet
+trigger1 = Time = 0
+fvar(0) = Random
+
+[State 3100, キャンディ使用時]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+fvar(0) = 100
+
+[State 3100, 成功の予感発動]
+type = VarSet
+triggerall = Time = 0
+triggerall = fvar(0) > 299
+triggerall = PalNo > 6
+trigger1 = Random <= 399
+fvar(9) = var(2) + 900
+
+[State 3100, 成功の予感反映]
+type = VarAdd
+triggerall = Time = 0
+triggerall = fvar(9) > var(2)
+trigger1 = PalNo > 6
+fvar(0) = 50
+
+[State 3100, 声]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 0
+value = 2, 17
+
+[State 3100, 暗転一時停止]
+type = SuperPause
+trigger1 = Time = 0
+anim = -1
+pos = 0, 0
+sound = s8,24   ; とりあえず
+time = 10
+darken = 1
+poweradd = -3000
+unhittable = 0  ; 無敵なんてない
+
+[State 3100, キャンディ数字入れ替え]
+type = RemoveExplod
+trigger1 = Time = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+ID = 24110
+
+[State 3100, キャンディ使用時]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+var(8) = -1
+
+[State 3100, 数値表示(1P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 1
+trigger1 = var(2) <= fvar(16)
+anim = (24110 + var(8))
+ID = 24110
+pos = ceil(fvar(28) + 40), ceil(fvar(29) - 4)
+postype = left
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 3100, 数値表示(2P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 2
+trigger1 = var(2) <= fvar(16)
+anim = (24110 + var(8))
+ID = 24110
+pos = ceil(-fvar(28) - 15), ceil(fvar(29) - 4)
+postype = right
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+
+
+;失敗
+[State 3100, SE]
+type = PlaySnd
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) <= 299
+channel = 2
+value = 7, 0
+
+[State 3100, 失敗発生エフェクト]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) <= 299
+anim = 25420
+pos = ceil(100 * const(size.xscale)), ceil(-35 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 0
+scale = const(size.xscale), const(size.yscale)
+
+[State 3100, 失敗フロレ]
+type = Explod
+trigger1 = AnimElemTime(2) = 2
+trigger1 = fvar(0) <= 299
+anim = 25100
+pos = ceil(100 * const(size.xscale)), ceil(-35 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 3100, 失敗フロレ枠]
+type = Explod
+trigger1 = AnimElemTime(2) = 2
+trigger1 = fvar(0) <= 299
+anim = 25101
+pos = ceil(100 * const(size.xscale)), ceil(-35 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 3100, 失敗時パーツ]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) <= 299
+anim = 25400
+pos = ceil(100 * const(size.xscale)), ceil(-35 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 3100, 失敗時パーツ]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) <= 299
+anim = 25401
+pos = ceil(100 * const(size.xscale)), ceil(-35 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+
+; 成功
+[State 3100, SE]
+type = PlaySnd
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) = [300,799]
+channel = 2
+value = 7, 1
+
+[State 3100, 成功発生エフェクト]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) = [300,799]
+anim = 25421
+pos = ceil(100 * const(size.xscale)), ceil(-35 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 3100, 成功発生エフェクト２]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) = [300,799]
+anim = 25423
+pos = ceil(105 * const(size.xscale)), ceil(-40 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 3100, 成功フロレ]
+type = Explod
+trigger1 = AnimElemTime(2) = 2
+trigger1 = fvar(0) = [300,799]
+anim = 25110
+pos = ceil(100 * const(size.xscale)), ceil(-35 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 3100, 成功フロレ枠]
+type = Explod
+trigger1 = AnimElemTime(2) = 2
+trigger1 = fvar(0) = [300,799]
+anim = 25111
+pos = ceil(100 * const(size.xscale)), ceil(-35 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+
+;大成功
+[State 3100, SE]
+type = PlaySnd
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) >= 800
+channel = 2
+value = 7, 2
+
+[State 3100, 大成功発生エフェクト]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) >= 800
+anim = 25422
+pos = ceil(100 * const(size.xscale)), ceil(-35 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 3100, 大成功発生エフェクト２]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger1 = fvar(0) >= 800
+anim = 25423
+pos = ceil(105 * const(size.xscale)), ceil(-40 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State 3100, 大成功フロレ]
+type = Explod
+trigger1 = AnimElemTime(2) = 2
+trigger1 = fvar(0) >= 800
+anim = 25120
+pos = ceil(100 * const(size.xscale)), ceil(-35 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 3100, 大成功フロレ枠]
+type = Explod
+trigger1 = AnimElemTime(2) = 2
+trigger1 = fvar(0) >= 800
+anim = 25121
+pos = ceil(100 * const(size.xscale)), ceil(-35 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+
+[State 3100, 大成功時パーツ]
+type = Explod
+trigger1 = AnimElemTime(2) = 2
+trigger1 = fvar(0) >= 800
+anim = 25410
+pos = ceil(100 * const(size.xscale)), ceil(-35 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+
+[State 3100, 大成功時パーツ]
+type = Explod
+trigger1 = AnimElemTime(2) = 2
+trigger1 = fvar(0) >= 800
+anim = 25411
+pos = ceil(100 * const(size.xscale)), ceil(-35 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+
+
+[State 3100, カライダー本体]
+type = Explod
+trigger1 = AnimElemTime(2) = 13
+anim = 24600
+ID = 24600
+pos = ceil(0 * const(size.xscale)), ceil(0 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -2
+removeongethit = 1
+
+[State 3100, カライダー範囲]
+type = Explod
+trigger1 = AnimElemTime(2) = 13
+anim = 24609
+ID = 24600
+pos = ceil(0 * const(size.xscale)), ceil(0 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -5
+removeongethit = 1
+
+[State 3100, ホイール]
+type = Explod
+trigger1 = AnimElemTime(2) = 28
+anim = 24601
+ID = 24610
+pos = ceil(0 * const(size.xscale)), ceil(0 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = -4
+
+[State 3100, 設置音]
+type = PlaySnd
+trigger1 = AnimElemTime(2) = 13
+channel = 8
+value = 7, 33
+
+[State 3100, コイル電流]
+type = Explod
+trigger1 = AnimElemTime(2) = 40
+trigger1 = fvar(0) >= 300
+anim = 24622
+pos = ceil(0 * const(size.xscale)), ceil(0 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 1
+
+[State 3100, 針1]
+type = Explod
+trigger1 = AnimTime = 0
+anim = 24605
+ID = 24600
+pos = ceil(0 * const(size.xscale)), ceil(0 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3100, 針2]
+type = Explod
+trigger1 = AnimTime = 0
+anim = 24606
+ID = 24600
+pos = ceil(0 * const(size.xscale)), ceil(0 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3100, 針3]
+type = Explod
+trigger1 = AnimTime = 0
+anim = 24607
+ID = 24600
+pos = ceil(0 * const(size.xscale)), ceil(0 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3100, 針4]
+type = Explod
+trigger1 = AnimTime = 0
+anim = 24608
+ID = 24600
+pos = ceil(0 * const(size.xscale)), ceil(0 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3100, 煙]
+type = Explod
+trigger1 = AnimTime = 0
+ID = 32410
+anim = 32400
+pos = ceil(0 * const(size.xscale)), ceil(0 * const(size.yscale))
+postype = p1
+bindtime = -1
+sprpriority = -1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 3100, 煙]
+type = Explod
+trigger1 = AnimTime = 0
+ID = 32410
+anim = 32400
+pos = ceil(30 * const(size.xscale)), ceil(-25 * const(size.yscale))
+postype = p1
+bindtime = -1
+sprpriority = -1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 3100, 乗り込み状態]
+type = VarSet
+trigger1 = AnimTime = 0
+var(9) = 1
+
+[State 3100, 設置被ダメージ初期化]
+type = VarSet
+trigger1 = AnimTime = 0
+var(24) = 0
+
+[State 3100, 失敗ステートへ]
+type = ChangeState
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) <= 299
+value = 3101
+
+[State 3100, 成功ステートへ]
+type = ChangeState
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) = [300, 799]
+value = 3102
+
+[State 3100, 大成功ステートへ]
+type = ChangeState
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) >= 800
+value = 3103
+
+
+
+
+; 失敗ステート
+[Statedef 3101]
+Type      = S
+movetype  = A
+physics   = S
+anim      = 3120
+facep2    = 0
+sprpriority = -3
+
+[State 3101, ぶつかり判定消滅]
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 3101, 場所移動]
+type = PosAdd
+trigger1 = Time = 0
+x = 30 * const(size.xscale)
+y = -25 * const(size.yscale)
+
+[State 3101, 特殊]
+type = AssertSpecial
+trigger1 = 1
+flag = noautoturn
+
+[State 3101, 被ダメージ加算]
+type = VarAdd
+trigger1 = GetHitVar(damage) > 0
+var(24) = GetHitVar(damage)
+
+[State 3101, 悲鳴]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 0
+value = 2, 10
+
+[State 3101, ループ音]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 9
+value = 7, 34
+loop = 1
+
+[State 3101, ヘッドスパーク]
+type = Explod
+trigger1 = Time = 0
+anim = 24626
+ID = 24600
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3101, 電撃点発生]
+type = Explod
+trigger1 = Time = 0
+anim = 24630
+ID = 24600
+pos = ceil(70 * const(size.xscale)), ceil(-175 * const(size.yscale))
+bindtime = -1
+removetime = -1
+sprpriority = 0
+scale = const(size.xscale), const(size.yscale)
+removeongethit = 1
+
+[State 3101, 一旦ホイール消去]
+type = RemoveExplod
+trigger1 = Time = 0
+ID = 24610
+
+[State 3101, ホイール]
+type = Explod
+trigger1 = Time = 0
+anim = 24610
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -4
+removeongethit = 1
+
+[State 3101, ホイール]
+type = Explod
+trigger1 = Time = 0
+anim = 24602
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3101, 紐]
+type = Explod
+trigger1 = Time = 0
+anim = 24603
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+removeongethit = 1
+
+[State 3101, ホネ]
+type = Explod
+trigger1 = Time = 0
+anim = 24604
+ID = 24600
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -2
+removeongethit = 1
+
+
+[State 3101, 蒸気噴出音]
+type = PlaySnd
+trigger1 = Time = 300
+channel = 10
+value = 7, 22
+loop = 1
+
+[State 3101, 蒸気噴出1]
+type = Explod
+trigger1 = Time = 300
+anim = IfElse(Random < 499, 24618, 24619)
+ID = 24600
+pos = ceil(27 * const(size.xscale)), ceil(12 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3101, 蒸気噴出2]
+type = Explod
+trigger1 = Time = 300
+anim = IfElse(Random < 499, 24618, 24619)
+ID = 24600
+pos = ceil(48 * const(size.xscale)), ceil(-82 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3101, 蒸気噴出3]
+type = Explod
+trigger1 = Time = 300
+anim = IfElse(Random < 499, 24620, 24621)
+ID = 24600
+pos = ceil(83 * const(size.xscale)), ceil(-88 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3101, 蒸気噴出4]
+type = Explod
+trigger1 = Time = 300
+anim = IfElse(Random < 499, 24620, 24621)
+ID = 24600
+pos = ceil(93 * const(size.xscale)), ceil(-2 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+
+[State 3101, 自爆電撃]
+type = Helper
+triggerall = (NumHelper(27402) = 0)
+trigger1 = Time = 0
+name = "ColliderFaildLightning"
+stateno = 27402
+ID = 27402
+pos = ceil(30 * const(size.xscale)), ceil(-68 * const(size.yscale))
+postype = p1
+ownpal = 1
+size.xscale = const(size.xscale) * 1
+size.yscale = const(size.yscale) * 1
+Persistent = 0
+
+[State 3101, 2P電撃]
+type = Helper
+triggerall = (NumHelper(27400) = 0)
+trigger1 = Time = 0
+trigger1 = NumEnemy > 0
+trigger1 = Enemy(0),alive
+name = "ColliderLightning1"
+stateno = 27400
+ID = 27400
+pos = 0, 0
+postype = p1
+ownpal = 1
+size.xscale = const(size.xscale) * 1
+size.yscale = const(size.yscale) * 1
+Persistent = 0
+
+[State 3101, 4P電撃]
+type = Helper
+triggerall = (NumHelper(27401) = 0)
+trigger1 = Time = 0
+trigger1 = NumEnemy > 1
+trigger1 = Enemy(1),alive
+name = "ColliderLightning2"
+stateno = 27401
+ID = 27401
+pos = 0, 0
+postype = p1
+ownpal = 1
+size.xscale = const(size.xscale) * 1
+size.yscale = const(size.yscale) * 1
+Persistent = 0
+
+[State 3101, 爆発ステートへ]
+type = ChangeState
+trigger1 = Time >= 354
+trigger2 = var(24) > 500
+trigger3 = RoundState >= 3
+trigger4 = !alive
+value = 3105
+
+
+
+; 成功ステート
+[Statedef 3102]
+Type      = S
+movetype  = A
+physics   = S
+anim      = 3121
+facep2    = 0
+sprpriority = -3
+
+[State 3102, ぶつかり判定消滅]
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 3102, 場所移動]
+type = PosAdd
+trigger1 = Time = 0
+x = 30 * const(size.xscale)
+y = -25 * const(size.yscale)
+
+[State 3102, 特殊]
+type = AssertSpecial
+trigger1 = 1
+flag = noautoturn
+
+[State 3102, 被ダメージ加算]
+type = VarAdd
+trigger1 = GetHitVar(damage) > 0
+var(24) = GetHitVar(damage)
+
+[State 3102, ループ音]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 9
+value = 7, 34
+loop = 1
+
+[State 3102, コイル色]
+type = Explod
+trigger1 = Time = 0
+anim = 24623
+ID = 24600
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3102, 電球]
+type = Explod
+trigger1 = Time = 0
+anim = 24624
+ID = 24600
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3102, コイルスパーク]
+type = Explod
+trigger1 = Time = 0
+anim = 24625
+ID = 24600
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3102, ヘッドスパーク]
+type = Explod
+trigger1 = Time = 0
+anim = 24626
+ID = 24600
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3102, 電撃点発生]
+type = Explod
+trigger1 = Time = 0
+anim = 24630
+ID = 24600
+pos = ceil(70 * const(size.xscale)), ceil(-175 * const(size.yscale))
+bindtime = -1
+removetime = -1
+sprpriority = 0
+scale = const(size.xscale), const(size.yscale)
+removeongethit = 1
+
+[State 3102, 一旦ホイール消去]
+type = RemoveExplod
+trigger1 = Time = 0
+ID = 24610
+
+[State 3102, 紐]
+type = Explod
+trigger1 = Time = 0
+anim = 24603
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+removeongethit = 1
+
+[State 3102, ホイール]
+type = Explod
+trigger1 = Time = 0
+anim = 24610
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -4
+removeongethit = 1
+
+[State 3102, ホイール]
+type = Explod
+trigger1 = Time = 0
+anim = 24602
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3102, 速度Up]
+type = ChangeAnim
+trigger1 = Time = 120
+value = 3122
+
+[State 3102, 一旦ホイール消去]
+type = RemoveExplod
+trigger1 = Time = 120
+ID = 24610
+
+[State 3102, 紐]
+type = Explod
+trigger1 = Time = 120
+anim = 24612
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+removeongethit = 1
+
+[State 3102, ホイール]
+type = Explod
+trigger1 = Time = 120
+anim = 24611
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -4
+removeongethit = 1
+
+[State 3102, ホイール]
+type = Explod
+trigger1 = Time = 120
+anim = 24602
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3102, ホイールスパーク1]
+type = Explod
+trigger1 = Time = 120
+anim = 24627
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3102, ホイールスパーク2]
+type = Explod
+trigger1 = Time = 120
+anim = 24628
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3102, 蒸気噴出音]
+type = PlaySnd
+trigger1 = Time = 300
+channel = 10
+value = 7, 22
+loop = 1
+
+[State 3102, 蒸気噴出1]
+type = Explod
+trigger1 = Time = 300
+anim = IfElse(Random < 499, 24618, 24619)
+ID = 24600
+pos = ceil(27 * const(size.xscale)), ceil(12 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3102, 蒸気噴出2]
+type = Explod
+trigger1 = Time = 300
+anim = IfElse(Random < 499, 24618, 24619)
+ID = 24600
+pos = ceil(48 * const(size.xscale)), ceil(-82 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3102, 蒸気噴出3]
+type = Explod
+trigger1 = Time = 300
+anim = IfElse(Random < 499, 24620, 24621)
+ID = 24600
+pos = ceil(83 * const(size.xscale)), ceil(-88 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3102, 蒸気噴出4]
+type = Explod
+trigger1 = Time = 300
+anim = IfElse(Random < 499, 24620, 24621)
+ID = 24600
+pos = ceil(93 * const(size.xscale)), ceil(-2 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3102, 2P電撃]
+type = Helper
+triggerall = (NumHelper(27400) = 0)
+trigger1 = Time = 0
+trigger1 = NumEnemy > 0
+trigger1 = Enemy(0),alive
+name = "ColliderLightning1"
+stateno = 27400
+ID = 27400
+pos = 0, 0
+postype = p1
+ownpal = 1
+size.xscale = const(size.xscale) * 1
+size.yscale = const(size.yscale) * 1
+Persistent = 0
+
+[State 3102, 4P電撃]
+type = Helper
+triggerall = (NumHelper(27401) = 0)
+trigger1 = Time = 0
+trigger1 = NumEnemy > 1
+trigger1 = Enemy(1),alive
+name = "ColliderLightning2"
+stateno = 27401
+ID = 27401
+pos = 0, 0
+postype = p1
+ownpal = 1
+size.xscale = const(size.xscale) * 1
+size.yscale = const(size.yscale) * 1
+Persistent = 0
+
+[State 3102, 爆発ステートへ]
+type = ChangeState
+trigger1 = Time >= 354
+trigger2 = var(24) > 500
+trigger3 = RoundState >= 3
+trigger4 = !alive
+value = 3105
+
+
+
+
+; 大成功ステート
+[Statedef 3103]
+Type      = S
+movetype  = A
+physics   = S
+anim      = 3121
+facep2    = 0
+sprpriority = -3
+
+[State 3103, ぶつかり判定消滅]
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 3103, 場所移動]
+type = PosAdd
+trigger1 = Time = 0
+x = 30 * const(size.xscale)
+y = -25 * const(size.yscale)
+
+[State 3103, 特殊]
+type = AssertSpecial
+trigger1 = 1
+flag = noautoturn
+
+[State 3103, 被ダメージ加算]
+type = VarAdd
+trigger1 = GetHitVar(damage) > 0
+var(24) = GetHitVar(damage)
+
+[State 3103, ループ音]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 9
+value = 7, 34
+loop = 1
+
+[State 3103, コイル色]
+type = Explod
+trigger1 = Time = 0
+anim = 24623
+ID = 24600
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3103, 電球]
+type = Explod
+trigger1 = Time = 0
+anim = 24624
+ID = 24600
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3103, コイルスパーク]
+type = Explod
+trigger1 = Time = 0
+anim = 24625
+ID = 24600
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3103, コイルスパーク2]
+type = Explod
+trigger1 = Time = 0
+anim = 24629
+ID = 24600
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3103, ヘッドスパーク]
+type = Explod
+trigger1 = Time = 0
+anim = 24626
+ID = 24600
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3103, 電撃点発生]
+type = Explod
+trigger1 = Time = 0
+anim = 24630
+ID = 24600
+pos = ceil(70 * const(size.xscale)), ceil(-175 * const(size.yscale))
+bindtime = -1
+removetime = -1
+sprpriority = 0
+scale = const(size.xscale), const(size.yscale)
+removeongethit = 1
+
+[State 3103, 一旦ホイール消去]
+type = RemoveExplod
+trigger1 = Time = 0
+ID = 24610
+
+[State 3103, 紐]
+type = Explod
+trigger1 = Time = 0
+anim = 24603
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+removeongethit = 1
+
+[State 3103, ホイール]
+type = Explod
+trigger1 = Time = 0
+anim = 24610
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -4
+removeongethit = 1
+
+[State 3103, ホイール]
+type = Explod
+trigger1 = Time = 0
+anim = 24602
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3103, 速度Up]
+type = ChangeAnim
+trigger1 = Time = 120
+value = 3122
+
+[State 3103, 一旦ホイール消去]
+type = RemoveExplod
+trigger1 = Time = 120
+ID = 24610
+
+[State 3103, 紐]
+type = Explod
+trigger1 = Time = 120
+anim = 24612
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+removeongethit = 1
+
+[State 3103, ホイール]
+type = Explod
+trigger1 = Time = 120
+anim = 24611
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -4
+removeongethit = 1
+
+[State 3103, ホイール]
+type = Explod
+trigger1 = Time = 120
+anim = 24602
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3103, ホイールスパーク1]
+type = Explod
+trigger1 = Time = 120
+anim = 24627
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3103, ホイールスパーク2]
+type = Explod
+trigger1 = Time = 120
+anim = 24628
+ID = 24610
+pos = 0, 0
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3103, 蒸気噴出音]
+type = PlaySnd
+trigger1 = Time = 300
+channel = 10
+value = 7, 22
+loop = 1
+
+[State 3103, 蒸気噴出1]
+type = Explod
+trigger1 = Time = 300
+anim = IfElse(Random < 499, 24618, 24619)
+ID = 24600
+pos = ceil(27 * const(size.xscale)), ceil(12 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3103, 蒸気噴出2]
+type = Explod
+trigger1 = Time = 300
+anim = IfElse(Random < 499, 24618, 24619)
+ID = 24600
+pos = ceil(48 * const(size.xscale)), ceil(-82 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3103, 蒸気噴出3]
+type = Explod
+trigger1 = Time = 300
+anim = IfElse(Random < 499, 24620, 24621)
+ID = 24600
+pos = ceil(83 * const(size.xscale)), ceil(-88 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3103, 蒸気噴出4]
+type = Explod
+trigger1 = Time = 300
+anim = IfElse(Random < 499, 24620, 24621)
+ID = 24600
+pos = ceil(93 * const(size.xscale)), ceil(-2 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = -1
+removeongethit = 1
+
+[State 3103, 2P電撃]
+type = Helper
+triggerall = (NumHelper(27400) = 0)
+trigger1 = Time = 0
+trigger1 = NumEnemy > 0
+trigger1 = Enemy(0),alive
+name = "ColliderLightning1"
+stateno = 27400
+ID = 27400
+pos = 0, 0
+postype = p1
+ownpal = 1
+size.xscale = const(size.xscale) * 1
+size.yscale = const(size.yscale) * 1
+Persistent = 0
+
+[State 3103, 4P電撃]
+type = Helper
+triggerall = (NumHelper(27401) = 0)
+trigger1 = Time = 0
+trigger1 = NumEnemy > 1
+trigger1 = Enemy(1),alive
+name = "ColliderLightning2"
+stateno = 27401
+ID = 27401
+pos = 0, 0
+postype = p1
+ownpal = 1
+size.xscale = const(size.xscale) * 1
+size.yscale = const(size.yscale) * 1
+Persistent = 0
+
+[State 3103, 爆発ステートへ]
+type = ChangeState
+trigger1 = Time >= 354
+trigger2 = var(24) > 500
+trigger3 = RoundState >= 3
+trigger4 = !alive
+value = 3105
+
+
+; 爆発
+[Statedef 3105]
+Type      = S
+movetype  = A
+physics   = S
+facep2    = 0
+
+[State 3105, 音停止]
+type = StopSnd
+trigger1 = Time = 0
+channel = 9
+
+[State 3105, エフェクト削除]
+type = RemoveExplod
+trigger1 = Time = 0
+ID = 24600
+
+[State 3105, ホイール消去]
+type = RemoveExplod
+trigger1 = Time = 0
+ID = 24610
+
+[State 3105, 設置状態解除]
+type = VarSet
+trigger1 = Time = 0
+var(9) = 0
+
+[State 3105, 場所移動]
+type = PosSet
+trigger1 = Time = 0
+y = -45
+
+[State 3105, SE]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 10
+value = 8, 19
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27033
+pos = 50, -100
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0, .3
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27033
+pos = 50, -100
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = -0.3, -0.3
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27033
+pos = 50, -100
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0.3, -0.3
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27034
+pos = 50, -100
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27035
+pos = 50, -100
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27036
+pos = 50, -100
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 2
+
+[State 3105, ヒット定義]
+type = Projectile
+trigger1 = Time = 0
+attr = S, HP
+damage = 40 * fvar(7), 0
+getpower = 0, 0
+givepower = 0, 0
+animtype = Back
+projID           = 3105
+projanim         = 27038
+projhitanim      = 27037
+projremanim      = 27037
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = -1
+guardflag = MA
+pausetime = 0, 20
+sparkno = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno = s(IfElse(Facing = -1, 30021, 30020))
+hitsound = s8, 21
+guardsound = s8, 3
+ground.type = High
+ground.slidetime = 10
+guard.slidetime = 10
+ground.hittime = 10
+guard.hittime = 4
+fall = 1
+hitflag = MAFD
+projheightbound = -240, 240
+offset = 50, -100
+
+[State 3105, SE]
+type = PlaySnd
+trigger1 = Time = 1
+channel = 10
+value = 8, 19
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 1
+anim = 27033
+pos = ceil(70 * const(size.xscale)), ceil(10 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0, .3
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 1
+anim = 27033
+pos = ceil(70 * const(size.xscale)), ceil(10 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = -0.3, -0.3
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 1
+anim = 27033
+pos = ceil(70 * const(size.xscale)), ceil(10 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0.3, -0.3
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 1
+anim = 27034
+pos = ceil(70 * const(size.xscale)), ceil(10 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 1
+anim = 27035
+pos = ceil(70 * const(size.xscale)), ceil(10 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 1
+anim = 27036
+pos = ceil(70 * const(size.xscale)), ceil(10 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 2
+
+[State 3105, ヒット定義]
+type = Projectile
+trigger1 = Time = 1
+attr = S, HP
+damage = 40 * fvar(7), 0
+getpower = 0, 0
+givepower = 0, 0
+animtype = Back
+projID           = 3105
+projanim         = 27038
+projhitanim      = 27037
+projremanim      = 27037
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = -1
+guardflag = MA
+pausetime = 0, 20
+sparkno = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno = s(IfElse(Facing = -1, 30021, 30020))
+hitsound = s8, 21
+guardsound = s8, 3
+ground.type = High
+ground.slidetime = 10
+guard.slidetime = 10
+ground.hittime = 10
+guard.hittime = 4
+fall = 1
+hitflag = MAFD
+projheightbound = -240, 240
+offset = ceil(70 * const(size.xscale)), ceil(10 * const(size.yscale))
+
+[State 3105, SE]
+type = PlaySnd
+trigger1 = Time = 2
+channel = 10
+value = 8, 19
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 2
+anim = 27033
+pos = ceil(20 * const(size.xscale)), ceil(20 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0, .3
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 2
+anim = 27033
+pos = ceil(20 * const(size.xscale)), ceil(20 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = -0.3, -0.3
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 2
+anim = 27033
+pos = ceil(20 * const(size.xscale)), ceil(20 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0.3, -0.3
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 2
+anim = 27034
+pos = ceil(20 * const(size.xscale)), ceil(20 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 2
+anim = 27035
+pos = ceil(20 * const(size.xscale)), ceil(20 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3105, 爆発]
+type = Explod
+trigger1 = Time = 2
+anim = 27036
+pos = ceil(20 * const(size.xscale)), ceil(20 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 2
+
+[State 3105, ヒット定義]
+type = Projectile
+trigger1 = Time = 2
+attr = S, HP
+damage = 40 * fvar(7), 0
+getpower = 0, 0
+givepower = 0, 0
+animtype = Back
+projID           = 3105
+projanim         = 27038
+projhitanim      = 27037
+projremanim      = 27037
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = -1
+guardflag = MA
+pausetime = 0, 20
+sparkno = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno = s(IfElse(Facing = -1, 30021, 30020))
+hitsound = s8, 21
+guardsound = s8, 3
+ground.type = High
+ground.slidetime = 10
+guard.slidetime = 10
+ground.hittime = 10
+guard.hittime = 4
+fall = 1
+hitflag = MAFD
+projheightbound = -240, 240
+offset = ceil(20 * const(size.xscale)), ceil(20 * const(size.yscale))
+
+
+[State 3105, バラバラパーツ1]
+type = Explod
+trigger1 = Time = 0
+anim = 24613
+pos = ceil(50 * const(size.xscale)), ceil(-100 * const(size.yscale))
+postype = p1
+sprpriority = 4
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -8 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3105, バラバラパーツ2]
+type = Explod
+trigger1 = Time = 0
+anim = 24614
+pos = ceil(50 * const(size.xscale)), ceil(-70 * const(size.yscale))
+postype = p1
+sprpriority = 4
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -8 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3105, バラバラパーツ3]
+type = Explod
+trigger1 = Time = 0
+anim = 24615
+pos = ceil(50 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 4
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -8 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3105, バラバラパーツ4]
+type = Explod
+trigger1 = Time = 0
+anim = 24616
+pos = ceil(50 * const(size.xscale)), ceil(-90 * const(size.yscale))
+postype = p1
+sprpriority = 4
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -8 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3105, バラバラパーツ5]
+type = Explod
+trigger1 = Time = 0
+anim = 24617
+pos = ceil(50 * const(size.xscale)), ceil(-40 * const(size.yscale))
+postype = p1
+sprpriority = 4
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -8 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3105, バラバラパーツ6]
+type = Explod
+trigger1 = Time = 0
+anim = 24640
+pos = ceil(50 * const(size.xscale)), ceil(30 * const(size.yscale))
+postype = p1
+sprpriority = 4
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -8 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3105, ステート変更]
+type = ChangeState
+trigger1 = Time = 2
+value = 5050
+
+
+;---------------------------------------------------------------------------
+; メガドリル
+;---------------------------------------------------------------------------
+[Statedef 3200]
+type     = U
+movetype = A
+physics  = N
+ctrl     = 0
+anim     = IfElse(var(2) <= fvar(19), 3210, 3200)
+velset   = 0, 0
+facep2   = 0
+
+[State 3200, クールタイムアイコン表示(1P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 1
+trigger1 = var(5) = 0
+ID = 22400
+anim = IfElse(var(2) <= fvar(19), 22450 ,22400)
+pos = ceil(fvar(6) + 15), ceil(fvar(5) + 15)
+postype = left
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 3200, クールタイムアイコン表示(2P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 2
+trigger1 = var(5) = 0
+ID = 22400
+anim = IfElse(var(2) <= fvar(19), 22450 ,22400)
+pos = ceil(-fvar(6) - 119), ceil(fvar(5) + 15)
+postype = right
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 3200, 成否判定用乱数発生]
+type = VarSet
+trigger1 = Time = 0
+fvar(0) = Random
+
+[State 3200, キャンディ使用時]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+fvar(0) = 100
+
+[State 3200, 成功の予感発動]
+type = VarSet
+triggerall = Time = 0
+triggerall = fvar(0) > 299
+triggerall = PalNo > 6
+trigger1 = Random <= 399
+fvar(9) = var(2) + 900
+
+[State 3200, 成功の予感反映]
+type = VarAdd
+triggerall = Time = 0
+triggerall = fvar(9) > var(2)
+trigger1 = PalNo > 6
+fvar(0) = 50
+
+[State 3200, 暗転一時停止]
+type = SuperPause
+trigger1 = Time = 0
+anim = -1
+pos = 0, 0
+sound = s8,24   ; とりあえず
+time = 10
+darken = 1
+poweradd = -3000
+unhittable = 0  ; 無敵なんてない
+
+[State 3200, 声]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 0
+value = 2, 16
+
+[State 3200, キャンディ数字入れ替え]
+type = RemoveExplod
+trigger1 = Time = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+ID = 24110
+
+[State 3200, キャンディ使用時]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(8) > 0
+trigger1 = var(2) <= fvar(16)
+var(8) = -1
+
+[State 3200, 数値表示(1P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 1
+trigger1 = var(2) <= fvar(16)
+anim = (24110 + var(8))
+ID = 24110
+pos = ceil(fvar(28) + 40), ceil(fvar(29) - 4)
+postype = left
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 3200, 数値表示(2P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 2
+trigger1 = var(2) <= fvar(16)
+anim = (24110 + var(8))
+ID = 24110
+pos = ceil(-fvar(28) - 15), ceil(fvar(29) - 4)
+postype = right
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 3200, 魔法ダメージ倍率 初期値設定]
+type = VarSet
+trigger1 = Time = 0
+fvar(7) = 1
+
+[State 3200, 魔法ダメージ倍率計算１ 古代の記憶]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(2) <= fvar(10) ;古代の記憶効果時間中の場合
+fvar(7) = 0.5
+
+[State 3200, 魔法ダメージ倍率計算２ 古代の図書館]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(2) <= fvar(11) ;古代の図書館効果時間中の場合
+fvar(7) = 0.2
+
+[State 3200, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 3201
+
+
+; 本体発生
+[Statedef 3201]
+type     = U
+movetype = A
+physics  = N
+ctrl     = 0
+anim     = 3250
+velset   = 0, 0
+facep2   = 0
+
+;失敗
+[State 3201, SE]
+type = PlaySnd
+trigger1 = Time = 0
+trigger1 = fvar(0) <= 299
+channel = 2
+value = 7, 0
+
+[State 3201, 失敗発生エフェクト]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) <= 299
+anim = 25420
+pos = ceil(-20 * const(size.xscale)), ceil(-160 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = -1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 失敗フロスト]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) <= 299
+anim = 25300
+pos = ceil(-20 * const(size.xscale)), ceil(-160 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 0
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 失敗フロスト枠]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) <= 299
+anim = 25201
+pos = ceil(-20 * const(size.xscale)), ceil(-160 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 失敗時パーツ]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) <= 299
+anim = 25400
+pos = ceil(-20 * const(size.xscale)), ceil(-160 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+
+; 成功
+[State 3201, SE]
+type = PlaySnd
+trigger1 = Time = 0
+trigger1 = fvar(0) = [300,799]
+channel = 2
+value = 7, 1
+
+[State 3201, 成功発生エフェクト]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) = [300,799]
+anim = 25421
+pos = ceil(-20 * const(size.xscale)), ceil(-160 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = -2
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 成功発生エフェクト２]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) = [300,799]
+anim = 25423
+pos = ceil(-15 * const(size.xscale)), ceil(-165 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = -1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 成功フロスト]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) = [300,799]
+anim = 25310
+pos = ceil(-20 * const(size.xscale)), ceil(-160 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 0
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 成功フロスト枠]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) = [300,799]
+anim = 25311
+pos = ceil(-20 * const(size.xscale)), ceil(-160 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+
+
+;大成功
+[State 3201, SE]
+type = PlaySnd
+trigger1 = Time = 0
+trigger1 = fvar(0) >= 800
+channel = 2
+value = 7, 2
+
+[State 3201, 大成功発生エフェクト]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) >= 800
+anim = 25422
+pos = ceil(-20 * const(size.xscale)), ceil(-160 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = -2
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 大成功発生エフェクト２]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) >= 800
+anim = 25423
+pos = ceil(-15 * const(size.xscale)), ceil(-165 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = -1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 大成功フロスト]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) >= 800
+anim = 25320
+pos = ceil(-20 * const(size.xscale)), ceil(-160 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 0
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 大成功ランタン枠]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) >= 800
+anim = 25321
+pos = ceil(-20 * const(size.xscale)), ceil(-160 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 0
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 大成功時パーツ]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) >= 800
+anim = 25410
+pos = ceil(-20 * const(size.xscale)), ceil(-160 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 大成功時パーツ]
+type = Explod
+trigger1 = Time = 0
+trigger1 = fvar(0) >= 800
+anim = 25411
+pos = ceil(-20 * const(size.xscale)), ceil(-160 * const(size.yscale))
+postype = p1
+facing = 1
+ownpal = 1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+
+[State 3201, 機械発生音]
+type = PlaySnd
+trigger1 = Time = 13
+channel = 8
+value = 7, 33
+
+[State 3201, ドリル発生]
+type = Explod
+trigger1 = Time = 13
+anim = 24700
+pos = 0, 0
+postype = p1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 成功以下刃発生]
+type = Explod
+trigger1 = Time = 47
+trigger1 = fvar(0) < 800
+anim = 24701
+pos = 0, 0
+postype = p1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 成功以下ライト点滅]
+type = Explod
+trigger1 = Time = 47
+trigger1 = fvar(0) < 800
+anim = 24702
+pos = 0, 0
+postype = p1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+
+[State 3201, 大成功刃発生]
+type = Explod
+trigger1 = Time = 47
+trigger1 = fvar(0) >= 800
+anim = 24706
+pos = 0, 0
+postype = p1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 大成功刃発生2]
+type = Explod
+trigger1 = Time = 47
+trigger1 = fvar(0) >= 800
+anim = 24708
+pos = 0, 0
+postype = p1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+
+
+
+; 失敗時 ドリル爆発
+[State 3201, 投擲ドリル発生]
+type = Explod
+trigger1 = Time = 86
+trigger1 = fvar(0) <= 299
+anim = 24703
+pos = 0, 0
+postype = p1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, SE]
+type = PlaySnd
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+channel = 1
+value = 6, 9
+
+[State 3201, SE]
+type = PlaySnd
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+channel = 8
+value = 8, 19
+
+[State 3201, 着地衝撃波1]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 31303
+pos = ceil(120 * const(size.xscale)), 0
+postype = p1
+sprpriority = 4
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 3201, 衝撃波２奥]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 31304
+pos = ceil(120 * const(size.xscale)), 0
+postype = p1
+sprpriority = -1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 3201, 衝撃波２前]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 31305
+pos = ceil(120 * const(size.xscale)), 0
+postype = p1
+sprpriority = 5
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 3201, ダスト]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 31307
+pos = ceil(120 * const(size.xscale)), 0
+postype = p1
+sprpriority = 5
+ownpal = 1
+scale = const(size.xscale) * 1.5, const(size.yscale) * 1
+
+[State 3201, 衝撃波３]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 31306
+pos = ceil(120 * const(size.xscale)), 0
+postype = p1
+sprpriority = -2
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 0.3
+
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27033
+pos = ceil(120 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0, .3
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27033
+pos = ceil(120 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = -0.3, -0.3
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27033
+pos = ceil(120 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0.3, -0.3
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27034
+pos = ceil(120 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27035
+pos = ceil(120 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27036
+pos = ceil(120 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 2
+
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27033
+pos = ceil(90 * const(size.xscale)), ceil(-100 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0, .3
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27033
+pos = ceil(90 * const(size.xscale)), ceil(-100 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = -0.3, -0.3
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27033
+pos = ceil(90 * const(size.xscale)), ceil(-100 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0.3, -0.3
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27034
+pos = ceil(90 * const(size.xscale)), ceil(-100 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27035
+pos = ceil(90 * const(size.xscale)), ceil(-100 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27036
+pos = ceil(90 * const(size.xscale)), ceil(-100 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 2
+
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27033
+pos = ceil(10 * const(size.xscale)), ceil(-70 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0, .3
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27033
+pos = ceil(10 * const(size.xscale)), ceil(-70 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = -0.3, -0.3
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27033
+pos = ceil(10 * const(size.xscale)), ceil(-70 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0.3, -0.3
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27034
+pos = ceil(10 * const(size.xscale)), ceil(-70 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27035
+pos = ceil(10 * const(size.xscale)), ceil(-70 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3201, 爆発]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 27036
+pos = ceil(10 * const(size.xscale)), ceil(-70 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 2
+
+[State 3201, 魔法ダメージ倍率計算３ シュルル]
+type = VarAdd
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+trigger1 = NumEnemy > 0
+trigger1 = NumHelper(27020) > 0
+trigger1 = (enemynear(0),ID = Helper(27020),var(38)) || (enemynear(0),ID = Helper(27020),var(39))
+fvar(7) = 0.1
+
+[State 3201, ヒット定義]
+type = Projectile
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+attr = S, HP
+damage = 70 * fvar(7), 0
+getpower = 0, 0
+givepower = 0, 0
+animtype = Back
+projID           = 27101
+projanim         = 27038
+projhitanim      = 27038
+projremanim      = 27038
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = -1
+guardflag = MA
+pausetime = 0, 20
+sparkno = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno = s(IfElse(Facing = -1, 30021, 30020))
+hitsound = s8, 21
+guardsound = s8, 3
+ground.type = High
+ground.slidetime = 10
+guard.slidetime = 10
+ground.hittime = 10
+guard.hittime = 4
+fall = 1
+hitflag = MAFD
+offset = ceil(120 * const(size.xscale)), ceil(-50 * const(size.yscale))
+
+[State 3201, バラバラパーツ1]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 24720
+pos = ceil(120 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -10 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3201, バラバラパーツ2]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 24721
+pos = ceil(120 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -10 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3201, バラバラパーツ3]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 24722
+pos = ceil(120 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -10 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3201, バラバラパーツ4]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 24723
+pos = ceil(120 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -10 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3201, バラバラパーツ5]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 24724
+pos = ceil(120 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -10 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3201, バラバラパーツ6]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 24725
+pos = ceil(120 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -10 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3201, バラバラパーツ7]
+type = Explod
+trigger1 = Time = 91
+trigger1 = fvar(0) <= 299
+anim = 24726
+pos = ceil(120 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -10 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+
+
+; 成功以上時 ドリルランディング
+[State 3201, 投擲ドリル発生]
+type = Explod
+trigger1 = Time = 86
+trigger1 = fvar(0) >= 300
+anim = 24704
+pos = 0, 0
+postype = p1
+ownpal = 1
+sprpriority = 2
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 投擲成功ドリル刃]
+type = Explod
+trigger1 = Time = 86
+trigger1 = fvar(0) = [300,800)
+anim = 24705
+pos = 0, 0
+postype = p1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, 投擲大成功ドリル刃]
+type = Explod
+trigger1 = Time = 86
+trigger1 = fvar(0) >= 800
+anim = 24707
+pos = 0, 0
+postype = p1
+ownpal = 1
+sprpriority = 3
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+
+[State 3201, SE]
+type = PlaySnd
+trigger1 = Time = 93
+trigger1 = fvar(0) >= 300
+channel = 1
+value = 6, 9
+
+[State 3201, 着地衝撃波1]
+type = Explod
+trigger1 = Time = 93
+trigger1 = fvar(0) >= 300
+anim = 31303
+pos = ceil(70 * const(size.xscale)), 0
+postype = p1
+sprpriority = 4
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 3201, 衝撃波２奥]
+type = Explod
+trigger1 = Time = 93
+trigger1 = fvar(0) >= 300
+anim = 31304
+pos = ceil(70 * const(size.xscale)), 0
+postype = p1
+sprpriority = -1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 3201, 衝撃波２前]
+type = Explod
+trigger1 = Time = 93
+trigger1 = fvar(0) >= 300
+anim = 31305
+pos = ceil(70 * const(size.xscale)), 0
+postype = p1
+sprpriority = 5
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 3201, ダスト]
+type = Explod
+trigger1 = Time = 93
+trigger1 = fvar(0) >= 300
+anim = 31307
+pos = ceil(70 * const(size.xscale)), 0
+postype = p1
+sprpriority = 5
+ownpal = 1
+scale = const(size.xscale) * 1.5, const(size.yscale) * 1
+
+[State 3201, 衝撃波３]
+type = Explod
+trigger1 = Time = 93
+trigger1 = fvar(0) >= 300
+anim = 31306
+pos = ceil(70 * const(size.xscale)), 0
+postype = p1
+sprpriority = -2
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 0.3
+
+[State 3201, 基本ダメージ設定]
+type = VarSet
+trigger1 = Time = 93
+trigger1 = fvar(0) >= 300
+fvar(2) = 50
+
+[State 3201, 魔法ダメージ倍率計算３ シュルル]
+type = VarSet
+trigger1 = Time = 93
+trigger1 = fvar(0) >= 300
+trigger1 = NumEnemy > 0
+trigger1 = NumHelper(27020) > 0
+trigger1 = (enemynear(0),ID = Helper(27020),var(38)) || (enemynear(0),ID = Helper(27020),var(39))
+fvar(2) = fvar(2) * (0.1 + fvar(7))
+
+[State 3201, ヒット定義]
+type = Projectile
+trigger1 = Time = 93
+trigger1 = fvar(0) >= 300
+attr = C, HA
+animtype = Back
+hitflag = MAFD
+damage = fvar(2), 0
+guardflag = MA
+projID           = 3201
+projanim         = 24727
+projhitanim      = 24728
+projremanim      = 24728
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = -1
+pausetime = 3,10
+guard.pausetime = 3,3
+sparkno = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno = s(IfElse(Facing = -1, 30021, 30020))
+sparkxy = -10, -20
+hitsound = s8, IfElse(Random < 334, 20, IfElse(Random < 500, 21, 22))
+guardsound = s8, 3
+ground.type = High
+ground.slidetime = 50
+guard.slidetime = 3
+ground.hittime = 50
+guard.hittime = 3
+air.hittime = 50
+guard.dist = 250
+ground.velocity = -1.5, 0
+air.velocity = -2,-2
+airguard.velocity = -2, 0
+air.juggle = 1
+fall = 1
+fall.recovertime = 56
+down.velocity = -1, -3
+ground.cornerpush.veloff = 0
+air.cornerpush.veloff = 0
+down.cornerpush.veloff = 0
+guard.cornerpush.veloff = 0
+
+[State 3201, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) <= 299
+value = 0
+ctrl = 1
+
+
+
+[State 3201, 煙]
+type = Explod
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) >= 300
+ID = 32410
+anim = 32400
+pos = ceil(0 * const(size.xscale)), ceil(0 * const(size.yscale))
+postype = p1
+bindtime = -1
+sprpriority = 4
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 3201, 煙]
+type = Explod
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) >= 300
+ID = 32410
+anim = 32400
+pos = ceil(70 * const(size.xscale)), ceil(0 * const(size.yscale))
+postype = p1
+bindtime = -1
+sprpriority = 4
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State 3201, 乗り込み状態]
+type = VarSet
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) >= 300
+var(9) = 1
+
+[State 3201, 設置被ダメージ初期化]
+type = VarSet
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) >= 300
+var(24) = 0
+
+[State 3201, 効果終了時間記録]
+type = VarSet
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) >= 300
+fvar(8) = var(2) + 420 ; 効果時間７秒
+
+[State 3201, 作動音]
+type = PlaySnd
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) >= 300
+channel = 8
+value = 7, 36
+
+[State 3201, 場所移動]
+type = PosAdd
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) >= 300
+x = 85
+
+
+; 成功時エフェクト
+[State 3201, ライト]
+type = Explod
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) = [300,800)
+anim = 24710
+ID = 24700
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3201, ドリル]
+type = Explod
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) = [300,800)
+anim = 24711
+ID = 24711
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+
+; 大成功時エフェクト
+[State 3201, ライト1]
+type = Explod
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) >= 800
+anim = 24717
+ID = 24700
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3201, ライト2]
+type = Explod
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) >= 800
+anim = 24718
+ID = 24700
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3201, スパーク]
+type = Explod
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) >= 800
+anim = 24719
+ID = 24700
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 3
+removetime = -1
+removeongethit = 1
+
+[State 3201, ドリル]
+type = Explod
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) >= 800
+anim = 24713
+ID = 24713
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3201, ドリル2]
+type = Explod
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) >= 800
+anim = 24715
+ID = 24713
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+
+[State 3201, ドリルステートへ]
+type = ChangeState
+trigger1 = AnimTime = 0
+trigger1 = fvar(0) >= 300
+value = 3202
+
+
+
+; ドリル停止状態
+[Statedef 3202]
+type     = U
+movetype = A
+physics  = S
+ctrl     = 0
+anim     = 3251
+facep2   = 0
+
+[State 3202, 特殊効果]
+type = AssertSpecial
+trigger1 = 1
+flag = noautoturn
+flag2 = noshadow
+
+[State 3202, ぶつかり判定消滅]
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 3202, ピストン表示]
+type = Explod
+trigger1 = Time = 0
+trigger1 = NumExplod(24709) <= 0
+anim = 24709
+ID = 24709
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+removetime = -1
+sprpriority = 2
+removeongethit = 1
+
+[State 3202, 被ダメージ加算]
+type = VarAdd
+trigger1 = GetHitVar(damage) > 0
+var(24) = GetHitVar(damage)
+
+
+
+[State 3202, 回転速度Up]
+type = Explod
+trigger1 = NumExplod(24711) > 0
+trigger1 = fvaR(8) - var(2) = 360
+anim = 24712
+ID = 24712
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3202, 回転速度Up]
+type = Explod
+trigger1 = NumExplod(24713) > 0
+trigger1 = fvaR(8) - var(2) = 360
+anim = 24714
+ID = 24714
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3202, 回転速度Up]
+type = Explod
+trigger1 = NumExplod(24713) > 0
+trigger1 = fvaR(8) - var(2) = 360
+anim = 24729
+ID = 24714
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3202, 低速回転ドリル削除]
+type = RemoveExplod
+trigger1 = NumExplod(24712) > 0
+ID = 24711
+
+[State 3202, 低速回転ドリル削除]
+type = RemoveExplod
+trigger1 = NumExplod(24714) > 0
+ID = 24713
+
+
+
+[State 3202, 蒸気1]
+type = Explod
+trigger1 = (Time % 120) = 0
+trigger1 = fvar(0) = [300,800)
+trigger1 = fvar(8) - var(2) > 120
+anim = 24618
+pos = ceil(-56 * const(size.xscale)), ceil(-94 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+
+[State 3202, 蒸気2]
+type = Explod
+trigger1 = (Time % 150) = 0
+trigger1 = fvar(0) = [300,800)
+trigger1 = fvar(8) - var(2) > 120
+anim = 24618
+pos = ceil(-75 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+
+
+; 5秒後からぷしゅぷしゅ
+[State 3202, 蒸気音]
+type = PlaySnd
+trigger1 = fvar(8) - var(2) = 120
+channel = 9
+value = 7, 22
+loop = 1
+
+[State 3202, 蒸気1]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+anim = IfElse(Random < 499, 24618, 24619)
+ID = 24705
+pos = ceil(-56 * const(size.xscale)), ceil(-94 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3202, 蒸気2]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+anim = IfElse(Random < 499, 24618, 24619)
+ID = 24705
+pos = ceil(-75 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3202, 蒸気3]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+anim = IfElse(Random < 499, 24618, 24619)
+ID = 24705
+pos = ceil(25 * const(size.xscale)), ceil(-95 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3202, 蒸気4]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+anim = IfElse(Random < 499, 24620, 24621)
+ID = 24705
+pos = ceil(5 * const(size.xscale)), ceil(-42 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3202, 蒸気5]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+anim = IfElse(Random < 499, 24620, 24621)
+ID = 24705
+pos = ceil(55 * const(size.xscale)), ceil(-75 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3202, 本体光]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+trigger1 = fvar(0) >= 800
+anim = 24716
+ID = 24705
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+
+
+
+[State 3202, ダメージ計算]
+type = VarSet
+trigger1 = (Time % 10) = 0
+trigger1 = fvar(8) - var(2) > 360
+trigger2 = (Time % 7) = 0
+trigger2 = fvar(8) - var(2) <= 360
+fvar(2) = IfElse(fvar(0) >= 800, 40, 30)
+
+[State 3202, ダメージ計算]
+type = VarSet
+trigger1 = (Time % 10) = 0
+trigger1 = fvar(8) - var(2) > 360
+trigger1 = fvar(0) <= 299
+trigger1 = NumEnemy > 0
+trigger1 = NumHelper(27020) > 0
+trigger1 = (enemynear(0),ID = Helper(27020),var(38)) || (enemynear(0),ID = Helper(27020),var(39))
+trigger2 = (Time % 7) = 0
+trigger2 = fvar(8) - var(2) <= 360
+trigger2 = fvar(0) <= 299
+trigger2 = NumEnemy > 0
+trigger2 = NumHelper(27020) > 0
+trigger2 = (enemynear(0),ID = Helper(27020),var(38)) || (enemynear(0),ID = Helper(27020),var(39))
+fvar(2) = fvar(2) * 1.1
+
+[State 3202, 当たり判定]
+type = HitDef
+trigger1 = (Time % 10) = 0
+trigger1 = fvar(8) - var(2) > 360
+trigger2 = (Time % 7) = 0
+trigger2 = fvar(8) - var(2) <= 360
+attr            = S, HA
+hitflag         = MAF
+guardflag       = MA
+animtype        = Hard
+priority        = 4, Hit
+damage          = fvar(2) * fvar(7), 0
+pausetime       = 0, 10
+guard.pausetime = 0, 5
+sparkno         = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno   = s(IfElse(Facing = -1, 30021, 30020))
+sparkxy         = 0, -50
+hitsound        = s7, IfElse(Random < 499, 38, 39)
+guardsound      = s8, 3
+ground.type     = Low
+guard.dist      = 200
+forcestand      = 1
+getpower        = 0, 0
+
+
+
+[State 3202, 前進ステートへ]
+type = ChangeState
+trigger1 = var(59) = 0
+trigger1 = command = "holdfwd"
+trigger2 = var(59) > 0
+trigger2 = var(56) = 1
+value = 3203
+
+[State 3202, 後退ステートへ]
+type = ChangeState
+trigger1 = var(59) = 0
+trigger1 = command = "holdback"
+trigger2 = var(59) > 0
+trigger2 = var(56) = -1
+value = 3204
+
+[State 3202, ステート変更]
+type = ChangeState
+trigger1 = var(24) >= 500
+trigger2 = var(2) >= fvar(8)
+trigger3 = RoundState >= 3
+trigger4 = !alive
+value = 3250
+
+
+
+; ドリル前進
+[Statedef 3203]
+type     = U
+movetype = A
+physics  = N
+ctrl     = 0
+anim     = 3252
+facep2   = 0
+
+[State 3203, 特殊効果]
+type = AssertSpecial
+trigger1 = 1
+flag = noautoturn
+flag2 = noshadow
+
+[State 3203, ぶつかり判定消滅]
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 3203, ダスト表示]
+type = MakeDust
+trigger1 = 1
+pos = ceil(-38 * const(size.xscale)), ceil(20 * const(size.yscale))
+spacing = 10
+
+[State 3203, 被ダメージ加算]
+type = VarAdd
+trigger1 = GetHitVar(damage) > 0
+var(24) = GetHitVar(damage)
+
+[State 3203, 前に加速]
+type = VelAdd
+trigger1 = Time % 3 = 0
+trigger1 = Vel X < 2
+x = 0.2
+
+[State 3203, 回転速度Up]
+type = Explod
+trigger1 = NumExplod(24711) > 0
+trigger1 = fvaR(8) - var(2) = 360
+anim = 24712
+ID = 24712
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3203, 回転速度Up]
+type = Explod
+trigger1 = NumExplod(24713) > 0
+trigger1 = fvaR(8) - var(2) = 360
+anim = 24714
+ID = 24714
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3203, 回転速度Up]
+type = Explod
+trigger1 = NumExplod(24713) > 0
+trigger1 = fvaR(8) - var(2) = 360
+anim = 24729
+ID = 24714
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3203, 低速回転ドリル削除]
+type = RemoveExplod
+trigger1 = NumExplod(24712) > 0
+ID = 24711
+
+[State 3203, 低速回転ドリル削除]
+type = RemoveExplod
+trigger1 = NumExplod(24714) > 0
+ID = 24713
+
+[State 3203, 蒸気1]
+type = Explod
+trigger1 = (Time % 120) = 0
+trigger1 = fvar(0) = [300,800)
+trigger1 = fvar(8) - var(2) > 120
+anim = 24618
+pos = ceil(-56 * const(size.xscale)), ceil(-94 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+
+[State 3203, 蒸気2]
+type = Explod
+trigger1 = (Time % 150) = 0
+trigger1 = fvar(0) = [300,800)
+trigger1 = fvar(8) - var(2) > 120
+anim = 24618
+pos = ceil(-75 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+
+
+; 5秒後からぷしゅぷしゅ
+[State 3203, 蒸気音]
+type = PlaySnd
+trigger1 = fvar(8) - var(2) = 120
+channel = 9
+value = 7, 22
+loop = 1
+
+[State 3203, 蒸気1]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+anim = IfElse(Random < 499, 24618, 24619)
+ID = 24705
+pos = ceil(-56 * const(size.xscale)), ceil(-94 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3203, 蒸気2]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+anim = IfElse(Random < 499, 24618, 24619)
+ID = 24705
+pos = ceil(-75 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3203, 蒸気3]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+anim = IfElse(Random < 499, 24618, 24619)
+ID = 24705
+pos = ceil(25 * const(size.xscale)), ceil(-95 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3203, 蒸気4]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+anim = IfElse(Random < 499, 24620, 24621)
+ID = 24705
+pos = ceil(5 * const(size.xscale)), ceil(-42 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3203, 蒸気5]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+anim = IfElse(Random < 499, 24620, 24621)
+ID = 24705
+pos = ceil(55 * const(size.xscale)), ceil(-75 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3203, 本体光]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+trigger1 = fvar(0) >= 800
+anim = 24716
+ID = 24705
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+
+[State 3203, ダメージ計算]
+type = VarSet
+trigger1 = (Time % 10) = 0
+trigger1 = fvar(8) - var(2) > 360
+trigger2 = (Time % 7) = 0
+trigger2 = fvar(8) - var(2) <= 360
+fvar(2) = IfElse(fvar(0) >= 800, 40, 30)
+
+[State 3203, ダメージ計算]
+type = VarSet
+trigger1 = (Time % 10) = 0
+trigger1 = fvar(8) - var(2) > 360
+trigger1 = fvar(0) <= 299
+trigger1 = NumEnemy > 0
+trigger1 = NumHelper(27020) > 0
+trigger1 = (enemynear(0),ID = Helper(27020),var(38)) || (enemynear(0),ID = Helper(27020),var(39))
+trigger2 = (Time % 7) = 0
+trigger2 = fvar(8) - var(2) <= 360
+trigger2 = fvar(0) <= 299
+trigger2 = NumEnemy > 0
+trigger2 = NumHelper(27020) > 0
+trigger2 = (enemynear(0),ID = Helper(27020),var(38)) || (enemynear(0),ID = Helper(27020),var(39))
+fvar(2) = fvar(2) * 1.1
+
+[State 3203, 当たり判定]
+type = HitDef
+trigger1 = (Time % 10) = 0
+trigger1 = fvar(8) - var(2) > 360
+trigger2 = (Time % 7) = 0
+trigger2 = fvar(8) - var(2) <= 360
+attr            = S, HA
+hitflag         = MAF
+guardflag       = MA
+animtype        = Hard
+priority        = 4, Hit
+damage          = fvar(2) * fvar(7), 0
+pausetime       = 0, 10
+guard.pausetime = 0, 5
+sparkno         = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno   = s(IfElse(Facing = -1, 30021, 30020))
+sparkxy         = 0, -50
+hitsound        = s7, IfElse(Random < 499, 38, 39)
+guardsound      = s8, 3
+ground.type     = Low
+guard.dist      = 200
+forcestand      = 1
+getpower        = 0, 0
+
+
+
+[State 3203, ステート変更]
+type = ChangeState
+trigger1 = var(59) = 0
+trigger1 = command != "holdfwd"
+trigger2 = var(59) > 0
+trigger2 = var(56) != 1
+value = 3202
+
+[State 3203, ステート変更]
+type = ChangeState
+trigger1 = var(24) >= 500
+trigger2 = var(2) >= fvar(8)
+trigger3 = RoundState >= 3
+trigger4 = !alive
+value = 3250
+
+
+
+
+
+; ドリル後退
+[Statedef 3204]
+type     = U
+movetype = A
+physics  = N
+ctrl     = 0
+anim     = 3253
+facep2   = 0
+
+[State 3204, 特殊効果]
+type = AssertSpecial
+trigger1 = 1
+flag = noautoturn
+flag2 = noshadow
+
+[State 3204, ぶつかり判定消滅]
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 3204, ダスト表示]
+type = MakeDust
+trigger1 = 1
+pos = ceil(-38 * const(size.xscale)), ceil(20 * const(size.yscale))
+spacing = 10
+
+[State 3204, 被ダメージ加算]
+type = VarAdd
+trigger1 = GetHitVar(damage) > 0
+var(24) = GetHitVar(damage)
+
+[State 3204, 後ろに加速]
+type = VelAdd
+trigger1 = Time % 3 = 0
+trigger1 = Vel X > -2
+x = -0.2
+
+
+[State 3204, 回転速度Up]
+type = Explod
+trigger1 = NumExplod(24711) > 0
+trigger1 = fvaR(8) - var(2) = 360
+anim = 24712
+ID = 24712
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3204, 回転速度Up]
+type = Explod
+trigger1 = NumExplod(24713) > 0
+trigger1 = fvaR(8) - var(2) = 360
+anim = 24714
+ID = 24714
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3204, 回転速度Up]
+type = Explod
+trigger1 = NumExplod(24713) > 0
+trigger1 = fvaR(8) - var(2) = 360
+anim = 24729
+ID = 24714
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3204, 低速回転ドリル削除]
+type = RemoveExplod
+trigger1 = NumExplod(24712) > 0
+ID = 24711
+
+[State 3204, 低速回転ドリル削除]
+type = RemoveExplod
+trigger1 = NumExplod(24714) > 0
+ID = 24713
+
+
+[State 3204, 蒸気1]
+type = Explod
+trigger1 = (Time % 120) = 0
+trigger1 = fvar(0) = [300,800)
+trigger1 = fvar(8) - var(2) > 120
+anim = 24618
+pos = ceil(-56 * const(size.xscale)), ceil(-94 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+
+[State 3204, 蒸気2]
+type = Explod
+trigger1 = (Time % 150) = 0
+trigger1 = fvar(0) = [300,800)
+trigger1 = fvar(8) - var(2) > 120
+anim = 24618
+pos = ceil(-75 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+
+
+; 5秒後からぷしゅぷしゅ
+[State 3204, 蒸気音]
+type = PlaySnd
+trigger1 = fvar(8) - var(2) = 120
+channel = 9
+value = 7, 22
+loop = 1
+
+[State 3204, 蒸気1]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+anim = IfElse(Random < 499, 24618, 24619)
+ID = 24705
+pos = ceil(-56 * const(size.xscale)), ceil(-94 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3204, 蒸気2]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+anim = IfElse(Random < 499, 24618, 24619)
+ID = 24705
+pos = ceil(-75 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3204, 蒸気3]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+anim = IfElse(Random < 499, 24618, 24619)
+ID = 24705
+pos = ceil(25 * const(size.xscale)), ceil(-95 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3204, 蒸気4]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+anim = IfElse(Random < 499, 24620, 24621)
+ID = 24705
+pos = ceil(5 * const(size.xscale)), ceil(-42 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3204, 蒸気5]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+anim = IfElse(Random < 499, 24620, 24621)
+ID = 24705
+pos = ceil(55 * const(size.xscale)), ceil(-75 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+[State 3204, 本体光]
+type = Explod
+trigger1 = fvar(8) - var(2) = 120
+trigger1 = fvar(0) >= 800
+anim = 24716
+ID = 24705
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+bindtime = -1
+sprpriority = 2
+removetime = -1
+removeongethit = 1
+
+
+[State 3204, ダメージ計算]
+type = VarSet
+trigger1 = (Time % 10) = 0
+trigger1 = fvar(8) - var(2) > 360
+trigger2 = (Time % 7) = 0
+trigger2 = fvar(8) - var(2) <= 360
+fvar(2) = IfElse(fvar(0) >= 800, 40, 30)
+
+[State 3204, ダメージ計算]
+type = VarSet
+trigger1 = (Time % 10) = 0
+trigger1 = fvar(8) - var(2) > 360
+trigger1 = fvar(0) <= 299
+trigger1 = NumEnemy > 0
+trigger1 = NumHelper(27020) > 0
+trigger1 = (enemynear(0),ID = Helper(27020),var(38)) || (enemynear(0),ID = Helper(27020),var(39))
+trigger2 = (Time % 7) = 0
+trigger2 = fvar(8) - var(2) <= 360
+trigger2 = fvar(0) <= 299
+trigger2 = NumEnemy > 0
+trigger2 = NumHelper(27020) > 0
+trigger2 = (enemynear(0),ID = Helper(27020),var(38)) || (enemynear(0),ID = Helper(27020),var(39))
+fvar(2) = fvar(2) * 1.1
+
+[State 3204, 当たり判定]
+type = HitDef
+trigger1 = (Time % 10) = 0
+trigger1 = fvar(8) - var(2) > 360
+trigger2 = (Time % 7) = 0
+trigger2 = fvar(8) - var(2) <= 360
+attr            = S, HA
+hitflag         = MAF
+guardflag       = MA
+animtype        = Hard
+priority        = 4, Hit
+damage          = fvar(2) * fvar(7), 0
+pausetime       = 0, 10
+guard.pausetime = 0, 5
+sparkno         = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno   = s(IfElse(Facing = -1, 30021, 30020))
+sparkxy         = 0, -50
+hitsound        = s7, IfElse(Random < 499, 38, 39)
+guardsound      = s8, 3
+ground.type     = Low
+guard.dist      = 200
+forcestand      = 1
+getpower        = 0, 0
+
+
+[State 3204, ステート変更]
+type = ChangeState
+trigger1 = var(59) = 0
+trigger1 = command != "holdback"
+trigger2 = var(59) > 0
+trigger2 = var(56) != -1
+value = 3202
+
+[State 3204, ステート変更]
+type = ChangeState
+trigger1 = var(24) >= 500
+trigger2 = var(2) >= fvar(8)
+trigger3 = RoundState >= 3
+trigger4 = !alive
+value = 3250
+
+
+
+
+; 爆発
+[Statedef 3250]
+type     = U
+movetype = A
+physics  = N
+ctrl     = 0
+velset   = 0, 0
+facep2   = 0
+
+[State 3250, 音停止]
+type = StopSnd
+trigger1 = Time = 0
+channel = 8
+
+[State 3250, 音停止]
+type = StopSnd
+trigger1 = Time = 0
+channel = 9
+
+[State 3250, エフェクト削除]
+type = RemoveExplod
+trigger1 = Time = 0
+ID = 24700
+
+[State 3250, エフェクト削除]
+type = RemoveExplod
+trigger1 = Time = 0
+ID = 24705
+
+[State 3250, エフェクト削除]
+type = RemoveExplod
+trigger1 = Time = 0
+ID = 24711
+
+[State 3250, エフェクト削除]
+type = RemoveExplod
+trigger1 = Time = 0
+ID = 24712
+
+[State 3250, エフェクト削除]
+type = RemoveExplod
+trigger1 = Time = 0
+ID = 24713
+
+[State 3250, エフェクト削除]
+type = RemoveExplod
+trigger1 = Time = 0
+ID = 24714
+
+[State 3250, エフェクト削除]
+type = RemoveExplod
+trigger1 = Time = 0
+ID = 24709
+
+[State 3250, 場所移動]
+type = PosSet
+trigger1 = Time = 0
+y = -45
+
+[State 3250, 設置状態解除]
+type = VarSet
+trigger1 = Time = 0
+var(9) = 0
+
+[State 3250, 基本ダメージ設定]
+type = VarSet
+trigger1 = Time = 0
+fvar(2) = 60
+
+[State 3250, SE]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 10
+value = 8, 19
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27033
+pos = ceil(70 * const(size.xscale)), ceil(-40 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0, .3
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27033
+pos = ceil(70 * const(size.xscale)), ceil(-40 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = -0.3, -0.3
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27033
+pos = ceil(70 * const(size.xscale)), ceil(-40 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0.3, -0.3
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27034
+pos = ceil(70 * const(size.xscale)), ceil(-40 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27035
+pos = ceil(70 * const(size.xscale)), ceil(-40 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 0
+anim = 27036
+pos = ceil(70 * const(size.xscale)), ceil(-40 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 2
+
+[State 3250, ヒット定義]
+type = Projectile
+trigger1 = Time = 0
+attr = S, HP
+damage = fvar(2) * fvar(7), 0
+getpower = 0, 0
+givepower = 0, 0
+animtype = Back
+projID           = 27101
+projanim         = 27038
+projhitanim      = 27038
+projremanim      = 27038
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = -1
+guardflag = MA
+pausetime = 0, 20
+sparkno = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno = s(IfElse(Facing = -1, 30021, 30020))
+hitsound = s8, 21
+guardsound = s8, 3
+ground.type = High
+ground.slidetime = 10
+guard.slidetime = 10
+ground.hittime = 10
+guard.hittime = 4
+fall = 1
+hitflag = MAFD
+offset = ceil(70 * const(size.xscale)), ceil(-40 * const(size.yscale))
+
+
+[State 3250, SE]
+type = PlaySnd
+trigger1 = Time = 1
+channel = 10
+value = 8, 19
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 1
+anim = 27033
+pos = ceil(45 * const(size.xscale)), ceil(-80 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0, .3
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 1
+anim = 27033
+pos = ceil(45 * const(size.xscale)), ceil(-80 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = -0.3, -0.3
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 1
+anim = 27033
+pos = ceil(45 * const(size.xscale)), ceil(-80 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0.3, -0.3
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 1
+anim = 27034
+pos = ceil(45 * const(size.xscale)), ceil(-80 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 1
+anim = 27035
+pos = ceil(45 * const(size.xscale)), ceil(-80 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 1
+anim = 27036
+pos = ceil(45 * const(size.xscale)), ceil(-80 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 2
+
+[State 3250, ヒット定義]
+type = Projectile
+trigger1 = Time = 1
+attr = S, HP
+damage = fvar(2) * fvar(7), 0
+getpower = 0, 0
+givepower = 0, 0
+animtype = Back
+projID           = 27101
+projanim         = 27038
+projhitanim      = 27038
+projremanim      = 27038
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = -1
+guardflag = MA
+pausetime = 0, 20
+sparkno = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno = s(IfElse(Facing = -1, 30021, 30020))
+hitsound = s8, 21
+guardsound = s8, 3
+ground.type = High
+ground.slidetime = 10
+guard.slidetime = 10
+ground.hittime = 10
+guard.hittime = 4
+fall = 1
+hitflag = MAFD
+offset = ceil(45 * const(size.xscale)), ceil(-80 * const(size.yscale))
+
+
+[State 3250, SE]
+type = PlaySnd
+trigger1 = Time = 2
+channel = 10
+value = 8, 19
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 2
+anim = 27033
+pos = ceil(-40 * const(size.xscale)), ceil(-60 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0, .3
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 2
+anim = 27033
+pos = ceil(-40 * const(size.xscale)), ceil(-60 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = -0.3, -0.3
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 2
+anim = 27033
+pos = ceil(-40 * const(size.xscale)), ceil(-60 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+accel = 0.3, -0.3
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 2
+anim = 27034
+pos = ceil(-40 * const(size.xscale)), ceil(-60 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 2
+anim = 27035
+pos = ceil(-40 * const(size.xscale)), ceil(-60 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 1
+
+[State 3250, 爆発]
+type = Explod
+trigger1 = Time = 2
+anim = 27036
+pos = ceil(-40 * const(size.xscale)), ceil(-60 * const(size.yscale))
+postype = p1
+scale = 0.7 * const(size.xscale), 0.7 * const(size.yscale)
+ownpal = 1
+sprpriority = 2
+
+[State 3250, ヒット定義]
+type = Projectile
+trigger1 = Time = 2
+attr = S, HP
+damage = fvar(2) * fvar(7), 0
+getpower = 0, 0
+givepower = 0, 0
+animtype = Back
+projID           = 27101
+projanim         = 27038
+projhitanim      = 27038
+projremanim      = 27038
+projscale        = const(size.xscale) * 1, const(size.yscale) * 1
+projhits         = 1
+projpriority     = 4
+projremovetime   = 1
+projsprpriority  = -1
+guardflag = MA
+pausetime = 0, 20
+sparkno = s(IfElse(Random < 500, 30000, 30010))
+guard.sparkno = s(IfElse(Facing = -1, 30021, 30020))
+hitsound = s8, 21
+guardsound = s8, 3
+ground.type = High
+ground.slidetime = 10
+guard.slidetime = 10
+ground.hittime = 10
+guard.hittime = 4
+fall = 1
+hitflag = MAFD
+offset = ceil(-40 * const(size.xscale)), ceil(-60 * const(size.yscale))
+
+
+[State 3250, バラバラパーツ1]
+type = Explod
+trigger1 = Time = 0
+anim = 24720
+pos = ceil(0 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -10 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3250, バラバラパーツ2]
+type = Explod
+trigger1 = Time = 0
+anim = 24721
+pos = ceil(0 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -10 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3250, バラバラパーツ3]
+type = Explod
+trigger1 = Time = 0
+anim = 24722
+pos = ceil(0 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -10 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3250, バラバラパーツ4]
+type = Explod
+trigger1 = Time = 0
+anim = 24723
+pos = ceil(0 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -10 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3250, バラバラパーツ5]
+type = Explod
+trigger1 = Time = 0
+anim = 24724
+pos = ceil(0 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -10 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3250, バラバラパーツ6]
+type = Explod
+trigger1 = Time = 0
+anim = 24725
+pos = ceil(0 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -10 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3250, バラバラパーツ7]
+type = Explod
+trigger1 = Time = 0
+anim = 24726
+pos = ceil(0 * const(size.xscale)), ceil(-50 * const(size.yscale))
+postype = p1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+removetime = 90
+vel = 4 * sin(2 * pi * GameTime / (35 + ceil(Random / 100))), -10 * abs(sin(2 * pi * GameTime / (35 + ceil(Random / 100))))
+accel = 0, 0.5
+
+[State 3250, ステート変更]
+type = ChangeState
+trigger1 = Time = 2
+value = 5050
+
+
+
+;---------------------------------------------------------------------------
+; フュージョンクラフト
+;---------------------------------------------------------------------------
+; 詠唱
+[Statedef 3300]
+type		= U
+movetype	= A
+physics		= N
+ctrl		= 0
+anim		= IfElse(var(2) <= fvar(19), 3310, 3300)
+velset		= 0, 0
+facep2		= 0
+sprpriority = -2
+
+[State 3300, クールタイムアイコン表示(1P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 1
+trigger1 = var(5) = 0
+ID = 22500
+anim = IfElse(var(2) <= fvar(19), 22550, 22500)
+pos = ceil(fvar(6)), ceil(fvar(5) + 15)
+postype = left
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 3300, クールタイムアイコン表示(2P側)]
+type = Explod
+trigger1 = Time = 0
+trigger1 = var(4) = 2
+trigger1 = var(5) = 0
+ID = 22500
+anim = IfElse(var(2) <= fvar(19), 22550, 22500)
+pos = ceil(-fvar(6) - 134), ceil(fvar(5) + 15)
+postype = right
+scale = 0.5, 0.5
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+
+[State 3300, 魔法ダメージ倍率 初期値設定]
+type = VarSet
+trigger1 = Time = 0
+fvar(7) = 1
+
+[State 3300, 魔法ダメージ倍率計算１ 古代の記憶]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(2) <= fvar(10) ;古代の記憶効果時間中の場合
+fvar(7) = 0.5
+
+[State 3300, 魔法ダメージ倍率計算２ 古代の図書館]
+type = VarAdd
+trigger1 = Time = 0
+trigger1 = var(2) <= fvar(11) ;古代の図書館効果時間中の場合
+fvar(7) = 0.2
+
+[State 3300, 暗転一時停止]
+type = SuperPause
+trigger1 = Time = 0
+anim = -1
+pos = 0, 0
+sound = s8,24   ; とりあえず
+time = 38
+darken = 1
+poweradd = -5000
+unhittable = 0  ; 無敵なんてない
+
+[State 3300, カットイン表示]
+type = Explod
+trigger1 = Time = 0
+anim = 25500
+pos = 0, 240
+postype = back
+bindtime = -1
+sprpriority = 5
+scale = 0.5 * const(size.xscale), 0.5 * const(size.yscale)
+ownpal = 1
+ontop = 1
+supermovetime = 99999
+pausemovetime = 99999
+
+[State 3300, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 3301
+
+
+; 前半
+[Statedef 3301]
+type		= S
+movetype	= A
+physics		= N
+anim		= 3301
+facep2		= 0
+sprpriority = -2
+
+[State 3301, 特殊]
+type = AssertSpecial
+trigger1 = 1
+flag = noautoturn
+
+[State 3301, ぶつかり判定消滅]
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 3301, カメラ解除]
+type = ScreenBound
+trigger1 = 1
+value = 0
+
+[State 3301, 鼻歌1]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 0
+value = 3, 1
+
+[State 3301, 設置表示用ヘルパー射出]
+type = Helper
+trigger1 = Time = 0
+name = "FusionCraft"
+StateNo = 27500
+ID = 27500
+pos = ceil(90 * const(size.xscale)), ceil(0 * const(size.yscale))
+postype = p1
+ownpal = 1
+size.xscale = const(size.xscale) * 0.7
+size.yscale = const(size.yscale) * 0.7
+supermovetime = 99999999
+pausemovetime = 99999999
+ignoreHitPause = 1
+persistent = 0
+
+[State 3301, トンカチ1]
+type = Explod
+trigger1 = AnimElemTime(1) = 0
+trigger2 = AnimElemTime(3) = 0
+trigger3 = AnimElemTime(5) = 0
+trigger4 = AnimElemTime(7) = 0
+trigger5 = AnimElemTime(9) = 0
+anim = 24877
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 0
+bindtime = -1
+
+[State 3301, トンカチ2]
+type = Explod
+trigger1 = AnimElemTime(1) = 0
+trigger2 = AnimElemTime(3) = 0
+trigger3 = AnimElemTime(5) = 0
+trigger4 = AnimElemTime(7) = 0
+trigger5 = AnimElemTime(9) = 0
+anim = 24878
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 0
+bindtime = -1
+
+[State 3301, トンカチ 打撃]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger2 = AnimElemTime(4) = 0
+trigger3 = AnimElemTime(6) = 0
+trigger4 = AnimElemTime(8) = 0
+trigger5 = AnimElemTime(10) = 0
+anim = 24879
+pos = ceil(40 * const(size.xscale)), ceil(-30 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 0
+bindtime = -1
+
+[State 3301, 場所移動]
+type = PosAdd
+trigger1 = AnimElemTime(12) = 0
+x = ceil(30 * const(size.xscale))
+y = ceil(-5 * const(size.yscale))
+
+[State 3301, 溶接1]
+type = Explod
+trigger1 = AnimElemTime(12) = 0
+anim = 24872
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 0
+bindtime = -1
+removetime = 120
+
+[State 3301, 溶接マスク1]
+type = Explod
+trigger1 = AnimElemTime(12) = 0
+anim = 24874
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 0
+bindtime = -1
+removetime = 120
+
+[State 3301, 溶接火花]
+type = Explod
+trigger1 = AnimElemTime(12) = 0
+anim = 24873
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 0
+bindtime = -1
+removetime = 120
+
+[State 3301, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 3302
+
+
+; 後半
+[Statedef 3302]
+type		= S
+movetype	= A
+physics		= N
+ctrl		= 0
+anim		= 3302
+velset		= 0, 0
+facep2		= 0
+sprpriority = 1
+
+[State 3302, 特殊]
+type = AssertSpecial
+trigger1 = 1
+flag = noautoturn
+
+[State 3302, ぶつかり判定消滅]
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 3302, カメラ解除]
+type = ScreenBound
+trigger1 = 1
+value = 0
+
+[State 3302, 鼻歌2]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 0
+value = 3, 2
+
+[State 3302, 場所移動]
+type = PosAdd
+trigger1 = AnimElemTime(1) = 0
+x = ceil(150 * const(size.xscale))
+y = ceil(15 * const(size.yscale))
+
+[State 3302, ドライバー 左向き]
+type = Explod
+trigger1 = AnimElemTime(1) = 0
+trigger2 = AnimElemTime(3) = 0
+trigger3 = AnimElemTime(5) = 0
+anim = 24875
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 2
+bindtime = -1
+
+[State 3302, ドライバー 打撃]
+type = Explod
+trigger1 = AnimElemTime(2) = 0
+trigger2 = AnimElemTime(4) = 0
+trigger3 = AnimElemTime(6) = 0
+anim = 24880
+pos = ceil(-70 * const(size.xscale)), ceil(-60 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 3
+bindtime = -1
+
+[State 3302, 場所移動]
+type = PosAdd
+trigger1 = AnimElemTime(8) = 0
+x = ceil(-150 * const(size.xscale))
+y = ceil(-60 * const(size.yscale))
+
+[State 3302, トンカチ1]
+type = Explod
+trigger1 = AnimElemTime(8) = 0
+trigger2 = AnimElemTime(10) = 0
+trigger3 = AnimElemTime(12) = 0
+anim = 24877
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 2
+bindtime = -1
+
+[State 3302, トンカチ2]
+type = Explod
+trigger1 = AnimElemTime(8) = 0
+trigger2 = AnimElemTime(10) = 0
+trigger3 = AnimElemTime(12) = 0
+anim = 24878
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 2
+bindtime = -1
+
+[State 3302, トンカチ 打撃]
+type = Explod
+trigger1 = AnimElemTime(9) = 0
+trigger2 = AnimElemTime(11) = 0
+trigger3 = AnimElemTime(13) = 0
+anim = 24879
+pos = ceil(40 * const(size.xscale)), ceil(-30 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 3
+bindtime = -1
+
+[State 3302, 場所移動]
+type = PosAdd
+trigger1 = AnimElemTime(14) = 0
+x = ceil(-40 * const(size.xscale))
+y = ceil(80 * const(size.yscale))
+
+[State 3302, 溶接1]
+type = Explod
+trigger1 = AnimElemTime(14) = 0
+trigger2 = AnimElemTime(26) = 0
+anim = 24872
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 2
+bindtime = -1
+removetime = 30
+
+[State 3302, 溶接マスク1]
+type = Explod
+trigger1 = AnimElemTime(14) = 0
+trigger2 = AnimElemTime(26) = 0
+anim = 24874
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 2
+bindtime = -1
+removetime = 30
+
+[State 3302, 溶接火花]
+type = Explod
+trigger1 = AnimElemTime(14) = 0
+trigger2 = AnimElemTime(26) = 0
+anim = 24873
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 3
+bindtime = -1
+removetime = 30
+
+[State 3302, 場所移動]
+type = PosAdd
+trigger1 = AnimElemTime(15) = 0
+x = ceil(-180 * const(size.xscale))
+y = ceil(-5 * const(size.yscale))
+
+[State 3302, ドライバー 右向き]
+type = Explod
+trigger1 = AnimElemTime(15) = 0
+trigger2 = AnimElemTime(17) = 0
+trigger3 = AnimElemTime(27) = 0
+trigger4 = AnimElemTime(29) = 0
+anim = 24876
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 2
+bindtime = -1
+
+[State 3302, ドライバー 打撃]
+type = Explod
+trigger1 = AnimElemTime(16) = 0
+trigger2 = AnimElemTime(18) = 0
+trigger3 = AnimElemTime(28) = 0
+trigger4 = AnimElemTime(30) = 0
+anim = 24879
+pos = ceil(70 * const(size.xscale)), ceil(-60 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 3
+bindtime = -1
+
+[State 3302, 場所移動]
+type = PosAdd
+trigger1 = AnimElemTime(20) = 0
+trigger2 = AnimElemTime(32) = 0
+x = ceil(200 * const(size.xscale))
+y = ceil(10 * const(size.yscale))
+
+[State 3302, ハンマー]
+type = Explod
+trigger1 = AnimElemTime(20) = 0
+trigger2 = AnimElemTime(23) = 0
+trigger3 = AnimElemTime(32) = 0
+trigger4 = AnimElemTime(35) = 0
+anim = 24871
+ID = 24871
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 2
+bindtime = -1
+
+[State 3302, ハンマー 打撃]
+type = Explod
+trigger1 = AnimElemTime(21) = 0
+trigger2 = AnimElemTime(24) = 0
+trigger3 = AnimElemTime(33) = 0
+trigger4 = AnimElemTime(36) = 0
+anim = 24880
+pos = ceil(-50 * const(size.xscale)), ceil(-100 * const(size.yscale))
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 3
+bindtime = -1
+
+[State 3302, 場所移動]
+type = PosAdd
+trigger1 = AnimElemTime(26) = 0
+trigger2 = AnimElemTime(37) = 0
+x = ceil(-10 * const(size.xscale))
+y = ceil(-10 * const(size.yscale))
+
+[State 3302, 場所移動]
+type = PosAdd
+trigger1 = AnimElemTime(27) = 0
+x = ceil(-190 * const(size.xscale))
+y = ceil(0 * const(size.yscale))
+
+[State 3302, ハンマー途中削除]
+type = RemoveExplod
+triggerall = NumExplod(24871) > 0
+trigger1 = AnimElemTime(37) = 0
+ID = 24871
+
+[State 3302, 溶接2]
+type = Explod
+trigger1 = AnimElemTime(37) = 0
+anim = 24872
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 2
+bindtime = -1
+removetime = 12
+
+[State 3302, 溶接マスク2]
+type = Explod
+trigger1 = AnimElemTime(37) = 0
+anim = 24874
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 2
+bindtime = -1
+removetime = 12
+
+[State 3302, 溶接火花2]
+type = Explod
+trigger1 = AnimElemTime(37) = 0
+anim = 24873
+pos = 0, 0
+postype = p1
+scale = const(size.xscale), const(size.yscale)
+ownpal = 1
+sprpriority = 3
+bindtime = -1
+removetime = 12
+
+[State 3302, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 3303
+
+
+; ふっとび
+[Statedef 3303]
+type		= A
+movetype	= H
+physics		= N
+ctrl		= 0
+anim		= 3303
+facep2		= 0
+
+[State 3303, 特殊]
+type = AssertSpecial
+trigger1 = 1
+flag = noautoturn
+
+[State 3303, ぶつかり判定消滅]
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 3303, 回転準備]
+type = AngleDraw
+trigger1 = 1
+
+[State 3303, まわる～]
+type = AngleAdd
+trigger1 = 1
+value = -30
+
+[State 3303, 場所設定]
+type = PosSet
+trigger1 = Time = 0
+y = -5
+
+[State 3303, 速度設定]
+type = VelSet
+trigger1 = Time = 0
+x = 7
+y = -12
+
+[State 3303, 声]
+type = PlaySnd
+trigger1 = Time = 0
+channel = 0
+value = 2, 10
+
+[State 3303, 速度追加]
+type = VelAdd
+trigger1 = 1
+y = 0.5
+
+[State 3303, ステート変更]
+type = ChangeState
+trigger1 = Pos Y >= 0
+value = 5100

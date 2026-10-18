@@ -1,0 +1,2169 @@
+;===========================================================================
+; 常時監視ステート（－２）
+;===========================================================================
+;---------------------------------------------------------------------------
+; 通常の食らい状態（Statedef 5000～5199間）でも、
+; 相手に（「P2StateNo」や「TargetState」等で）制御を奪われても、
+; 常に登録したステートコントローラが有効になります。
+; サブシステム等を制御する時に重宝するでしょう。
+;---------------------------------------------------------------------------
+
+[Statedef -2]
+
+[State -2, クリップボード]
+type = DisplayToClipboard
+trigger1 = 1
+text = "Cancel=%d, Throw=%d, Button=%d, Body-Distance X=%d,Y=%d \n"
+params = var(1),var(2),var(5),floor(P2BodyDist X),floor(P2BodyDist Y)
+
+[State -2, クリップボード（追加専用）]
+type = AppendToClipboard
+trigger1 = 1
+text = "Position X=%d,Y=%d, Velocity X=%f,Y=%f, Hit=%d \n"
+params = floor(Pos X),floor(Pos Y),(Vel X),(Vel Y),(MoveHit)
+
+[State -2, クリップボード（追加専用）]
+type = AppendToClipboard
+trigger1 = 1
+text = "fv10=%f, v5=%d, v1=%d \n"
+params = fvar(10), var(5), var(1)
+
+
+;---------------------------------------------------------------------------
+;獣を焦がす(黒秋葉)　相手ステータス変化
+[State -2]
+Type = LifeAdd
+trigger1 = NumEnemy > 0
+Trigger1 = Enemy(0),AuthorName = "tukemon&HAL" && Enemy(0),Name = "Akiha"
+Trigger1 = Enemy(0),Var(56) = 1
+trigger2 = NumEnemy > 1
+Trigger2 = Enemy(1),AuthorName = "tukemon&HAL" && Enemy(1),Name = "Akiha"
+Trigger2 = Enemy(1),Var(56) = 1
+Value = -8
+Kill = 0
+
+[State -2]
+Type = PowerAdd
+trigger1 = NumEnemy > 0
+Trigger1 = Enemy(0),AuthorName = "tukemon&HAL" && Enemy(0),Name = "Akiha"
+Trigger1 = Enemy(0),Var(51)%10 = 2
+Trigger1 = Enemy(0),Var(56) = 1
+trigger2 = NumEnemy > 1
+Trigger2 = Enemy(1),AuthorName = "tukemon&HAL" && Enemy(1),Name = "Akiha"
+Trigger2 = Enemy(1),Var(51)%10 = 2
+Trigger2 = Enemy(1),Var(56) = 1
+Value = -33
+
+;---------------------------------------------------------------------------
+; ラウンド経過時間
+;---------------------------------------------------------------------------
+[State -2, ラウンド経過時間加算]
+type = VarAdd
+trigger1 = RoundState = 2
+var(2) = 1
+
+
+;---------------------------------------------------------------------------
+; 食らいボイス再生
+;---------------------------------------------------------------------------
+[State -2, 食らい時声]
+type = PlaySnd
+triggerall = Time = 0
+triggerall = !IsHelper
+trigger1 = stateno = [5000,5199]
+value = 0, IfElse(Random < 350, 12, IfElse(Random < 350, 13, 14)) ;確率はかなりテキトー
+
+;---------------------------------------------------------------------------
+; 「オーラシールド」時に音を鳴らす
+;---------------------------------------------------------------------------
+[State -2, オーラシールド音を鳴らす]
+type = PlaySnd
+triggerall = (var(2) % 44) = 3
+triggerall = alive
+triggerall = RoundState = 2
+triggerall = StateNo != 5900
+trigger1 = var(7) = 1
+channel = 5
+value = 6, 5
+
+;---------------------------------------------------------------------------
+; 「ショータイム」時に音を鳴らす
+;---------------------------------------------------------------------------
+[State -2, ショータイム音を鳴らす]
+type = PlaySnd
+triggerall = (var(2) % 115) = 3
+triggerall = alive
+triggerall = RoundState = 2
+triggerall = StateNo != 5900
+trigger1 = var(2) <= fvar(19)
+channel = 6
+value = 6, 6
+
+
+;---------------------------------------------------------------------------
+; 「成功の予感」エフェクト表示
+;---------------------------------------------------------------------------
+[State -2, 成功の予感 エフェクト1]
+type = Explod
+triggerall = PalNo > 6
+triggerall = NumExplod(26060) = 0
+triggerall = Alive
+trigger1 = fvar(9) > var(2)
+anim = 26060
+ID = 26060
+pos = ceil(-30 * const(size.xscale)), ceil(-100 * const(size.yscale))
+postype = p1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+ignorehitpause = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+
+[State -2, 成功の予感 エフェクト2]
+type = Explod
+triggerall = PalNo > 6
+triggerall = NumExplod(26060) <= 1
+triggerall = Alive
+trigger1 = fvar(9) > var(2)
+anim = 26061
+ID = 26060
+pos = ceil(-30 * const(size.xscale)), ceil(-100 * const(size.yscale))
+postype = p1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+ignorehitpause = 1
+bindtime = -1
+removetime = -1
+ownpal = 1
+
+[State -2, 成功の予感 エフェクト削除]
+type = RemoveExplod
+triggerall = PalNo > 6
+triggerall = NumExplod(26060) > 0
+trigger1 = fvar(9) <= var(2)
+trigger2 = !Alive
+ID = 26060
+
+
+;---------------------------------------------------------------------------
+; 「スイートキャンディーバー」時に音を鳴らす
+;---------------------------------------------------------------------------
+[State -2, キャンディ音を鳴らす]
+type = PlaySnd
+triggerall = (var(2) % 131) = 3
+triggerall = alive
+trigger1 = var(2) <= fvar(16)
+channel = 4
+value = 7, 18
+
+;---------------------------------------------------------------------------
+; 気絶時星表示
+;---------------------------------------------------------------------------
+[State -2, 気絶時の星]
+type = Explod
+trigger1 = Anim = 5300
+trigger1 = (Time % 13) = 0
+anim = 30120
+ID = 30120
+pos = ceil(-10 * const(size.xscale)), ceil(-90 * const(size.yscale))
+postype = p1
+sprpriority = -1
+scale = const(size.xscale), const(size.yscale)
+ignorehitpause = 1
+
+[State -2, 気絶時の星]
+type = Explod
+trigger1 = Anim = 5300
+trigger1 = (Time % 13) = 0
+anim = 30121
+ID = 30120
+pos = ceil(-10 * const(size.xscale)), ceil(-90 * const(size.yscale))
+postype = p1
+sprpriority = 1
+scale = const(size.xscale), const(size.yscale)
+ignorehitpause = 1
+
+[State -2, 気絶時の音]
+type = PlaySnd
+trigger1 = alive
+trigger1 = NumExplod(30120) > 0
+trigger1 = (Time % 60) = 0
+channel = 1
+value = 8, 15
+
+[State -2, 気絶時の星削除]
+type = RemoveExplod
+trigger1 = Anim != 5300
+trigger1 = !alive
+ID = 30120
+
+;---------------------------------------------------------------------------
+; MAtkUpバフ効果表示
+;---------------------------------------------------------------------------
+[State -2, MatkUp表示裏]
+type = Explod
+triggerall = (var(2) < fvar(10)) || (var(2) < fvar(11))
+triggerall = alive
+triggerall = RoundState = 2
+triggerall = StateNo != 5900
+trigger1 = (var(2) % 30) = 3
+anim = 26020
+pos = ceil(0 * const(size.xscale)), ceil(-30 * const(size.yscale))
+postype = p1
+random = 60, 50
+sprpriority = -1
+ownpal = 1
+vel = 0, -2
+scale = const(size.xscale) * 0.7, const(size.yscale) * 0.7
+
+[State -2, MatkUp表示表]
+type = Explod
+triggerall = (var(2) < fvar(10)) || (var(2) < fvar(11))
+triggerall = alive
+triggerall = RoundState = 2
+triggerall = StateNo != 5900
+trigger1 = (var(2) % 33) = 3
+anim = 26020
+pos = ceil(0 * const(size.xscale)), ceil(-30 * const(size.yscale))
+postype = p1
+random = 60, 50
+sprpriority = 3
+ownpal = 1
+vel = 0, -2
+scale = const(size.xscale) * 0.7, const(size.yscale) * 0.7
+
+
+;---------------------------------------------------------------------------
+; 雨デバフ効果表示
+;---------------------------------------------------------------------------
+; 2P
+[State -2, 雨デバフ]
+type = Explod
+triggerall = NumEnemy > 0
+triggerall = var(2) < var(26)
+triggerall = Enemy(0),alive
+triggerall = alive
+triggerall = RoundState = 2
+triggerall = StateNo != 5900
+trigger1 = (var(2) % 15) = 3
+anim = 26050
+pos = Enemy(0),ScreenPos X + ceil(0 * const(size.xscale)), Enemy(0),ScreenPos Y + ceil(-60 * const(size.yscale))
+postype = left
+random = 60, 30
+sprpriority = 3
+ownpal = 1
+vel = 0, 2
+scale = const(size.xscale) * 0.7, const(size.yscale) * 0.7
+
+; 4P
+[State -2, 雨デバフ]
+type = Explod
+triggerall = var(2) < var(27)
+triggerall = NumEnemy > 1
+triggerall = Enemy(1),alive
+triggerall = alive
+triggerall = RoundState = 2
+triggerall = StateNo != 5900
+trigger1 = (var(2) % 15) = 3
+anim = 26050
+pos = Enemy(1),ScreenPos X + ceil(0 * const(size.xscale)), Enemy(1),ScreenPos Y + ceil(-60 * const(size.yscale))
+postype = left
+random = 60, 30
+sprpriority = 3
+ownpal = 1
+vel = 0, 2
+scale = const(size.xscale) * 0.7, const(size.yscale) * 0.7
+
+
+
+
+;---------------------------------------------------------------------------
+; MP回復（ゲージUp）バフ効果表示
+;---------------------------------------------------------------------------
+[State -2, ゲージUp]
+type = PowerAdd
+triggerall = var(2) < fvar(11)
+triggerall = alive
+triggerall = RoundState = 2
+triggerall = StateNo != 5900
+trigger1 = (var(2) % 2) = 0
+value = 3
+
+[State -2, MP回復星裏]
+type = Explod
+triggerall = var(2) < fvar(11)
+triggerall = alive
+triggerall = RoundState = 2
+triggerall = StateNo != 5900
+trigger1 = (var(2) % 30) = 3
+anim = 26030
+pos = ceil(0 * const(size.xscale)), ceil(-30 * const(size.yscale))
+postype = p1
+random = 60, 50
+sprpriority = -1
+ownpal = 1
+vel = sin(2 * pi * GameTime / 36), -2
+scale = const(size.xscale) * 0.5, const(size.yscale) * 0.5
+
+[State -2, MP回復星表]
+type = Explod
+triggerall = var(2) < fvar(11)
+triggerall = alive
+triggerall = RoundState = 2
+triggerall = StateNo != 5900
+trigger1 = (var(2) % 33) = 3
+anim = 26030
+pos = ceil(0 * const(size.xscale)), ceil(-30 * const(size.yscale))
+postype = p1
+random = 60, 50
+sprpriority = 3
+ownpal = 1
+vel = sin(2 * pi * GameTime / 36), -2
+scale = const(size.xscale) * 0.5, const(size.yscale) * 0.5
+
+
+;---------------------------------------------------------------------------
+; 混乱効果終了
+;---------------------------------------------------------------------------
+[State -2, 混乱終了]
+type = RemoveExplod
+trigger1 = var(2) > var(36)
+trigger2 = !alive
+ID = 30150
+
+
+;---------------------------------------------------------------------------
+; 古代の記憶効果終了
+;---------------------------------------------------------------------------
+; 効果消滅エフェクト
+[State -2, 消滅アイコン]
+type = Explod
+triggerall = RoundState >= 2
+trigger1 = var(2) = fvar(10)
+anim = 23002
+pos = ceil(0 * const(size.xscale)), ceil(-120 * const(size.yscale))
+postype = p1
+bindtime = -1
+sprpriority = 4
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+facing = facing
+
+[State -2, 消滅アイコン]
+type = Explod
+triggerall = RoundState >= 2
+trigger1 = var(2) = fvar(10)
+anim = 23203
+pos = ceil(0 * const(size.xscale)), ceil(-120 * const(size.yscale))
+postype = p1
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+facing = facing
+
+;---------------------------------------------------------------------------
+; 古代の図書館効果終了
+;---------------------------------------------------------------------------
+; 効果消滅エフェクト
+[State -2, 消滅アイコン]
+type = Explod
+triggerall = RoundState >= 2
+trigger1 = var(2) = fvar(11)
+anim = 23002
+pos = ceil(0 * const(size.xscale)), ceil(-120 * const(size.yscale))
+postype = p1
+bindtime = -1
+sprpriority = 4
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+facing = facing
+
+[State -2, 消滅アイコン]
+type = Explod
+triggerall = RoundState >= 2
+trigger1 = var(2) = fvar(11)
+anim = 23303
+pos = ceil(0 * const(size.xscale)), ceil(-120 * const(size.yscale))
+postype = p1
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+facing = facing
+
+;---------------------------------------------------------------------------
+; ショータイム効果終了
+;---------------------------------------------------------------------------
+; 効果消滅エフェクト
+[State -2, エフェクト消去]
+type = RemoveExplod
+trigger1 = var(2) = fvar(19)
+ID = 26010
+
+[State -2, 消滅アイコン]
+type = Explod
+triggerall = RoundState >= 2
+trigger1 = var(2) = fvar(19)
+anim = 23002
+pos = ceil(0 * const(size.xscale)), ceil(-120 * const(size.yscale))
+postype = p1
+bindtime = -1
+sprpriority = 4
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+facing = facing
+
+[State -2, 消滅アイコン]
+type = Explod
+triggerall = RoundState >= 2
+trigger1 = var(2) = fvar(19)
+anim = 23403
+pos = ceil(0 * const(size.xscale)), ceil(-120 * const(size.yscale))
+postype = p1
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+facing = facing
+
+[State -2, 音消去]
+type = StopSnd
+triggerall = RoundState >= 2
+trigger1 = var(2) = fvar(19)
+channel = 6
+
+
+;---------------------------------------------------------------------------
+; スイートキャンディーバー効果終了
+;---------------------------------------------------------------------------
+; 効果消滅エフェクト
+[State -2, 消滅表示]
+type = Explod
+triggerall = RoundState >= 2
+trigger1 = var(2) = fvar(16)
+trigger2 = var(2) <= fvar(16)
+trigger2 = var(8) <= 0
+anim = 24104
+ID = 24104
+pos = ceil(-5 * const(size.xscale)), ceil(-120 * const(size.yscale))
+postype = p1
+bindtime = -1
+sprpriority = 5
+ownpal = 1
+scale = const(size.xscale), const(size.yscale)
+
+[State -2, 音消去]
+type = StopSnd
+triggerall = RoundState >= 2
+trigger1 = var(2) = fvar(16)
+trigger2 = var(2) <= fvar(16)
+trigger2 = var(8) <= 0
+channel = 4
+
+[State -2, 消滅音]
+type = PlaySnd
+triggerall = RoundState >= 2
+trigger1 = var(2) = fvar(16)
+trigger2 = var(2) <= fvar(16)
+trigger2 = var(8) <= 0
+channel = 1
+value = 7, 19
+
+[State -2, 値消去]
+type = VarSet
+triggerall = RoundState >= 2
+trigger1 = var(2) = fvar(16)
+trigger2 = var(2) <= fvar(16)
+trigger2 = var(8) <= 0
+var(8) = -1
+
+[State -2, 値消去]
+type = VarSet
+triggerall = RoundState >= 2
+trigger1 = var(2) = fvar(16)
+trigger2 = var(2) <= fvar(16)
+trigger2 = var(8) <= 0
+fvar(16) = var(2) - 1
+
+[State -2, エフェクト消去]
+type = RemoveExplod
+triggerall = RoundState >= 2
+trigger1 = var(2) > fvar(16)
+trigger2 = var(2) <= fvar(16)
+trigger2 = var(8) <= 0
+trigger3 = !alive
+ID = 24100
+
+[State -2, エフェクト消去]
+type = RemoveExplod
+triggerall = RoundState >= 2
+trigger1 = var(2) > fvar(16)
+trigger2 = var(2) <= fvar(16)
+trigger2 = var(8) <= 0
+trigger3 = !alive
+ID = 24110
+
+
+
+;---------------------------------------------------------------------------
+; 被弾時オラシ
+;---------------------------------------------------------------------------
+[State -2, 被弾時オラシ]
+type = Explod
+triggerall = Time = 0
+triggerall = var(7) = 1
+trigger1 = stateno = [5000,5199]
+trigger2 = StateNo = [150,152]
+anim = 26002
+pos = ceil(0 * const(size.xscale)), ceil(-5 * const(size.yscale))
+postype = p1
+bindtime = -1
+sprpriority = 3
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+[State -2, 被弾時オラシ]
+type = Explod
+triggerall = Time = 0
+triggerall = var(7) = 1
+trigger1 = stateno = [5000,5199]
+trigger2 = StateNo = [150,152]
+anim = 26003
+pos = ceil(0 * const(size.xscale)), ceil(-5 * const(size.yscale))
+postype = p1
+bindtime = -1
+sprpriority = -1
+ownpal = 1
+scale = const(size.xscale) * 1, const(size.yscale) * 1
+
+
+;---------------------------------------------------------------------------
+; ヘイストエフェクト
+;---------------------------------------------------------------------------
+[State -2, ヘイストエフェクト付与1]
+type = Explod
+triggerall = RoundState >= 2
+triggerall = StateNo != 5900
+trigger1 = NumExplod(26040) <= 0
+trigger1 = var(2) = (fvar(25) - 1199)
+anim = 26040
+ID = 26040
+pos = 0, 0
+postype = p1
+bindtime = -1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 0.6, const(size.yscale) * 0.6
+removetime = -1
+
+[State -2, ヘイストエフェクト付与2]
+type = Explod
+triggerall = RoundState >= 2
+triggerall = StateNo != 5900
+trigger1 = NumExplod(26040) = 1
+trigger1 = var(2) = (fvar(25) - 1199)
+anim = 26041
+ID = 26040
+pos = 0, 0
+postype = p1
+bindtime = -1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 0.6, const(size.yscale) * 0.6
+removetime = -1
+
+[State -2, ヘイストエフェクト付与3]
+type = Explod
+triggerall = RoundState >= 2
+triggerall = StateNo != 5900
+trigger1 = NumExplod(26040) = 2
+trigger1 = var(2) = (fvar(25) - 1199)
+anim = 26042
+ID = 26040
+pos = 0, 0
+postype = p1
+bindtime = -1
+sprpriority = 1
+ownpal = 1
+scale = const(size.xscale) * 0.6, const(size.yscale) * 0.6
+removetime = -1
+
+[State -2, ヘイストエフェクト削除]
+type = RemoveExplod
+trigger1 = var(2) > fvar(25)
+trigger1 = !alive
+ID = 26040
+
+
+;---------------------------------------------------------------------------
+; 水属性エフェクト
+;---------------------------------------------------------------------------
+[State -2, SE]
+type = PlaySnd
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 0
+trigger1 = var(2) <= fvar(13)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(0),ID
+trigger2 = StateNo = [3202,3204]
+trigger2 = fvar(0) >= 800
+trigger2 = Target,ID = Enemy(0),ID
+trigger3 = var(2) % 42 = 0
+trigger3 = NumHelper(27200) > 0
+trigger3 = abs(Enemy(0),Pos X - Helper(27200),Pos X) <= 89
+trigger3 = Enemy(0),Pos Y >= Helper(27200),Pos Y
+trigger3 = Helper(27100),StateNo = 27203
+trigger3 = Enemy(0),StateNo != [120,152]
+channel = 2
+value = 8, 4
+pan = Enemy(0),ScreenPos X - ScreenPos X
+
+[State -2, 背景]
+type = Explod
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 0
+trigger1 = var(2) <= fvar(13)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(0),ID
+trigger2 = StateNo = [3202,3204]
+trigger2 = fvar(0) >= 800
+trigger2 = Target,ID = Enemy(0),ID
+trigger3 = var(2) % 42 = 0
+trigger3 = NumHelper(27200) > 0
+trigger3 = abs(Enemy(0),Pos X - Helper(27200),Pos X) <= 89
+trigger3 = Enemy(0),Pos Y >= Helper(27200),Pos Y
+trigger3 = Helper(27100),StateNo = 27203
+trigger3 = Enemy(0),StateNo != [120,152]
+anim = 30050
+pos = ceil(Enemy(0),ScreenPos X), ceil(Enemy(0),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 0
+ownpal = 1
+
+[State -2, 枠]
+type = Explod
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 0
+trigger1 = var(2) <= fvar(13)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(0),ID
+trigger2 = StateNo = [3202,3204]
+trigger2 = fvar(0) >= 800
+trigger2 = Target,ID = Enemy(0),ID
+trigger3 = var(2) % 42 = 0
+trigger3 = NumHelper(27200) > 0
+trigger3 = abs(Enemy(0),Pos X - Helper(27200),Pos X) <= 89
+trigger3 = Enemy(0),Pos Y >= Helper(27200),Pos Y
+trigger3 = Helper(27100),StateNo = 27203
+trigger3 = Enemy(0),StateNo != [120,152]
+anim = 30052
+pos = ceil(Enemy(0),ScreenPos X), ceil(Enemy(0),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 1
+ownpal = 1
+
+[State -2, 本体]
+type = Explod
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 0
+trigger1 = var(2) <= fvar(13)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(0),ID
+trigger2 = StateNo = [3202,3204]
+trigger2 = fvar(0) >= 800
+trigger2 = Target,ID = Enemy(0),ID
+trigger3 = var(2) % 42 = 0
+trigger3 = NumHelper(27200) > 0
+trigger3 = abs(Enemy(0),Pos X - Helper(27200),Pos X) <= 89
+trigger3 = Enemy(0),Pos Y >= Helper(27200),Pos Y
+trigger3 = Helper(27100),StateNo = 27203
+trigger3 = Enemy(0),StateNo != [120,152]
+anim = 30051
+pos = ceil(Enemy(0),ScreenPos X), ceil(Enemy(0),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 2
+ownpal = 1
+
+
+
+[State -2, SE]
+type = PlaySnd
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 1
+trigger1 = var(2) <= fvar(13)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(1),ID
+trigger2 = StateNo = [3202,3204]
+trigger2 = fvar(0) >= 800
+trigger2 = Target,ID = Enemy(1),ID
+trigger3 = var(2) % 42 = 0
+trigger3 = NumHelper(27200) > 0
+trigger3 = abs(Enemy(1),Pos X - Helper(27200),Pos X) <= 89
+trigger3 = Enemy(1),Pos Y >= Helper(27200),Pos Y
+trigger3 = Helper(27100),StateNo = 27203
+trigger3 = Enemy(1),StateNo != [120,152]
+channel = 2
+value = 8, 4
+pan = Enemy(1),ScreenPos X - ScreenPos X
+
+[State -2, 背景]
+type = Explod
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 1
+trigger1 = var(2) <= fvar(13)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(1),ID
+trigger2 = StateNo = [3202,3204]
+trigger2 = fvar(0) >= 800
+trigger2 = Target,ID = Enemy(1),ID
+trigger3 = var(2) % 42 = 0
+trigger3 = NumHelper(27200) > 0
+trigger3 = abs(Enemy(1),Pos X - Helper(27200),Pos X) <= 89
+trigger3 = Enemy(1),Pos Y >= Helper(27200),Pos Y
+trigger3 = Helper(27100),StateNo = 27203
+trigger3 = Enemy(1),StateNo != [120,152]
+anim = 30050
+pos = ceil(Enemy(1),ScreenPos X), ceil(Enemy(1),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 0
+ownpal = 1
+
+[State -2, 枠]
+type = Explod
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 1
+trigger1 = var(2) <= fvar(13)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(1),ID
+trigger2 = StateNo = [3202,3204]
+trigger2 = fvar(0) >= 800
+trigger2 = Target,ID = Enemy(1),ID
+trigger3 = var(2) % 42 = 0
+trigger3 = NumHelper(27200) > 0
+trigger3 = abs(Enemy(1),Pos X - Helper(27200),Pos X) <= 89
+trigger3 = Enemy(1),Pos Y >= Helper(27200),Pos Y
+trigger3 = Helper(27100),StateNo = 27203
+trigger3 = Enemy(1),StateNo != [120,152]
+anim = 30052
+pos = ceil(Enemy(1),ScreenPos X), ceil(Enemy(1),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 1
+ownpal = 1
+
+[State -2, 本体]
+type = Explod
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 1
+trigger1 = var(2) <= fvar(13)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(1),ID
+trigger2 = StateNo = [3202,3204]
+trigger2 = fvar(0) >= 800
+trigger2 = Target,ID = Enemy(1),ID
+trigger3 = var(2) % 42 = 0
+trigger3 = NumHelper(27200) > 0
+trigger3 = abs(Enemy(1),Pos X - Helper(27200),Pos X) <= 89
+trigger3 = Enemy(1),Pos Y >= Helper(27200),Pos Y
+trigger3 = Helper(27100),StateNo = 27203
+trigger3 = Enemy(1),StateNo != [120,152]
+anim = 30051
+pos = ceil(Enemy(1),ScreenPos X), ceil(Enemy(1),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 2
+ownpal = 1
+
+
+;---------------------------------------------------------------------------
+; 闇属性エフェクト
+;---------------------------------------------------------------------------
+[State -2, SE]
+type = PlaySnd
+triggerall = NumEnemy > 0
+triggerall = MoveHit = 1
+trigger1 = var(2) <= fvar(14)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(0),ID
+trigger2 = ProjHitTime(27101) = 1
+trigger2 = Target,ID = Enemy(0),ID
+channel = 2
+value = 8, 5
+pan = Enemy(0),ScreenPos X - ScreenPos X
+
+[State -2, 背景]
+type = Explod
+triggerall = NumEnemy > 0
+triggerall = MoveHit = 1
+trigger1 = var(2) <= fvar(14)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(0),ID
+trigger2 = ProjHitTime(27101) = 1
+trigger2 = Target,ID = Enemy(0),ID
+anim = 30060
+pos = ceil(Enemy(0),ScreenPos X), ceil(Enemy(0),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 0
+ownpal = 1
+
+[State -2, 枠]
+type = Explod
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 0
+trigger1 = var(2) <= fvar(14)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(0),ID
+trigger2 = ProjHitTime(27101) = 1
+trigger2 = Target,ID = Enemy(0),ID
+anim = 30062
+pos = ceil(Enemy(0),ScreenPos X), ceil(Enemy(0),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 1
+ownpal = 1
+
+[State -2, 本体]
+type = Explod
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 0
+trigger1 = var(2) <= fvar(14)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(0),ID
+trigger2 = ProjHitTime(27101) = 1
+trigger2 = Target,ID = Enemy(0),ID
+anim = 30061
+pos = ceil(Enemy(0),ScreenPos X * const(size.xscale)), ceil((Enemy(0),ScreenPos Y - 50) * const(size.yscale))
+postype = left
+bindtime = -1
+sprpriority = 2
+ownpal = 1
+
+
+[State -2, SE]
+type = PlaySnd
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 1
+trigger1 = var(2) <= fvar(14)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(1),ID
+trigger2 = ProjHitTime(27101) = 1
+trigger2 = Target,ID = Enemy(1),ID
+channel = 2
+value = 8, 5
+pan = Enemy(1),ScreenPos X - ScreenPos X
+
+[State -2, 背景]
+type = Explod
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 1
+trigger1 = var(2) <= fvar(14)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(1),ID
+trigger2 = ProjHitTime(27101) = 1
+trigger2 = Target,ID = Enemy(1),ID
+anim = 30060
+pos = ceil(Enemy(1),ScreenPos X), ceil(Enemy(1),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 0
+ownpal = 1
+
+[State -2, 枠]
+type = Explod
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 1
+trigger1 = var(2) <= fvar(14)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(1),ID
+trigger2 = ProjHitTime(27101) = 1
+trigger2 = Target,ID = Enemy(1),ID
+anim = 30062
+pos = ceil(Enemy(1),ScreenPos X), ceil(Enemy(1),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 1
+ownpal = 1
+
+[State -2, 本体]
+type = Explod
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 1
+trigger1 = var(2) <= fvar(14)
+trigger1 = StateNo = [200,950]
+trigger1 = Target,ID = Enemy(1),ID
+trigger2 = ProjHitTime(27101) = 1
+trigger2 = Target,ID = Enemy(1),ID
+anim = 30061
+pos = ceil(Enemy(1),ScreenPos X), ceil(Enemy(1),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 2
+ownpal = 1
+
+
+;---------------------------------------------------------------------------
+; 火属性エフェクト
+;---------------------------------------------------------------------------
+[State -2, SE]
+type = PlaySnd
+triggerall = NumEnemy > 0
+trigger1 = ProjHitTime(27031) = 1
+trigger1 = Target,ID = Enemy(0),ID
+trigger2 = ProjHitTime(2903) = 1
+trigger2 = Target,ID = Enemy(0),ID
+trigger3 = var(2) % 80 = 0
+trigger3 = NumHelper(27100) > 0
+trigger3 = abs(Enemy(0),Pos X - Helper(27100),Pos X) <= 110
+trigger3 = (Enemy(0),Pos Y - Helper(27100),Pos Y) = [-19,8]
+trigger3 = Helper(27100),StateNo = 27103
+trigger3 = Enemy(0),StateNo != [120,152]
+trigger4 = ProjHitTime(27100) = 1
+trigger4 = Target,ID = Enemy(0),ID
+channel = 2
+value = 8, 6
+pan = Enemy(0),ScreenPos X - ScreenPos X
+
+[State -2, 背景]
+type = Explod
+triggerall = NumEnemy > 0
+trigger1 = ProjHitTime(27031) = 1
+trigger1 = Target,ID = Enemy(0),ID
+trigger2 = ProjHitTime(2903) = 1
+trigger2 = Target,ID = Enemy(0),ID
+trigger3 = var(2) % 80 = 0
+trigger3 = NumHelper(27100) > 0
+trigger3 = abs(Enemy(0),Pos X - Helper(27100),Pos X) <= 110
+trigger3 = (Enemy(0),Pos Y - Helper(27100),Pos Y) = [-19,8]
+trigger3 = Helper(27100),StateNo = 27103
+trigger3 = Enemy(0),StateNo != [120,152]
+trigger4 = ProjHitTime(27100) = 1
+trigger4 = Target,ID = Enemy(0),ID
+anim = 30070
+pos = ceil(Enemy(0),ScreenPos X), ceil(Enemy(0),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 0
+ownpal = 1
+
+[State -2, 本体]
+type = Explod
+triggerall = NumEnemy > 0
+trigger1 = ProjHitTime(27031) = 1
+trigger1 = Target,ID = Enemy(0),ID
+trigger2 = ProjHitTime(2903) = 1
+trigger2 = Target,ID = Enemy(0),ID
+trigger3 = var(2) % 80 = 0
+trigger3 = NumHelper(27100) > 0
+trigger3 = abs(Enemy(0),Pos X - Helper(27100),Pos X) <= 110
+trigger3 = (Enemy(0),Pos Y - Helper(27100),Pos Y) = [-19,8]
+trigger3 = Helper(27100),StateNo = 27103
+trigger3 = Enemy(0),StateNo != [120,152]
+trigger4 = ProjHitTime(27100) = 1
+trigger4 = Target,ID = Enemy(0),ID
+anim = 30071
+pos = ceil(Enemy(0),ScreenPos X), ceil(Enemy(0),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 1
+ownpal = 1
+
+
+[State -2, SE]
+type = PlaySnd
+triggerall = NumEnemy > 1
+trigger1 = ProjHitTime(27031) = 1
+trigger1 = Target,ID = Enemy(1),ID
+trigger2 = ProjHitTime(2903) = 1
+trigger2 = Target,ID = Enemy(1),ID
+trigger3 = var(2) % 80 = 0
+trigger3 = NumHelper(27100) > 0
+trigger3 = abs(Enemy(1),Pos X - Helper(27100),Pos X) <= 110
+trigger3 = (Enemy(1),Pos Y - Helper(27100),Pos Y) = [-19,8]
+trigger3 = Helper(27100),StateNo = 27103
+trigger3 = Enemy(1),StateNo != [120,152]
+trigger4 = ProjHitTime(27100) = 1
+trigger4 = Target,ID = Enemy(1),ID
+channel = 2
+value = 8, 6
+pan = Enemy(1),ScreenPos X - ScreenPos X
+
+[State -2, 背景]
+type = Explod
+triggerall = NumEnemy > 1
+trigger1 = ProjHitTime(27031) = 1
+trigger1 = Target,ID = Enemy(1),ID
+trigger2 = ProjHitTime(2903) = 1
+trigger2 = Target,ID = Enemy(1),ID
+trigger3 = var(2) % 80 = 0
+trigger3 = NumHelper(27100) > 0
+trigger3 = abs(Enemy(1),Pos X - Helper(27100),Pos X) <= 110
+trigger3 = (Enemy(1),Pos Y - Helper(27100),Pos Y) = [-19,8]
+trigger3 = Helper(27100),StateNo = 27103
+trigger3 = Enemy(1),StateNo != [120,152]
+trigger4 = ProjHitTime(27100) = 1
+trigger4 = Target,ID = Enemy(1),ID
+anim = 30070
+pos = ceil(Enemy(1),ScreenPos X), ceil(Enemy(1),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 0
+ownpal = 1
+
+[State -2, 本体]
+type = Explod
+triggerall = NumEnemy > 1
+trigger1 = ProjHitTime(27031) = 1
+trigger1 = Target,ID = Enemy(1),ID
+trigger2 = ProjHitTime(2903) = 1
+trigger2 = Target,ID = Enemy(1),ID
+trigger3 = var(2) % 80 = 0
+trigger3 = NumHelper(27100) > 0
+trigger3 = abs(Enemy(1),Pos X - Helper(27100),Pos X) <= 110
+trigger3 = (Enemy(1),Pos Y - Helper(27100),Pos Y) = [-19,8]
+trigger3 = Helper(27100),StateNo = 27103
+trigger3 = Enemy(1),StateNo != [120,152]
+trigger4 = ProjHitTime(27100) = 1
+trigger4 = Target,ID = Enemy(1),ID
+anim = 30071
+pos = ceil(Enemy(1),ScreenPos X), ceil(Enemy(1),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 1
+ownpal = 1
+
+
+;---------------------------------------------------------------------------
+; 光属性エフェクト
+;---------------------------------------------------------------------------
+[State -2, SE]
+type = PlaySnd
+triggerall = NumEnemy > 0
+trigger1 = ProjHitTime(27061) = 1
+trigger1 = Target,ID = Enemy(0),ID
+trigger2 = ProjHitTime(27201) = 1
+trigger2 = Target,ID = Enemy(0),ID
+trigger3 = ProjHitTime(27401) = 1
+trigger3 = Target,ID = Enemy(0),ID
+channel = 2
+value = 8, 7
+pan = Enemy(0),ScreenPos X - ScreenPos X
+
+[State -2, 背景]
+type = Explod
+triggerall = NumEnemy > 0
+trigger1 = ProjHitTime(27061) = 1
+trigger1 = Target,ID = Enemy(0),ID
+trigger2 = ProjHitTime(27201) = 1
+trigger2 = Target,ID = Enemy(0),ID
+trigger3 = ProjHitTime(27401) = 1
+trigger3 = Target,ID = Enemy(0),ID
+anim = 30080
+pos = ceil(Enemy(0),ScreenPos X), ceil(Enemy(0),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 0
+ownpal = 1
+
+[State -2, 本体]
+type = Explod
+triggerall = NumEnemy > 0
+trigger1 = ProjHitTime(27061) = 1
+trigger1 = Target,ID = Enemy(0),ID
+trigger2 = ProjHitTime(27201) = 1
+trigger2 = Target,ID = Enemy(0),ID
+trigger3 = ProjHitTime(27401) = 1
+trigger3 = Target,ID = Enemy(0),ID
+anim = 30081
+pos = ceil(Enemy(0),ScreenPos X), ceil(Enemy(0),ScreenPos Y - 50)
+postype = p2
+bindtime = -1
+sprpriority = 1
+ownpal = 1
+
+
+[State -2, SE]
+type = PlaySnd
+triggerall = NumEnemy > 1
+trigger1 = ProjHitTime(27061) = 1
+trigger1 = Target,ID = Enemy(1),ID
+trigger2 = ProjHitTime(27201) = 1
+trigger2 = Target,ID = Enemy(1),ID
+trigger3 = ProjHitTime(27401) = 1
+trigger3 = Target,ID = Enemy(1),ID
+channel = 2
+value = 8, 7
+pan = Enemy(1),ScreenPos X - ScreenPos X
+
+[State -2, 背景]
+type = Explod
+triggerall = NumEnemy > 1
+trigger1 = ProjHitTime(27061) = 1
+trigger1 = Target,ID = Enemy(1),ID
+trigger2 = ProjHitTime(27201) = 1
+trigger2 = Target,ID = Enemy(1),ID
+trigger3 = ProjHitTime(27401) = 1
+trigger3 = Target,ID = Enemy(1),ID
+anim = 30080
+pos = ceil(Enemy(1),ScreenPos X), ceil(Enemy(1),ScreenPos Y - 50)
+postype = left
+bindtime = -1
+sprpriority = 0
+ownpal = 1
+
+[State -2, 本体]
+type = Explod
+triggerall = NumEnemy > 1
+trigger1 = ProjHitTime(27061) = 1
+trigger1 = Target,ID = Enemy(1),ID
+trigger2 = ProjHitTime(27201) = 1
+trigger2 = Target,ID = Enemy(1),ID
+trigger3 = ProjHitTime(27401) = 1
+trigger3 = Target,ID = Enemy(1),ID
+anim = 30081
+pos = ceil(Enemy(1),ScreenPos X), ceil(Enemy(1),ScreenPos Y - 50)
+postype = p2
+bindtime = -1
+sprpriority = 1
+ownpal = 1
+
+
+;---------------------------------------------------------------------------
+; 毒
+;---------------------------------------------------------------------------
+[State -2, 2P毒]
+type = VarSet
+triggerall = NumEnemy > 0
+triggerall = MoveHit = 1
+triggerall = var(2) <= fvar(14)
+triggerall = Target,ID = Enemy(0),ID
+triggerall = Random < fvar(21)
+trigger1 = StateNo = 200 ;通常１
+trigger2 = StateNo = 210 ;通常２
+trigger3 = StateNo = 220 ;通常３
+trigger4 = StateNo = 300 ;ダッシュ攻撃
+trigger5 = StateNo = 600 ;ジャンプ通常１
+trigger6 = StateNo = 610 ;ジャンプ通常２
+trigger7 = StateNo = 800 ;天撃
+trigger8 = StateNo = [900,910] ;竜牙
+var(13) = var(2) + 120 ; ２秒
+
+[State -2, 2P毒化音]
+type = PlaySnd
+triggerall = NumEnemy > 0
+triggerall = MoveHit = 1
+triggerall = var(2) <= fvar(14)
+triggerall = Target,ID = Enemy(0),ID
+triggerall = Random < fvar(21)
+trigger1 = StateNo = 200 ;通常１
+trigger2 = StateNo = 210 ;通常２
+trigger3 = StateNo = 220 ;通常３
+trigger4 = StateNo = 300 ;ダッシュ攻撃
+trigger5 = StateNo = 600 ;ジャンプ通常１
+trigger6 = StateNo = 610 ;ジャンプ通常２
+trigger7 = StateNo = 800 ;天撃
+trigger8 = StateNo = [900,910] ;竜牙
+value = 8, 13
+
+[State -2, 4P毒]
+type = VarSet
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 1
+triggerall = var(2) <= fvar(14)
+triggerall = Target,ID = Enemy(1),ID
+triggerall = Random < fvar(21)
+trigger1 = StateNo = 200 ;通常１
+trigger2 = StateNo = 210 ;通常２
+trigger3 = StateNo = 220 ;通常３
+trigger4 = StateNo = 300 ;ダッシュ攻撃
+trigger5 = StateNo = 600 ;ジャンプ通常１
+trigger6 = StateNo = 610 ;ジャンプ通常２
+trigger7 = StateNo = 800 ;天撃
+trigger8 = StateNo = [900,910] ;竜牙
+var(14) = var(2) + 120 ; ２秒
+
+[State -2, 4P毒化音]
+type = PlaySnd
+triggerall = MoveHit = 1
+triggerall = NumEnemy > 1
+triggerall = var(2) <= fvar(14)
+triggerall = Target,ID = Enemy(1),ID
+triggerall = Random < fvar(21)
+trigger1 = StateNo = 200 ;通常１
+trigger2 = StateNo = 210 ;通常２
+trigger3 = StateNo = 220 ;通常３
+trigger4 = StateNo = 300 ;ダッシュ攻撃
+trigger5 = StateNo = 600 ;ジャンプ通常１
+trigger6 = StateNo = 610 ;ジャンプ通常２
+trigger7 = StateNo = 800 ;天撃
+trigger8 = StateNo = [900,910] ;竜牙
+value = 8, 13
+
+
+;---------------------------------------------------------------------------
+; 凍結
+;---------------------------------------------------------------------------
+[State -2, 2P凍結判定]
+type = VarSet
+triggerall = NumEnemy > 0
+triggerall = RoundState >= 2
+triggerall = StateNo != 5900
+triggerall = MoveHit = 1
+triggerall = var(2) <= fvar(13)
+triggerall = Random < fvar(20)
+triggerall = var(2) > var(10)
+triggerall = Target,ID = Enemy(0),ID
+trigger1 = StateNo = 200 ;通常１
+trigger2 = StateNo = 210 ;通常２
+trigger3 = StateNo = 220 ;通常３
+trigger4 = StateNo = 300 ;ダッシュ攻撃
+trigger5 = StateNo = 600 ;ジャンプ通常１
+trigger6 = StateNo = 610 ;ジャンプ通常２
+trigger7 = StateNo = 800 ;天撃
+trigger8 = StateNo = [900,910] ;竜牙
+var(10) = var(2) + 120 ; ２秒
+
+[State -2, 2P強制解凍]
+type = VarSet
+triggerall = NumEnemy > 0
+triggerall = RoundState >= 2
+triggerall = StateNo != 5900
+triggerall = var(2) < var(10)
+trigger1 = !Enemy(0),alive
+trigger2 = Enemy(0),StateNo != 4000         ; 対象が凍結ステート以外になった場合
+trigger2 = Enemy(0),StateNo != [5000, 5150] ; 対象が食らいステート以外になった場合
+trigger3 = ProjHitTime(27031) = 1
+trigger3 = Target,ID = Enemy(0),ID
+trigger4 = ProjHitTime(2903) = 1
+trigger4 = Target,ID = Enemy(0),ID
+trigger5 = var(2) % 80 = 0
+trigger5 = NumHelper(27100) > 0
+trigger5 = abs(Enemy(0),Pos X - Helper(27100),Pos X) <= 110
+trigger5 = (Enemy(0),Pos Y - Helper(27100),Pos Y) = [-19,8]
+trigger5 = Helper(27100),StateNo = 27103
+trigger5 = Enemy(0),StateNo != [120,152]
+trigger6 = !alive
+var(10) = var(2)
+
+[State -2, 2P凍結中のステート奪取]
+type = TargetState
+triggerall = NumEnemy > 0
+triggerall = RoundState >= 2
+triggerall = StateNo != 5900
+triggerall = var(2) < var(10)
+triggerall = Target,ID = Enemy(0),ID
+triggerall = Enemy(0),alive
+triggerall = alive
+trigger1 = NumHelper(9100) = 0
+trigger2 = NumHelper(9100) = 1
+trigger2 = Helper(9100),NumTarget = 0
+value = 4000
+
+
+
+[State -2, 4P凍結判定]
+type = VarSet
+triggerall = RoundState >= 2
+triggerall = StateNo != 5900
+triggerall = MoveHit = 1
+triggerall = var(2) <= fvar(13)
+triggerall = Random < fvar(20)
+triggerall = var(2) > var(11)
+triggerall = NumEnemy > 1
+triggerall = Target,ID = Enemy(1),ID
+trigger1 = StateNo = 200 ;通常１
+trigger2 = StateNo = 210 ;通常２
+trigger3 = StateNo = 220 ;通常３
+trigger4 = StateNo = 300 ;ダッシュ攻撃
+trigger5 = StateNo = 600 ;ジャンプ通常１
+trigger6 = StateNo = 610 ;ジャンプ通常２
+trigger7 = StateNo = 800 ;天撃
+trigger8 = StateNo = [900,910] ;竜牙
+var(11) = var(2) + 120 ; ２秒
+
+[State -2, 4P強制解凍]
+type = VarSet
+triggerall = RoundState >= 2
+triggerall = StateNo != 5900
+triggerall = var(2) < var(11)
+triggerall = NumEnemy > 1
+trigger1 = Enemy(1),StateNo != 4000          ; 対象が凍結ステート以外になった場合
+trigger1 = Enemy(1),StateNo != [5000, 5150] ; 対象が食らいステート以外になった場合
+trigger2 = !Enemy(1),alive
+trigger3 = ProjHitTime(27031) = 1
+trigger3 = Target,ID = Enemy(1),ID
+trigger4 = ProjHitTime(2903) = 1
+trigger4 = Target,ID = Enemy(1),ID
+trigger5 = var(2) % 80 = 0
+trigger5 = NumHelper(27100) > 0
+trigger5 = abs(Enemy(1),Pos X - Helper(27100),Pos X) <= 110
+trigger5 = (Enemy(1),Pos Y - Helper(27100),Pos Y) = [-19,8]
+trigger5 = Helper(27100),StateNo = 27103
+trigger5 = Enemy(1),StateNo != [120,152]
+trigger6 = !alive
+var(11) = var(2)
+
+[State -2, 4P凍結中のステート奪取]
+type = TargetState
+triggerall = RoundState >= 2
+triggerall = StateNo != 5900
+triggerall = var(2) < var(11)
+triggerall = NumEnemy > 1
+triggerall = Target,ID = Enemy(1),ID
+triggerall = Enemy(1),alive
+triggerall = alive
+trigger1 = NumHelper(9101) = 0
+trigger2 = NumHelper(9101) = 1
+trigger2 = Helper(9101),NumTarget = 0
+value = 4000
+
+
+
+
+;---------------------------------------------------------------------------
+; コンボ補正
+;---------------------------------------------------------------------------
+[State -2, ヒット数での補正]
+type = VarSet
+triggerall = StateNo != 5900
+triggerall = RoundState = 2
+trigger1 = EnemyNear,GetHitVar(hitcount) >= 5
+fvar(32) = 1.0 - (EnemyNear,GetHitVar(hitcount) * 0.05)
+
+[State -2, 補正解除]
+type = VarSet
+trigger1 = P2MoveType != H
+trigger2 = EnemyNear,GetHitVar(hitcount) = 0
+fvar(32) = 1.0
+
+[State -2, 補正時最低ダメージ]
+type = VarSet
+trigger1 = fvar(32) < 0
+fvar(32) = 0
+
+[State -2, 実倍率]
+type = AttackMulSet
+triggerall = StateNo != 5900
+trigger1 = RoundState = 2
+value = fvar(32)
+
+
+
+;---------------------------------------------------------------------------
+; ハイパーアーマー
+;---------------------------------------------------------------------------
+[State -2, アーマーヘルパー呼び出し]
+type = Helper
+triggerall = !NumHelper(9000) && (MoveType != H)
+trigger1 = (StateNo = 1020) && (Time = 1) ; 落花掌最大タメ
+trigger2 = (StateNo = 1025) && (Time = 1) ; 落花掌最大タメその場
+trigger3 = (StateNo = 2800) && (AnimElemTime(8) = 1) ; ブラックマント
+trigger4 = (StateNo = 2801) && (Time = 1) ; ブラックマント
+trigger5 = (StateNo = 2400) && (AnimElemTime(3) = 1) ; ホウキスピン
+trigger6 = (StateNo = 2430) && (Time = 1) ; ホウキスピン（攻撃判定なし)
+trigger7 = (StateNo = 2900) && (AnimElemTime(2) = 0) ; 燃え盛る炎の加熱炉
+trigger8 = (StateNo = 2910) && (AnimElemTime(2) = 0) ; 燃え盛る炎の加熱炉
+trigger9 = (StateNo = 3100) && (AnimElemTime(2) = 0) ; フローレカライダー
+trigger10 = (StateNo = 3110) && (AnimElemTime(2) = 0) ; フローレカライダー
+trigger11 = (StateNo = 3201)               ; メガドリル
+trigger12 = (StateNo = 3301)	; フュージョンクラフト前半
+name = "HyperArmor"
+stateno = 9000
+ID = 9000
+size.xscale = const(size.xscale) * 1
+size.yscale = const(size.yscale) * 1
+postype = p1
+pos = 0, 0
+ownpal = 1
+supermovetime = 99999
+pausemovetime = 99999
+
+[State -2, アーマー中の投げ以外無効]
+type = NotHitBy
+trigger1 = NumHelper(9000)
+value2 = , AA, AP
+time = 2
+
+[State -2, 設置中の場合、投げも無効]
+type = NotHitBy
+trigger1 = NumHelper(9000)
+trigger1 = var(9) = 1
+trigger2 = StateNo = [3301,3302]	; フュージョンクラフト中
+value2 = , AA, AP, AT
+time = 2
+
+[State -2, アーマー中に被弾した際無敵時間延長(多重被弾抑制処理)]
+type = NotHitBy
+trigger1 = NumHelper(9000)
+trigger1 = Helper(9000), GetHitVar(damage)
+value = SCA
+time = Helper(9000), GetHitVar(HitShakeTime) + 5
+
+[State -2, アーマー受けした時のライフ減少]
+type = LifeAdd
+trigger1 = NumHelper(9000)
+trigger1 = Helper(9000), GetHitVar(damage)
+value = -1 * Helper(9000), GetHitVar(damage)
+absolute = 1
+ignorehitpause = 1
+
+
+
+;---------------------------------------------------------------------------
+; ディスエンチャント被弾処理
+;---------------------------------------------------------------------------
+[State -2, オラシ解除]
+type = VarSet
+triggerall = NumEnemy > 0
+trigger1 = Enemy(0),Name = "MadoGakusha" && Enemy(0),AuthorName = "BluishCat"
+trigger1 = Enemy(0),StateNo = 1700 && Enemy(0),AnimElemTime(2) = 0
+trigger1 = abs(Enemy(0),Pos X - Pos X) < 170
+trigger1 = abs(Enemy(0),Pos Y - Pos Y) < 50
+trigger2 = NumEnemy > 1
+trigger2 = Enemy(1),Name = "MadoGakusha" && Enemy(1),AuthorName = "BluishCat"
+trigger2 = Enemy(1),StateNo = 1700 && Enemy(1),AnimElemTime(2) = 0
+trigger2 = abs(Enemy(1),Pos X - Pos X) < 170
+trigger2 = abs(Enemy(1),Pos Y - Pos Y) < 50
+trigger3 = Enemy(0),Name = "アラド戦記 バトルメイジ" && Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),StateNo = 1800
+trigger3 = GetHitVar(chainid) = 1800
+trigger3 = MoveType = H
+trigger4 = NumEnemy > 1
+trigger4 = Enemy(1),Name = "アラド戦記 バトルメイジ" && Enemy(1),AuthorName = "Serika"
+trigger4 = Enemy(1),StateNo = 1800
+trigger4 = GetHitVar(chainid) = 1800
+trigger4 = MoveType = H
+var(7) = 0
+
+[State -2, エフェクト消去]
+type = RemoveExplod
+triggerall = NumEnemy > 0
+trigger1 = Enemy(0),Name = "MadoGakusha" && Enemy(0),AuthorName = "BluishCat"
+trigger1 = Enemy(0),StateNo = 1700 && Enemy(0),AnimElemTime(2) = 0
+trigger1 = abs(Enemy(0),Pos X - Pos X) < 170
+trigger1 = abs(Enemy(0),Pos Y - Pos Y) < 50
+trigger2 = NumEnemy > 1
+trigger2 = Enemy(1),Name = "MadoGakusha" && Enemy(1),AuthorName = "BluishCat"
+trigger2 = Enemy(1),StateNo = 1700 && Enemy(1),AnimElemTime(2) = 0
+trigger2 = abs(Enemy(1),Pos X - Pos X) < 170
+trigger2 = abs(Enemy(1),Pos Y - Pos Y) < 50
+trigger3 = Enemy(0),Name = "アラド戦記 バトルメイジ" && Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),StateNo = 1800
+trigger3 = GetHitVar(chainid) = 1800
+trigger3 = MoveType = H
+trigger4 = NumEnemy > 1
+trigger4 = Enemy(1),Name = "アラド戦記 バトルメイジ" && Enemy(1),AuthorName = "Serika"
+trigger4 = Enemy(1),StateNo = 1800
+trigger4 = GetHitVar(chainid) = 1800
+trigger4 = MoveType = H
+ID = 26000
+
+[State 1150, エフェクト消去]
+type = RemoveExplod
+triggerall = NumEnemy > 0
+trigger1 = Enemy(0),Name = "MadoGakusha" && Enemy(0),AuthorName = "BluishCat"
+trigger1 = Enemy(0),StateNo = 1700 && Enemy(0),AnimElemTime(2) = 0
+trigger1 = abs(Enemy(0),Pos X - Pos X) < 170
+trigger1 = abs(Enemy(0),Pos Y - Pos Y) < 50
+trigger2 = NumEnemy > 1
+trigger2 = Enemy(1),Name = "MadoGakusha" && Enemy(1),AuthorName = "BluishCat"
+trigger2 = Enemy(1),StateNo = 1700 && Enemy(1),AnimElemTime(2) = 0
+trigger2 = abs(Enemy(1),Pos X - Pos X) < 170
+trigger2 = abs(Enemy(1),Pos Y - Pos Y) < 50
+trigger3 = Enemy(0),Name = "アラド戦記 バトルメイジ" && Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),StateNo = 1800
+trigger3 = GetHitVar(chainid) = 1800
+trigger3 = MoveType = H
+trigger4 = NumEnemy > 1
+trigger4 = Enemy(1),Name = "アラド戦記 バトルメイジ" && Enemy(1),AuthorName = "Serika"
+trigger4 = Enemy(1),StateNo = 1800
+trigger4 = GetHitVar(chainid) = 1800
+trigger4 = MoveType = H
+ID = 26001
+
+[State -2, 古代の記憶解除]
+type = VarSet
+triggerall = NumEnemy > 0
+trigger1 = Enemy(0),Name = "MadoGakusha" && Enemy(0),AuthorName = "BluishCat"
+trigger1 = Enemy(0),StateNo = 1700 && Enemy(0),AnimElemTime(2) = 0
+trigger1 = abs(Enemy(0),Pos X - Pos X) < 170
+trigger1 = abs(Enemy(0),Pos Y - Pos Y) < 50
+trigger2 = NumEnemy > 1
+trigger2 = Enemy(1),Name = "MadoGakusha" && Enemy(1),AuthorName = "BluishCat"
+trigger2 = Enemy(1),StateNo = 1700 && Enemy(1),AnimElemTime(2) = 0
+trigger2 = abs(Enemy(1),Pos X - Pos X) < 170
+trigger2 = abs(Enemy(1),Pos Y - Pos Y) < 50
+trigger3 = Enemy(0),Name = "アラド戦記 バトルメイジ" && Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),StateNo = 1800
+trigger3 = GetHitVar(chainid) = 1800
+trigger3 = MoveType = H
+trigger4 = NumEnemy > 1
+trigger4 = Enemy(1),Name = "アラド戦記 バトルメイジ" && Enemy(1),AuthorName = "Serika"
+trigger4 = Enemy(1),StateNo = 1800
+trigger4 = GetHitVar(chainid) = 1800
+trigger4 = MoveType = H
+fvar(10) = var(2)
+
+[State -2, 古代の図書館解除]
+type = VarSet
+triggerall = NumEnemy > 0
+trigger1 = Enemy(0),Name = "MadoGakusha" && Enemy(0),AuthorName = "BluishCat"
+trigger1 = Enemy(0),StateNo = 1700 && Enemy(0),AnimElemTime(2) = 0
+trigger1 = abs(Enemy(0),Pos X - Pos X) < 170
+trigger1 = abs(Enemy(0),Pos Y - Pos Y) < 50
+trigger2 = NumEnemy > 1
+trigger2 = Enemy(1),Name = "MadoGakusha" && Enemy(1),AuthorName = "BluishCat"
+trigger2 = Enemy(1),StateNo = 1700 && Enemy(1),AnimElemTime(2) = 0
+trigger2 = abs(Enemy(1),Pos X - Pos X) < 170
+trigger2 = abs(Enemy(1),Pos Y - Pos Y) < 50
+trigger3 = Enemy(0),Name = "アラド戦記 バトルメイジ" && Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),StateNo = 1800
+trigger3 = GetHitVar(chainid) = 1800
+trigger3 = MoveType = H
+trigger4 = NumEnemy > 1
+trigger4 = Enemy(1),Name = "アラド戦記 バトルメイジ" && Enemy(1),AuthorName = "Serika"
+trigger4 = Enemy(1),StateNo = 1800
+trigger4 = GetHitVar(chainid) = 1800
+trigger4 = MoveType = H
+fvar(11) = var(2)
+
+[State -2, チリパ解除]
+type = VarSet
+triggerall = NumEnemy > 0
+trigger1 = Enemy(0),Name = "MadoGakusha" && Enemy(0),AuthorName = "BluishCat"
+trigger1 = Enemy(0),StateNo = 1700 && Enemy(0),AnimElemTime(2) = 0
+trigger1 = abs(Enemy(0),Pos X - Pos X) < 170
+trigger1 = abs(Enemy(0),Pos Y - Pos Y) < 50
+trigger2 = NumEnemy > 1
+trigger2 = Enemy(1),Name = "MadoGakusha" && Enemy(1),AuthorName = "BluishCat"
+trigger2 = Enemy(1),StateNo = 1700 && Enemy(1),AnimElemTime(2) = 0
+trigger2 = abs(Enemy(1),Pos X - Pos X) < 170
+trigger2 = abs(Enemy(1),Pos Y - Pos Y) < 50
+trigger3 = Enemy(0),Name = "アラド戦記 バトルメイジ" && Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),StateNo = 1800
+trigger3 = GetHitVar(chainid) = 1800
+trigger3 = MoveType = H
+trigger4 = NumEnemy > 1
+trigger4 = Enemy(1),Name = "アラド戦記 バトルメイジ" && Enemy(1),AuthorName = "Serika"
+trigger4 = Enemy(1),StateNo = 1800
+trigger4 = GetHitVar(chainid) = 1800
+trigger4 = MoveType = H
+fvar(13) = var(2)
+
+[State -2, デスパ解除]
+type = VarSet
+triggerall = NumEnemy > 0
+trigger1 = Enemy(0),Name = "MadoGakusha" && Enemy(0),AuthorName = "BluishCat"
+trigger1 = Enemy(0),StateNo = 1700 && Enemy(0),AnimElemTime(2) = 0
+trigger1 = abs(Enemy(0),Pos X - Pos X) < 170
+trigger1 = abs(Enemy(0),Pos Y - Pos Y) < 50
+trigger2 = NumEnemy > 1
+trigger2 = Enemy(1),Name = "MadoGakusha" && Enemy(1),AuthorName = "BluishCat"
+trigger2 = Enemy(1),StateNo = 1700 && Enemy(1),AnimElemTime(2) = 0
+trigger2 = abs(Enemy(1),Pos X - Pos X) < 170
+trigger2 = abs(Enemy(1),Pos Y - Pos Y) < 50
+trigger3 = Enemy(0),Name = "アラド戦記 バトルメイジ" && Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),StateNo = 1800
+trigger3 = GetHitVar(chainid) = 1800
+trigger3 = MoveType = H
+trigger1 = NumEnemy > 1
+trigger4 = Enemy(1),Name = "アラド戦記 バトルメイジ" && Enemy(1),AuthorName = "Serika"
+trigger4 = Enemy(1),StateNo = 1800
+trigger4 = GetHitVar(chainid) = 1800
+trigger4 = MoveType = H
+fvar(14) = var(2)
+
+[State -2, ショータイム解除]
+type = VarSet
+triggerall = NumEnemy > 0
+trigger1 = Enemy(0),Name = "MadoGakusha" && Enemy(0),AuthorName = "BluishCat"
+trigger1 = Enemy(0),StateNo = 1700 && Enemy(0),AnimElemTime(2) = 0
+trigger1 = abs(Enemy(0),Pos X - Pos X) < 170
+trigger1 = abs(Enemy(0),Pos Y - Pos Y) < 50
+trigger2 = NumEnemy > 1
+trigger2 = Enemy(1),Name = "MadoGakusha" && Enemy(1),AuthorName = "BluishCat"
+trigger2 = Enemy(1),StateNo = 1700 && Enemy(1),AnimElemTime(2) = 0
+trigger2 = abs(Enemy(1),Pos X - Pos X) < 170
+trigger2 = abs(Enemy(1),Pos Y - Pos Y) < 50
+trigger3 = Enemy(0),Name = "アラド戦記 バトルメイジ" && Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),AuthorName = "Serika"
+trigger3 = Enemy(0),StateNo = 1800
+trigger3 = GetHitVar(chainid) = 1800
+trigger3 = MoveType = H
+trigger4 = NumEnemy > 1
+trigger4 = Enemy(1),Name = "アラド戦記 バトルメイジ" && Enemy(1),AuthorName = "Serika"
+trigger4 = Enemy(1),StateNo = 1800
+trigger4 = GetHitVar(chainid) = 1800
+trigger4 = MoveType = H
+fvar(19) = var(2)
+
+
+
+
+;---------------------------------------------------------------------------
+; ユニオンヒット処理
+;---------------------------------------------------------------------------
+[State -2, ユニオンヒット：発生フラグ]
+type = VarSet
+triggerall = NumPartner
+trigger1 = MoveHit = 1
+trigger2 = ProjHitTime(0) = 1
+var(34) = 3
+ignorehitpause = 1
+
+[State -2, ユニオンヒット：ターゲットID記憶]
+type = VarSet
+triggerall = NumPartner
+trigger1 = MoveHit = 1
+trigger2 = ProjHitTime(0) = 1
+var(35) = Target, ID
+ignorehitpause = 1
+
+[State -2, ユニオンヒット：ヒットサウンド]
+type = PlaySnd
+triggerall = NumPartner
+triggerall = var(34) = 2
+; 以下 ユニオンヒット搭載キャラクターの条件を羅列
+trigger1 = Partner, Name = "DnF_Ranger_F" && Partner, AuthorName = "QK2Key"
+trigger1 = (Partner, Var(13) = [1, 2]) && Partner, Var(14) = var(35)
+trigger2 = Partner, Name = "DnF_Witchcraft" && Partner, AuthorName = "QK2Key"
+trigger2 = (Partner, Var(13) = [1, 2]) && Partner, Var(14) = var(35)
+trigger3 = Partner, Name = "DnF_Spitfire_M" && Partner, AuthorName = "QK2Key"
+trigger3 = (Partner, Var(13) = [1, 2]) && Partner, Var(14) = var(35)
+trigger4 = Partner, Name = "DnF_Rogue" && Partner, AuthorName = "QK2Key"
+trigger4 = (Partner, Var(13) = [1, 2]) && Partner, Var(14) = var(35)
+trigger5 = Partner, Name = "DnF_Berserker" && Partner, AuthorName = "GoukaSoshina_SerikaBase"
+trigger5 = (Partner, Var(33) = [1, 2]) && Partner, Var(34) = var(35)
+trigger6 = Partner, Name = "Dragon_Warrior(DnF)" && Partner, AuthorName = "White hair Knight"
+trigger6 = (Partner, Var(13) = [1, 2]) && Partner, Var(14) = var(35)
+trigger7 = Partner, Name = "Desperado" && Partner, AuthorName = "sdc"
+trigger7 = (Partner, Var(42) = [1, 2]) && Partner, Var(43) = var(35)
+trigger8 = Partner, Name = "アラド戦記 阿修羅" && Partner, AuthorName = "Serika"
+trigger8 = (Partner, Var(43) = [1, 2]) && Partner, Var(44) = var(35)
+trigger9 = Partner, Name = "MadoGakusha" && Partner, AuthorName = "BluishCat"
+trigger9 = (Partner, var(34) = [1, 2]) && Partner, var(35) = var(35)
+value = 8, 25
+ignorehitpause = 1
+persistent = 0
+
+[State -2, ユニオンヒット：エフェクト表示]
+type = Explod
+triggerall = NumPartner
+triggerall = var(34) = 2
+; 以下 ユニオンヒット搭載キャラクターの条件を羅列
+trigger1 = Partner, Name = "DnF_Ranger_F" && Partner, AuthorName = "QK2Key"
+trigger1 = (Partner, Var(13) = [1, 2]) && Partner, Var(14) = var(35)
+trigger2 = Partner, Name = "DnF_Witchcraft" && Partner, AuthorName = "QK2Key"
+trigger2 = (Partner, Var(13) = [1, 2]) && Partner, Var(14) = var(35)
+trigger3 = Partner, Name = "DnF_Spitfire_M" && Partner, AuthorName = "QK2Key"
+trigger3 = (Partner, Var(13) = [1, 2]) && Partner, Var(14) = var(35)
+trigger4 = Partner, Name = "DnF_Rogue" && Partner, AuthorName = "QK2Key"
+trigger4 = (Partner, Var(13) = [1, 2]) && Partner, Var(14) = var(35)
+trigger5 = Partner, Name = "DnF_Berserker" && Partner, AuthorName = "GoukaSoshina_SerikaBase"
+trigger5 = (Partner, Var(33) = [1, 2]) && Partner, Var(34) = var(35)
+trigger6 = Partner, Name = "Dragon_Warrior(DnF)" && Partner, AuthorName = "White hair Knight"
+trigger6 = (Partner, Var(13) = [1, 2]) && Partner, Var(14) = var(35)
+trigger7 = Partner, Name = "Desperado" && Partner, AuthorName = "sdc"
+trigger7 = (Partner, Var(42) = [1, 2]) && Partner, Var(43) = var(35)
+trigger8 = Partner, Name = "アラド戦記 阿修羅" && Partner, AuthorName = "Serika"
+trigger8 = (Partner, Var(43) = [1, 2]) && Partner, Var(44) = var(35)
+trigger9 = Partner, Name = "MadoGakusha" && Partner, AuthorName = "BluishCat"
+trigger9 = (Partner, var(34) = [1, 2]) && Partner, var(35) = var(35)
+anim = 30110
+ID = 30110
+facing = IfElse(Random < 500, 1, -1)
+ownpal = 1
+sprpriority = 3
+pos = Ceil(PlayerID(Var(44)), ScreenPos X) * const(size.xscale), Ceil(PlayerID(Var(44)), ScreenPos Y - 80) * const(size.yscale)
+postype = left
+random = 20, 20
+bindtime = 1
+ignorehitpause = 1
+persistent = 0
+
+[State -2, ユニオンヒット：パワーゲージ増加]
+type = PowerAdd
+triggerall = NumPartner
+triggerall = var(34) = 2
+; 以下 ユニオンヒット搭載キャラクターの条件を羅列
+trigger1 = Partner, Name = "DnF_Ranger_F" && Partner, AuthorName = "QK2Key"
+trigger1 = (Partner, Var(13) = [1, 2]) && Partner, Var(14) = var(35)
+trigger2 = Partner, Name = "DnF_Witchcraft" && Partner, AuthorName = "QK2Key"
+trigger2 = (Partner, Var(13) = [1, 2]) && Partner, Var(14) = var(35)
+trigger3 = Partner, Name = "DnF_Spitfire_M" && Partner, AuthorName = "QK2Key"
+trigger3 = (Partner, Var(13) = [1, 2]) && Partner, Var(14) = var(35)
+trigger4 = Partner, Name = "DnF_Rogue" && Partner, AuthorName = "QK2Key"
+trigger4 = (Partner, Var(13) = [1, 2]) && Partner, Var(14) = var(35)
+trigger5 = Partner, Name = "DnF_Berserker" && Partner, AuthorName = "GoukaSoshina_SerikaBase"
+trigger5 = (Partner, Var(33) = [1, 2]) && Partner, Var(34) = var(35)
+trigger6 = Partner, Name = "Dragon_Warrior(DnF)" && Partner, AuthorName = "White hair Knight"
+trigger6 = (Partner, Var(13) = [1, 2]) && Partner, Var(14) = var(35)
+trigger7 = Partner, Name = "Desperado" && Partner, AuthorName = "sdc"
+trigger7 = (Partner, Var(42) = [1, 2]) && Partner, Var(43) = var(35)
+trigger8 = Partner, Name = "アラド戦記 阿修羅" && Partner, AuthorName = "Serika"
+trigger8 = (Partner, Var(43) = [1, 2]) && Partner, Var(44) = var(35)
+trigger9 = Partner, Name = "MadoGakusha" && Partner, AuthorName = "BluishCat"
+trigger9 = (Partner, var(34) = [1, 2]) && Partner, var(35) = var(35)
+value = 100
+ignorehitpause = 1
+persistent = 0
+
+[State -2, ユニオンヒット：フラグ管理]
+type = VarAdd
+triggerall = NumPartner
+trigger1 = var(34) > 0
+var(34) = -1
+
+
+
+;---------------------------------------------------------------------------
+; ダメージ表示(Enemy(0)側)
+;---------------------------------------------------------------------------
+[State -2, ダメージ表示(100桁)]
+type = Explod
+triggerall = NumEnemy > 0
+triggerall = var(32) - Enemy(0), Life > 99
+trigger1 = MoveContact = 1
+trigger2 = ProjContactTime(0) = 1
+trigger3 = StateNo = 2801 && Enemy(0), StateNo = 2810
+trigger4 = StateNo = 2400
+anim = 30090 + ((var(32) - Enemy(0), Life) / 100 % 10)
+ID = 30093
+pos = Floor(((Pos X + 20) * IfElse(Facing = 1,-1,1)) + (Enemy(0),Pos X * IfElse(Facing = 1,1,-1))), Floor(Enemy(0),Pos Y - 80)
+postype = p1
+facing = Facing
+scale = 0.9, 0.9
+ownpal = 1
+ontop = 1
+ignorehitpause = 1
+
+[State -2, ダメージ表示(10桁)]
+type = Explod
+triggerall = NumEnemy > 0
+triggerall = var(32) - Enemy(0), Life > 9
+trigger1 = MoveContact = 1
+trigger2 = ProjContactTime(0) = 1
+trigger3 = StateNo = 2801 && Enemy(0), StateNo = 2810
+trigger4 = StateNo = 2400
+anim = 30090 + ((var(32) - Enemy(0), Life) / 10 % 10)
+ID = 30092
+pos = Floor(((Pos X + 10) * IfElse(Facing = 1,-1,1)) + (Enemy(0),Pos X * IfElse(Facing = 1,1,-1))), Floor(Enemy(0),Pos Y - 80)
+postype = p1
+facing = Facing
+ontop = 1
+scale = 0.9, 0.9
+ownpal = 1
+ignorehitpause = 1
+
+[State -2, ダメージ表示(1桁)]
+type = Explod
+triggerall = NumEnemy > 0
+triggerall = var(32) - Enemy(0), Life > 0
+trigger1 = MoveContact = 1
+trigger2 = ProjContactTime(0) = 1
+trigger3 = StateNo = 2801 && Enemy(0), StateNo = 2810
+trigger4 = StateNo = 2400
+anim = 30090 + ((var(32) - Enemy(0), Life) % 10)
+ID = 30091
+pos = Floor((Pos X * IfElse(Facing = 1,-1,1)) + (Enemy(0),Pos X * IfElse(Facing = 1,1,-1))), Floor(Enemy(0),Pos Y - 80)
+postype = p1
+facing = Facing
+ontop = 1
+scale = 0.9, 0.9
+ownpal = 1
+ignorehitpause = 1
+
+[State -2, Enemy(0)のライフ保存]
+type = VarSet
+triggerall = NumEnemy > 0
+trigger1 = var(32) != Enemy(0), Life
+var(32) = Enemy(0), Life
+ignorehitpause = 1
+
+;---------------------------------------------------------------------------
+; ダメージ表示(Enemy(1)側)
+;---------------------------------------------------------------------------
+[State -2, ダメージ表示(100桁)]
+type = Explod
+triggerall = NumEnemy > 1
+triggerall = var(33) - Enemy(1), Life > 99
+trigger1 = MoveContact = 1
+trigger2 = ProjContactTime(0) = 1
+trigger3 = StateNo = 2801 && Enemy(1), StateNo = 2810
+trigger4 = StateNo = 2400
+anim = 30090 + ((var(33) - Enemy(1), Life) / 100 % 10)
+ID = 30098
+pos = Floor(((Pos X + 20) * IfElse(Facing = 1,-1,1)) + (Enemy(1),Pos X * IfElse(Facing = 1,1,-1))), Floor(Enemy(1),Pos Y - 90)
+postype = p1
+facing = Facing
+ontop = 1
+scale = 0.9, 0.9
+ownpal = 1
+ignorehitpause = 1
+
+[State -2, ダメージ表示(10桁)]
+type = Explod
+triggerall = NumEnemy > 1
+triggerall = var(33) - Enemy(1), Life > 9
+trigger1 = MoveContact = 1
+trigger2 = ProjContactTime(0) = 1
+trigger3 = StateNo = 2801 && Enemy(1), StateNo = 2810
+trigger4 = StateNo = 2400
+anim = 30090 + ((var(33) - Enemy(1), Life) / 10 % 10)
+ID = 30097
+pos = Floor(((Pos X + 10) * IfElse(Facing = 1,-1,1)) + (Enemy(1),Pos X * IfElse(Facing = 1,1,-1))), Floor(Enemy(1),Pos Y - 90)
+postype = p1
+facing = Facing
+ontop = 1
+scale = 0.9, 0.9
+ownpal = 1
+ignorehitpause = 1
+
+[State -2, ダメージ表示(1桁)]
+type = Explod
+triggerall = NumEnemy > 1
+triggerall = var(33) - Enemy(1), Life > 0
+trigger1 = MoveContact = 1
+trigger2 = ProjContactTime(0) = 1
+trigger3 = StateNo = 2801 && Enemy(1), StateNo = 2810
+trigger4 = StateNo = 2400
+anim = 30090 + ((var(33) - Enemy(1), Life) % 10)
+ID = 30096
+pos = Floor((Pos X * IfElse(Facing = 1,-1,1)) + (Enemy(1),Pos X * IfElse(Facing = 1,1,-1))), Floor(Enemy(1),Pos Y - 90)
+postype = p1
+facing = Facing
+ontop = 1
+scale = 0.9, 0.9
+ownpal = 1
+ignorehitpause = 1
+
+[State -2, Enemy(1)のライフ保存]
+type = VarSet
+trigger1 = NumEnemy > 1
+trigger1 = var(33) != Enemy(1), Life
+var(33) = Enemy(1), Life
+ignorehitpause = 1
+
+
+;---------------------------------------------------------------------------
+; ダメージ処理
+;---------------------------------------------------------------------------
+; 元ダメージを x
+; オラシ状態を y (オラシありで1)
+; 設置状態を   z (設置ありで1)
+;  とすると
+; 最終ダメージ = x(1 - 0.5z)(1 - 0.25y) - x
+; とする
+[State -2, ダメージ検出]
+type			= VarSet
+triggerall		= !IsHelper
+triggerall		= !( RoundState = 0 && ((StateNo = [180, 189]) || StateNo = 5500 || StateNo = 5900) )
+trigger1		= 1
+var(30)			= var(31) - Life + (var(31) > LifeMax) * (LifeMax - var(31))
+ignorehitpause	= 1
+pausemovetime	= 99999999999876543210
+supermovetime	= 99999999999876543210
+
+[State -2, 回復]
+type			= LifeAdd
+triggerall		= !IsHelper
+triggerall		= !( RoundState = 0 && ((StateNo = [180, 189]) || StateNo = 5500 || StateNo = 5900) )
+trigger1		= var(30) < 0
+value			= -(var(30) * IfElse(var(30) > -1000, 100, 1)) + var(30)
+absolute		= 1
+ignorehitpause	= 1
+pausemovetime	= 99999999999876543210
+supermovetime	= 99999999999876543210
+
+[State -2, オラシでのゲージ減少] ; 現在ダメージ1につきパワー1減少
+type			= PowerAdd
+triggerall		= !IsHelper
+triggerall		= !( RoundState = 0 && ((StateNo = [180, 189]) || StateNo = 5500 || StateNo = 5900) )
+trigger1		= var(7) = 1
+trigger1		= 0 < var(30)
+value			= IfElse((0 < var(30)) && (var(30) < 1000), -var(30), floor(-var(30) / 100))
+ignorehitpause	= 1
+pausemovetime	= 99999999999876543210
+supermovetime	= 99999999999876543210
+
+[State -2, ダメージ計算 設置減算]
+type			= VarSet
+triggerall		= !IsHelper
+triggerall		= !( RoundState = 0 && ((StateNo = [180, 189]) || StateNo = 5500 || StateNo = 5900) )
+trigger1		= 0 < var(30) && var(30) < 1000
+trigger1		= var(9) = 1
+var(30)			= ceil(var(30) * 0.5)
+ignorehitpause	= 1
+pausemovetime	= 99999999999876543210
+supermovetime	= 99999999999876543210
+
+[State -2, ダメージ計算 オラシ減算]
+type			= VarSet
+triggerall		= !IsHelper
+triggerall		= !( RoundState = 0 && ((StateNo = [180, 189]) || StateNo = 5500 || StateNo = 5900) )
+trigger1		= 0 < var(30) && var(30) < 1000
+trigger1		= var(7) = 1
+var(30)			= ceil(var(30) * 0.75)
+ignorehitpause	= 1
+pausemovetime	= 99999999999876543210
+supermovetime	= 99999999999876543210
+
+[State -2, ダメージ計算 雨デバフ減算]
+type			= VarSet
+triggerall		= !IsHelper
+triggerall		= !( RoundState = 0 && ((StateNo = [180, 189]) || StateNo = 5500 || StateNo = 5900) )
+trigger1		= 0 < var(30) && var(30) < 1000
+trigger1		= (var(2) < var(26)) || (var(2) < var(27))
+var(30)			= ceil(var(30) * 0.95)
+ignorehitpause	= 1
+pausemovetime	= 99999999999876543210
+supermovetime	= 99999999999876543210
+
+[State -2, ダメージ計算 基本倍率]
+type			= VarSet
+triggerall		= !IsHelper
+triggerall		= !( RoundState = 0 && ((StateNo = [180, 189]) || StateNo = 5500 || StateNo = 5900) )
+trigger1		= 0 < var(30) && var(30) < 1000
+var(30)			= var(30) * 100
+ignorehitpause	= 1
+pausemovetime	= 99999999999876543210
+supermovetime	= 99999999999876543210
+
+[State -2, ダメージ適用]
+type			= LifeAdd
+triggerall		= !IsHelper
+triggerall		= !( RoundState = 0 && ((StateNo = [180, 189]) || StateNo = 5500 || StateNo = 5900) )
+trigger1		= Life > 1
+value			= -(var(30) - (var(31) - Life + (var(31) > LifeMax) * (LifeMax - var(31))))
+absolute		= 1
+ignorehitpause	= 1
+pausemovetime	= 99999999999876543210
+supermovetime	= 99999999999876543210
+
+[State -2, 現在ライフ 設定]
+type = VarSet
+triggerall		= !IsHelper
+triggerall		= !( RoundState = 0 && ((StateNo = [180, 189]) || StateNo = 5500 || StateNo = 5900) )
+trigger1		= 1
+var(31)			= Life
+ignorehitpause	= 1
+pausemovetime	= 99999999999876543210
+supermovetime	= 99999999999876543210
+
+
+
+
+
+
+
+
+;---------------------------------------------------------------------------
+; シュルル被弾処理
+;---------------------------------------------------------------------------
+[State -2, 被弾声再生]
+type = PlaySnd
+triggerall = RoundState = 2
+triggerall = NumHelper(27020)
+trigger1 = helper(27020),GetHitVar(damage)
+channel = 3
+value = 7, 6
+
+[State -2, 枠消滅]
+type = RemoveExplod
+triggerall = IsHelper(27020)
+triggerall = RoundState = 2
+trigger1 = (StateNo != 27022) && (StateNo != 27023)
+ID = 27026
+
+[State -2, ステート抜け]
+type = SelfState
+triggerall = IsHelper(27020)
+triggerall = RoundState = 2
+trigger1 = (StateNo != 27020) && (StateNo != 27021) && (StateNo != 27022) && (StateNo != 27023) && (StateNo != 27025)
+trigger1 = PrevStateNo = 27020
+value = 27020
+ignorehitpause	= 1
+pausemovetime	= 99999999999876543210
+supermovetime	= 99999999999876543210
+
+[State -2, ステート抜け]
+type = SelfState
+triggerall = IsHelper(27020)
+triggerall = RoundState = 2
+trigger1 = (StateNo != 27020) && (StateNo != 27021) && (StateNo != 27022) && (StateNo != 27023) && (StateNo != 27025)
+trigger1 = fvar(0) <= 99
+value = 27021
+ignorehitpause	= 1
+pausemovetime	= 99999999999876543210
+supermovetime	= 99999999999876543210
+
+[State -2, ステート抜け]
+type = SelfState
+triggerall = IsHelper(27020)
+triggerall = RoundState = 2
+trigger1 = (StateNo != 27020) && (StateNo != 27021) && (StateNo != 27022) && (StateNo != 27023) && (StateNo != 27025)
+trigger1 = fvar(0) = [100,799]
+value = 27022
+ignorehitpause	= 1
+pausemovetime	= 99999999999876543210
+supermovetime	= 99999999999876543210
+
+[State -2, ステート抜け]
+type = SelfState
+triggerall = IsHelper(27020)
+triggerall = RoundState = 2
+trigger1 = (StateNo != 27020) && (StateNo != 27021) && (StateNo != 27022) && (StateNo != 27023) && (StateNo != 27025)
+trigger1 = fvar(0) >= 800
+value = 27023
+ignorehitpause	= 1
+pausemovetime	= 99999999999876543210
+supermovetime	= 99999999999876543210
+
+
+
+
+
+
+
+
+;---------------------------------------------------------------------------
+; 永続ターゲット用ヘルパー射出処理
+;---------------------------------------------------------------------------
+[State -2, 2Pターゲット用ヘルパー射出]
+type = Helper
+triggerall = NumEnemy > 0
+trigger1 = RoundState = 2
+trigger1 = NumHelper(9100) = 0
+trigger1 = alive
+trigger1 = !IsHelper
+name = "Target1"
+ID = 9100
+pos = 0, 0
+postype = p1
+stateno = 9100
+ownpal = 1
+ignorehitpause = 1
+superpausetime = 99999
+pausemovetime = 9999
+persistent = 0
+size.xscale = const(size.xscale)
+size.yscale = const(size.yscale)
+
+[State -2, 4Pターゲット用ヘルパー射出]
+type = Helper
+trigger1 = RoundState = 2
+trigger1 = NumEnemy > 1
+trigger1 = NumHelper(9101) = 0
+trigger1 = alive
+trigger1 = !IsHelper
+name = "Target2"
+ID = 9101
+pos = 0, 0
+postype = p1
+stateno = 9101
+ownpal = 1
+ignorehitpause = 1
+superpausetime = 99999
+pausemovetime = 9999
+persistent = 0
+size.xscale = const(size.xscale)
+size.yscale = const(size.yscale)
+
+;---------------------------------------------------------------------------
+; ヒット数補正処理
+;---------------------------------------------------------------------------
+[State -2, マイナス]
+type = HitAdd
+triggerall = NumHelper(9100) && var(25)
+trigger1 = NumEnemy > 0
+trigger1 = Enemy(0),MoveType != H
+trigger2 = NumEnemy > 1
+trigger2 = Enemy(0),Alive && Enemy(1),Alive
+trigger2 = Enemy(0),MoveType != H
+trigger2 = Enemy(1),MoveType != H
+trigger3 = NumEnemy > 1
+trigger3 = Enemy(0),Alive && !Enemy(1),Alive
+trigger3 = Enemy(0),MoveType != H
+trigger4 = NumEnemy > 1
+trigger4 = !Enemy(0),Alive && Enemy(1),Alive
+trigger4 = Enemy(1),MoveType != H
+value = -var(25)
+ignorehitpause = 1
+
+[State -2, 変数初期化]
+type = VarSet
+triggerall = NumHelper(9100) && var(25)
+trigger1 = NumEnemy > 0
+trigger1 = Enemy(0),MoveType != H
+trigger2 = NumEnemy > 1
+trigger2 = Enemy(0),Alive && Enemy(1),Alive
+trigger2 = Enemy(0),MoveType != H
+trigger2 = Enemy(1),MoveType != H
+trigger3 = NumEnemy > 1
+trigger3 = Enemy(0),Alive && !Enemy(1),Alive
+trigger3 = Enemy(0),MoveType != H
+trigger4 = NumEnemy > 1
+trigger4 = !Enemy(0),Alive && Enemy(1),Alive
+trigger4 = Enemy(1),MoveType != H
+var(25) = 0
+ignorehitpause = 1
+
+[State -2, プラス]
+type = VarAdd
+trigger1 = MoveHit = 1
+trigger2 = ProjHit = 1
+trigger3 = NumPartner > 0
+trigger3 = Partner,MoveHit = 1
+trigger4 = NumPartner > 0
+trigger4 = Partner,ProjHit = 1
+var(25) = 1
+
+[State -2, ヘルパー用マイナス]
+type = HitAdd
+triggerall = NumHelper(9100)
+trigger1 = Helper(9100),MoveHit = 1
+value = -1
+ignorehitpause = 1
+
+[State -2, ヘルパー用マイナス]
+type = HitAdd
+triggerall = NumHelper(9101)
+trigger1 = Helper(9101),MoveHit = 1
+value = -1
+ignorehitpause = 1
+
+
+
+;---------------------------------------------------------------------------
+; ゲジマシ
+;---------------------------------------------------------------------------
+[State -2, ゲジマシ]
+type = PowerAdd
+triggerall = var(40) = 1
+trigger1 = RoundState >= 1
+trigger1 = var(2) % 2 = 0
+value = 5
+
+;---------------------------------------------------------------------------
+; ゲジマユ
+;---------------------------------------------------------------------------
+[State -2, ゲジマユ]
+type = PowerSet
+triggerall = var(41) = 1
+trigger1 = RoundState >= 1
+trigger1 = Power < const(data.power)
+value = const(data.power)
+

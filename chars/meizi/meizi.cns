@@ -1,0 +1,4991 @@
+
+
+;---------------------------------------------------------------------------
+; 基本データ
+;---------------------------------------------------------------------------
+[Data]
+life              = 950   ;ライフ（体力ゲージ）最大値
+power             = 10000   ;パワーゲージ最大値（オプション・デフォルトは3000=Lv.3）
+attack            = 100    ;攻撃力（デフォルトは１００％）
+defence           = 90    ;防御力（デフォルトは１００％）
+fall.defence_up   = 60     ;横に倒れている時に一時的に加える防御力（％）
+liedown.time      = 40     ;横に倒れている時間（フレーム）
+airjuggle         = 50     ;ジャグルポイント限界値（「小ネタ.txt」参照）
+sparkno           = 2      ;デフォルトのヒットスパーク（fightfxから）
+guard.sparkno     = 40     ;デフォルトのガードスパーク（fightfxから）
+KO.echo           = 0      ;ＫＯ時の音声（11,0）にエコーを掛けるか否か（0=掛けない,1=掛ける）
+volume            = 0      ;キャラの標準の音量（最小-255・最大255）
+IntPersistIndex   = 60     ;次のラウンドへ持ち越せる「Var」のアドレスの範囲を決める（※１）
+FloatPersistIndex = 40     ;次のラウンドへ持ち越せる「FVar」のアドレスの範囲を決める（※１）
+
+
+;---------------------------------------------------------------------------
+; サイズ
+;---------------------------------------------------------------------------
+[Size]
+xscale           = 1       ;キャラの横の大きさ（絶対値・float）
+yscale           = 1       ;キャラの縦の大きさ（絶対値・float）
+ground.back      = 15      ;地上にいる時の「後方の物理的な幅」
+ground.front     = 16      ;地上にいる時の「前方の物理的な幅」
+air.back         = 12      ;空中にいる時の「後方の物理的な幅」
+air.front        = 12      ;空中にいる時の「前方の物理的な幅」
+height           = 60      ;キャラの物理的な高さ（高いほど相手は飛び越しにくくなる）
+attack.dist      = 160     ;相手がガード態勢に入る最低の距離
+proj.attack.dist = 90      ;自分の「Projectile」に対して相手がガード態勢に入る最低の距離
+proj.doscale     = 0       ;xscaleとyscaleを「Projectile」にも影響させるか否か（0=させない・1=させる）
+head.pos         = -5,-90  ;キャラの標準の頭の座標（Bind系で適用される）
+mid.pos          = -5,-60  ;キャラの標準の体中心の座標（Bind系で適用される）
+shadowoffset     = 0       ;影のＹ軸方向の位置座標
+draw.offset      = 0,0     ;キャラの表示座標（Ｘ軸,Ｙ軸）
+
+;---------------------------------------------------------------------------
+; 移動速度
+;---------------------------------------------------------------------------
+[Velocity]
+walk.fwd     = 1.8         ;前進速度（Ｘ軸・[Statedef 20]に適用される）
+walk.back    = -1.8        ;後退速度（Ｘ軸・[Statedef 20]に適用される）
+run.fwd      = 3.8,0       ;前方に走る速度（Ｘ軸,Ｙ軸・[Statedef 100]に適用される）
+run.back     = -3.8,-4.2   ;後方に走る速度（Ｘ軸,Ｙ軸・[Statedef 105]に適用される）
+jump.neu     = 0,-7.5      ;垂直ジャンプの速度（Ｘ軸,Ｙ軸・[Statedef 40]に適用される）
+jump.back    = -1.8       ;後方ジャンプの速度（Ｘ軸・[Statedef 40]に適用される）
+jump.fwd     = 1.8         ;前方ジャンプの速度（Ｘ軸・[Statedef 40]に適用される）
+runjump.back = -2.25,-6.1  ;後方に走ってからのジャンプ速度（Ｘ軸,Ｙ軸・[Statedef 40]に適用される）
+runjump.fwd  = 3.8,-5.1      ;前方に走ってからのジャンプ速度（Ｘ軸,Ｙ軸・[Statedef 40]に適用される）
+airjump.neu  = 0,-10.1      ;空中垂直ジャンプ速度（Ｘ軸,Ｙ軸・[Statedef 45]に適用される）
+airjump.back = -2.55       ;空中後方ジャンプ速度（Ｘ軸・[Statedef 45]に適用される）
+airjump.fwd  = 2.5         ;空中前方ジャンプ速度（Ｘ軸・[Statedef 45]に適用される）
+
+;---------------------------------------------------------------------------
+; 運動関係
+;---------------------------------------------------------------------------
+[Movement]
+airjump.num     = 0        ;空中ジャンプが出来る回数
+airjump.height  = 35       ;空中ジャンプが出来る最低の高度（Ｙ軸）
+yaccel          = .41      ;Ｙ軸加速度（重力）
+stand.friction  = .85      ;立っている時の摩擦係数（ステートのPhysicsが「S」の時）
+crouch.friction = .82      ;しゃがんでいる時の摩擦係数（ステートのPhysicsが「C」の時）
+
+;===========================================================================
+; ステート
+;===========================================================================
+
+;===========================================================================
+; 基本行動
+;===========================================================================
+;---------------------------------------------------------------------------
+;タイムオーバー（負けた時）
+[Statedef 170]
+type = S
+ctrl = 0
+anim = 170
+velset = 0,0
+
+
+
+
+[State 170, 無敵]
+type = NotHitBy
+trigger1 = 1 ;トリガーを何も書かず「1」にする事により、『無条件で常に実行させる命令』になる。
+value = SCA
+time = 1
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;勝利ポーズ分岐（common1.cnsには無いけど、これもコモンステート）
+[Statedef 180]
+type = S
+
+[State 180, ステート変更]
+type = ChangeState
+trigger1 = Time = 0
+value = 181
+
+;---------------------------------------------------------------------------
+;勝利ポーズ（礼をする）
+[Statedef 181]
+type = S
+ctrl = 0
+anim = 181
+velset = 0,0
+
+[State 181, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 26
+value = 31, 0
+
+[State 181, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 28
+value = 38, 0
+
+[State 181, 無敵]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 1
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;イントロ（試合開始前の登場演出アクション）
+[Statedef 191]
+type = S
+ctrl = 0
+anim = 261
+velset = 0,0
+
+[State 191, 変数]			
+type = VarSet
+trigger1 = AnimElem = 1
+v = 11
+value = 12
+IgnoreHitPause = 1
+Persistent = 1
+
+[State 191, アニメ変更];バトル画面に切り替わった瞬間のフェードインの時、アニメを固定している
+type = ChangeAnim
+trigger1 = RoundState = 0
+value = 261
+
+[State 191, 特殊効果];試合が開始するまではこのコントローラを使おう（※２）
+type = AssertSpecial
+trigger1 = 1
+flag = Intro ;イントロの状態
+
+[State 191, エフェクト];エフェ
+type = Explod
+trigger1 = time = 1
+anim = 8009
+postype = p1
+pos = 0, 0
+velocity = 0, 0
+accel = 0, 0
+removetime = 39
+persistent = 0
+sprpriority = 2
+
+
+
+
+
+[State 191, ステート変更];アニメーションが終われば「通常立ち」のステートに変更する
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+
+
+;---------------------------------------------------------------------------
+; ※２：AssertSpecial
+;
+; 　他のコントローラでは設定出来ない『特殊な効果』を指定する命令。
+; 　設定したトリガーが有効になってる間だけ一時的に適用される。
+;
+; 　適用出来るパラメータはこのコントローラを一つ設置する場合、最大３つまで。
+; 　書式としては「flag」「flag2」「flag3」を順に加えていく形。
+; 　flag2とflag3はオプション。ではその特殊効果を全て紹介。
+;
+; 　Intro          = イントロ（試合開始前の登場演出アクション）の状態になる。イントロステート専用。
+; 　Invisible      = 自分の姿を消す。しかし残像（AfterImage）は消せない。
+; 　RoundNotOver   = 現在のラウンドを過ぎない。勝利ポーズ専用。
+; 　NoBarDisplay   = ライフバーを非表示にする。
+; 　NoBG           = ステージの奥の画像を非表示にし、「真っ黒の背景」にする。
+; 　NoFG           = ステージの手前の画像を非表示にする。
+; 　NoStandGuard   = 立ちガードが出来なくなる。
+; 　NoCrouchGuard  = しゃがみガードが出来なくなる。
+; 　NoAirGuard     = 空中ガードが出来なくなる。
+; 　NoAutoTurn     = 自動で振り向かない。
+; 　NoJuggleCheck  = ジャグルをチェックしない。（ジャグルポイントが減らなくなる）
+; 　NoKOSnd        = ＫＯ時の音声（11,0）を鳴らさないようにする。画面中に存在する全員に有効なので注意。
+; 　NoKOSlow       = ＫＯ時のスローモーションを無効にする。（ＫＯ直前に有効にしないといけない）
+; 　NoShadow       = 自分の影を消す。
+; 　GlobalNoShadow = 画面中に存在する全てのプレイヤー（ヘルパーとProjectileも含む）の影を消す。
+; 　NoMusic        = 演奏しているＢＧＭを止める。（プラグインによってはＢＧＭがバグるので要注意）
+; 　NoWalk         = 歩かない。（前か後ろのキーを入力中コントロールが可能の時に勝手に[Statedef 20]にならない）
+; 　TimerFreeze    = タイムカウント（制限時間）を停止する。
+; 　UnGuardable    = 自分の全ての攻撃が『ガード不可』になる。
+;
+;---------------------------------------------------------------------------
+;挑発
+[Statedef 195]
+type = S
+movetype = I
+physics = S
+ctrl = 0
+anim = 195
+velset = 0,0
+sprpriority = 1
+
+[State 195, コントロール]
+type = CtrlSet
+trigger1 = Time = 40 ;このステートが４０フレームになったら
+value = 1            ;キーコントロールが可能になる。
+
+[State 195, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;===========================================================================
+; 通常攻撃技
+;===========================================================================
+;---------------------------------------------------------------------------
+;天激
+[Statedef 200]
+type    = S
+movetype= A
+physics = N
+juggle  = 1
+velset = 12,0
+ctrl = 0
+anim = 200
+poweradd = 20
+sprpriority = 1
+
+[State 200, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 0
+value = 115, 0
+
+[State 200, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 9
+value = 61, 9
+
+[State 200,軸位置移動]
+type = velmul
+triggerall = vel X >= 0.5
+trigger1 = animelemtime(2) <= 0
+x = 0.75
+
+[State 200,軸位置移動]
+type = velset
+triggerall = vel X <= 0.5
+trigger1 = animelemtime(2) <= 0
+x = 0
+
+[State 200,軸位置移動]
+type = veladd
+triggerall = vel X >= 1
+trigger1 = AnimElemtime(3) >= 0
+x = -0.5
+
+[State 200,軸位置移動]
+type = veladd
+trigger1 = AnimElemtime(3) = 0
+x = 7
+
+[State 200,軸位置移動]
+type = veladd
+trigger1 = AnimElemtime(3) >= 0
+trigger1 = vel X >= 0.2
+x = -0.2
+
+[State 200,軸位置移動]
+type = velset
+trigger1 = AnimElemtime(3) >= 0
+trigger1 = vel X <= 0.2
+x = 0
+
+[State 200, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 64, 0
+channel = 0
+
+[State 200, ヒット定義]
+type = HitDef
+trigger1 = AnimElem = 3
+attr = S, NA ;立ち通常打撃（Standing, Normal Attack）
+damage = 23, 0
+animtype = Light
+guardflag = MA
+hitflag = MAFD
+priority = 3, Hit
+pausetime = 5, 8
+sparkno = 0
+sparkxy = -10, -76
+hitsound = 5, 0
+guardsound = 6, 0
+ground.type = High
+ground.slidetime = 15
+ground.hittime  = 8
+ground.velocity = -1,-9
+air.velocity = -1,-9
+air.hittime = 12
+airguard.velocity = -1,-5.8
+air.type = High
+fall= 1
+fall.recover = 0
+
+[State 200, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+;---------------------------------------------------------------------------
+
+;---------------------------------------------------------------------------
+;落花掌 溜め
+[Statedef 210]
+type    = S
+movetype= I
+physics = S
+juggle  = 4
+poweradd= 65
+ctrl = 0
+velset = 0,0
+anim = 210
+sprpriority = 0
+
+[State 301, 落花掌変数]
+type = varset
+trigger1 = time = 0
+v = 17
+value = 211
+
+[State 210, ステート変更]
+type = ChangeState
+triggerall = time > 3
+trigger1 = var(19) = 0
+trigger2 = var(20) = 1
+value = 211
+
+;---------------------
+;落花掌 発動
+[Statedef 211]
+type    = S
+movetype= A
+physics = S
+juggle  = 4
+poweradd= 65
+ctrl = 0
+velset = 0,0
+anim = 211
+sprpriority = 1
+
+[State 211, 速度調整]
+type = velset
+triggerall = time = 0
+trigger1 = command != "holdback"
+;AI 判断用trigger あとで追加
+x = 16+ceil(var(18)/5)
+
+[State 212, チャージ時間の調整]
+type = varset
+trigger1 = var(18) >= 30
+v = 18
+value = 30
+
+[State 211, 変数リセット]
+type = varset
+trigger1 = animtime = 0
+v = 17
+value = 0
+
+[State 211, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 0
+value = 61, 5
+
+[State 211, 音を鳴らす]
+type = PlaySnd
+trigger1 = animelem = 1
+value = 65, 0
+channel = 0
+
+[State 211]
+type = hitoverride
+trigger1 = var(18) >= 30
+trigger1 = AnimElem = 1
+time = 15
+attr =SCA,AP,AA,AT
+slot = 0
+stateno = 212
+
+[State 211, ヒット定義]
+type = HitDef
+trigger1 = var(18) < 30
+trigger1 = time = 1
+attr = S, NA
+animtype  = Medium
+damage    = 57
+guardflag = MA
+pausetime = 12,12
+sparkno = 1
+sparkxy = -10,-70
+hitsound   = 5,2
+guardsound = 6,0
+ground.type = High
+ground.slidetime = 12
+ground.hittime  = 15
+ground.velocity = -6-ceil(var(18)/6),-3.2-ceil(var(18)/10)
+fall= 1
+air.velocity = -6.0-ceil(var(18)/6),-3-ceil(var(18)/10)
+air.hittime = 18
+air.fall= 1
+fall.animtype = Hard
+fall.recover = 0
+
+[State 212, ヒット定義]
+type = HitDef
+trigger1 = var(18) >= 30
+trigger1 = time = 1
+attr = S, SA
+animtype  = Medium
+damage    = 30,5
+hitflag   = AMF
+guardflag = M
+pausetime = 12,12
+sparkno = 1
+sparkxy = -10,-70
+hitsound   = 5,2
+guardsound = 6,0
+getpower   = 30
+airguard.velocity = -10,-4
+p1sprpriority = 1
+p2facing = 1
+p2stateno = 241
+fall = 1
+ID = 241
+
+[State 211, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;-----------------
+;落花掌 アーマー
+[Statedef 212]
+type    = S
+movetype= A
+physics = S
+juggle  = 4
+poweradd= 65
+ctrl = 0
+anim = 212
+sprpriority = 1
+
+[State 212, 変数リセット]
+type = varset
+trigger1 = animtime = 0
+v = 17
+value = 0
+
+[State 212]
+type = hitoverride
+trigger1 = var(18) >= 30
+trigger1 = AnimElem = 1
+time = 10
+attr =SCA,AP,AA,AT
+slot = 0
+stateno = 213
+
+[State 212, ヒット定義]
+type = HitDef
+trigger1 = var(18) < 30
+trigger1 = time = 1
+attr = S, NA
+animtype  = Medium
+damage    = 57
+guardflag = MA
+pausetime = 12,12
+sparkno = 1
+sparkxy = -10,-70
+hitsound   = 5,2
+guardsound = 6,0
+ground.type = High
+ground.slidetime = 12
+ground.hittime  = 15
+ground.velocity = -6-ceil(var(18)/6),-3.2-ceil(var(18)/10)
+fall= 1
+air.velocity = -6.0-ceil(var(18)/6),-3-ceil(var(18)/10)
+air.hittime = 18
+air.fall= 1
+fall.animtype = Hard
+fall.recover = 0
+
+[State 212, ヒット定義]
+type = HitDef
+trigger1 = var(18) >= 30
+trigger1 = time = 1
+attr = S, SA
+animtype  = Medium
+damage    = 30,5
+hitflag   = AMF
+guardflag = M
+pausetime = 12,12
+sparkno = 1
+sparkxy = -10,-70
+hitsound   = 5,2
+guardsound = 6,0
+getpower   = 30
+airguard.velocity = -10,-4
+p1sprpriority = 1
+p2facing = 1
+p2stateno = 241
+fall = 1
+ID = 241
+
+[State 212, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;-----------------
+;落花掌 アーマー2
+[Statedef 213]
+type    = S
+movetype= I
+physics = S
+juggle  = 4
+poweradd= 65
+ctrl = 0
+anim = 212
+sprpriority = 1
+
+[State 212, 変数リセット]
+type = varset
+trigger1 = animtime = 0
+v = 17
+value = 0
+
+[State 213]
+type = ChangeAnim
+trigger1 = time = 0
+value = 212
+elem = 2
+
+
+[State 212, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+;---------------------------------------------------------------------------
+
+;------------------------------------------------------------------
+;
+;砕覇
+[Statedef 230]
+type    = S
+movetype= A
+physics = S
+juggle  = 1
+velset = 0,0
+ctrl = 0
+anim = 230
+poweradd = 20
+sprpriority = 1
+
+[State 231, 速度補正]
+type = velset
+trigger1 = animelem = 3
+x = 3
+
+[State 230, 音を鳴らす]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 113, 0
+
+[State 230, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 66, 0
+channel = 0
+
+[State 230, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 3
+value = 60, 6
+channel = 0
+
+[State 230, ヒット定義]
+type = HitDef
+trigger1 = AnimElem = 3
+attr = S, NA ;立ち通常打撃（Standing, Normal Attack）
+damage = 23, 0
+animtype = Light
+guardflag = HA
+hitflag = MAF
+priority = 3, Hit
+pausetime = 5, 8
+sparkno = 0
+sparkxy = -10, -76
+hitsound = 5, 0
+guardsound = 6, 0
+ground.type = High
+ground.slidetime = 15
+ground.hittime  = 8
+ground.velocity = -5,-4
+air.velocity = -5,-4
+airguard.velocity = -3,-3
+fall= 1
+fall.recover = 0
+air.type = High
+
+
+[State 230, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------
+;竜牙
+[Statedef 240]
+type    = S
+movetype= A
+physics = S
+juggle  = 1
+velset = 0,0
+ctrl = 0
+anim = 240
+poweradd = 20
+sprpriority = 1
+
+[State 240, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElemtime(2) = -2
+value = 114, 0
+
+[State 240, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElemtime(2) = 0
+value = 38, 0
+channel = 0
+
+[State 240, ヒット定義]
+type = HitDef
+trigger1 = AnimElem = 3
+attr = S, NA ;立ち通常打撃（Standing, Normal Attack）
+damage = 30, 0
+animtype = Light
+guardflag = MA
+hitflag = MAFD
+priority = 1, Hit
+pausetime = 5, 16
+sparkno = 0
+sparkxy = -10, -76
+hitsound = 5, 1
+guardsound = 6, 0
+ground.type = High
+ground.slidetime = 25
+ground.hittime  = 20
+ground.velocity = -3,0
+airguard.velocity = -1.1,-1
+air.type = High
+air.velocity = -1.1
+air.hittime = 12
+air.fall = 1
+fall.recovertime = 30
+ground.cornerpush.veloff = -10
+
+[State 240, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;-------------------------------------------------
+;やられ側 壁に当たったらバウンド
+[Statedef 241]
+type    = A
+movetype= H
+physics = N
+velset = 0,0
+anim = 5030
+
+[State 241, チェンジステート]
+type = ChangeAnim
+trigger1 = time = 15
+value = 5050
+
+[State 241, バグ対策]
+type = Velset
+trigger1 = time = 15
+trigger1 = vel X = 0
+trigger1 = vel Y = 0
+x = -11
+y = -6
+
+[State -2, 揺れ]
+type = EnvShake
+trigger1 = time = 0
+time = 10
+freq = 70
+ampl = 5
+phase = 0
+
+[State 241, チェンジステート]
+type = ChangeState
+trigger1 = time >= 15
+trigger1 = BackEdgeBodyDist <= 2
+value = 242
+
+[State 241, 重力]
+type = VelAdd
+trigger1 = time >= 15
+y = 0.4
+
+[State -2, 揺れ]
+type = EnvShake
+trigger1 = time > 15
+trigger1 = Vel Y > 0
+trigger1 = Pos Y >= 0
+time = 6
+freq = 70
+ampl = 4
+phase = 0
+
+[State 241, 相手のステートに戻す]
+type = SelfState
+trigger1 = time > 15
+trigger1 = Vel Y > 0
+trigger1 = Pos Y >= 0
+value = 5100
+
+[State 241, 相手のステートに戻す]
+type = SelfState
+trigger1 = time = 100
+value = 50
+ctrl = 1
+
+;----------------------------------------------------------------------------
+;やられ側 壁バウンド
+[Statedef 242]
+type    = A
+movetype= H
+physics = N
+velset = 0,0
+anim = 5100
+
+[State 242, 角度を有効にする];これを有効にしないと角度が適用されない
+type = AngleDraw
+trigger1 = time < 15
+value = -90
+
+[State 242, 位置補正]
+type = offset
+trigger1 = time < 15
+x = ifelse(facing=-1,20,-20)
+y = const(size.mid.pos.y)
+
+
+[State -2, 揺れ]
+type = EnvShake
+trigger1 = time = 0
+time = 10
+freq = 70
+ampl = 5
+phase = 0
+
+[State 242, ダメージ]
+type = lifeadd
+trigger1 = time = 0
+value = -10
+
+[State 5110, 6]
+type = PlaySnd
+trigger1 = time = 0
+value = F7, (sysvar(1) > 5) + (sysvar(1) > 14)
+persistent = 0
+
+
+[State 241, チェンジアニメ]
+type = ChangeAnim
+trigger1 = time = 15
+value = 5050
+
+[State 241, 壁バウンド速度]
+type = VelSet
+trigger1 = time = 15
+x = 2.5
+y = -9
+
+[State 241, 重力]
+type = VelAdd
+trigger1 = time >= 15
+y = 0.4
+
+[State -2, 揺れ]
+type = EnvShake
+trigger1 = Time >= 16
+trigger1 = pos Y >= 0
+trigger1 = Vel Y > 0
+time = 6
+freq = 70
+ampl = 4
+phase = 0
+
+[State 241, 相手のステートに戻す]
+type = SelfState
+trigger1 = Time >= 16
+trigger1 = pos Y >= 0
+trigger1 = Vel Y > 0
+value = 5100
+
+;---------------------------------------------------------------------
+;ジャンプ攻撃
+[Statedef 290]
+type    = A
+movetype= A
+physics = A
+juggle  = 1
+ctrl = 0
+anim = 290
+poweradd = 20
+sprpriority = 1
+
+
+[State 290, 浮力]
+type = veladd
+trigger1 = 1
+y = -0.1
+
+[State 290, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElemtime(1) = 0
+value = 82, 0
+channel = 0
+
+[State 290, ヒット定義]
+type = HitDef
+trigger1 = AnimElem = 2
+attr = S, NA ;立ち通常打撃（Standing, Normal Attack）
+damage = 30, 0
+animtype = Light
+guardflag = MA
+hitflag = MAF
+priority = 1, Hit
+pausetime = 8, 8
+sparkno = 0
+sparkxy = 0, -26
+hitsound = 5, 1
+guardsound = 6, 0
+ground.type = High
+ground.slidetime = 25
+ground.hittime  = 20
+ground.velocity = -4,-3
+airguard.velocity = -4,-3
+air.type = High
+air.velocity = -4,-3
+air.hittime = 12
+fall = 1
+fall.recover = 0
+
+[state 50, 空中制御];前
+type = velset
+triggerall = prevstateno != [5000,5210]
+triggerall = fvar(11) = 0
+triggerall = var(59) = 0
+trigger1 = command = "holdfwd"
+x = fvar(10)
+
+[state 50, 空中制御];後ろ
+type = velset
+triggerall = prevstateno != [5000,5210]
+triggerall = fvar(11) = 0
+triggerall = var(59) = 0
+trigger1 = command = "holdback"
+x = -fvar(10)
+
+[state 50, 空中制御];待機
+type = velset
+triggerall = prevstateno != [5000,5210]
+triggerall = fvar(11) = 0
+triggerall = var(59) = 0
+triggerall = fvar(1) = 0
+trigger1 = command != "holdfwd"
+trigger1 = command != "holdback"
+x = 0
+
+[State 290, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 50
+ctrl = 1
+;---------------------------------------------------------------------------
+;MM 横
+[Statedef 300]
+type    = S
+movetype= A
+physics = S
+juggle  = 1
+velset = 0,0
+ctrl = 0
+anim = 300
+poweradd = -10
+sprpriority = 1
+
+[State 300, チェンジアニメ];ショタ中
+type = Changeanim
+trigger1 = var(16) >= 1
+trigger1 = time = 0
+value = 299
+
+[State 300, 音を鳴らす]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 61, 6
+
+[State 300, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 3
+value = 60, 4
+
+[State 300, MMヘルパー]
+type = Helper
+stateno = 299
+trigger1 = animelem = 4
+id = 300
+name = "MM"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,0
+postype = p1
+
+[State 300, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;MM 斜め上
+[Statedef 305]
+type    = S
+movetype= A
+physics = S
+juggle  = 1
+velset = 0,0
+ctrl = 0
+anim = 300
+poweradd = -10
+sprpriority = 1
+
+[State 300, チェンジアニメ];ショタ中
+type = Changeanim
+trigger1 = var(16) >= 1
+trigger1 = time = 0
+value = 299
+
+[State 300, 音を鳴らす]
+type = PlaySnd
+trigger1 = animelem = 3
+value = 61, 6
+
+[State 305, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 3
+value = 60, 4
+
+[State 300, MMヘルパー]
+type = Helper
+stateno = 299
+trigger1 = animelem = 4
+id = 300
+name = "MM"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,0
+postype = p1
+
+[State 300, ステート変更]
+type = Changestate
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+;---------------------------------------------------------------------------
+;プルート
+[Statedef 301]
+type    = S
+movetype= I
+physics = S
+juggle  = 1
+velset = 0,0
+ctrl = 0
+anim = 301
+poweradd = -100
+sprpriority = 1
+
+
+
+[State 301, プルート変数]
+type = varset
+trigger1 = time = 0
+v = 17
+value = 303
+
+[State 301, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 60, 10
+channel = 10
+
+[State 301, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 62, 0
+
+[State 301, コントロール]
+type = ctrlset
+trigger1 = Time = 36
+value = 1
+
+;---------------------------------------------------------------------------
+;プルート
+[Statedef 302]
+type    = S
+movetype= I
+physics = S
+juggle  = 1
+velset = 0,0
+ctrl = 0
+anim = 301
+poweradd = -100
+sprpriority = 1
+
+[State 302, プルート変数]
+type = varset
+trigger1 = time = 0
+v = 17
+value = 303
+
+[State 301, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 60, 10
+channel = 10
+
+[State 301, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 62, 0
+
+[State 302, 音を鳴らす]
+type = ctrlset
+trigger1 = Time = 18
+value = 1
+
+;---------------------------------------------------------------------------
+;プルート 発動
+[Statedef 303]
+type    = S
+movetype= A
+physics = S
+juggle  = 1
+velset = 0,0
+ctrl = 0
+anim = 303
+poweradd = 0
+sprpriority = 1
+
+[State 1102, チャージ時間の調整]
+type = varset
+trigger1 = var(18) >= 20
+v = 18
+value = 20
+
+[State 303, 変数リセット]
+type = varset
+trigger1 = animtime = 0
+v = 17
+value = 0
+
+[State 303, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 1
+value = 61, 1
+channel = 10
+
+[State 303, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 2
+value = 60, 3
+
+[State 303, 飛び道具];HitDefに飛び道具専用のパラメータを加えたようなものが「Projectile」
+type = Projectile
+trigger1 = AnimElem = 2
+attr = S, SP ;立ち必殺飛び道具（Standing, Special Projectile）
+damage = ceil(20+var(5)*10),7 ;Var(5)をここなどに代入すれば活かされる
+getpower = 20,10
+animtype = Hard
+pausetime = 0,2+ceil(var(18)/4)
+;-----------------------------------Projectile専用のパラメータ
+offset = 0,0                ;飛び道具を発射する位置（Ｘ軸,Ｙ軸）
+velocity = 0,0  ;ceil(4+var(5)*2),-3 ;飛び道具の移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0                 ;飛び道具の加速度(float)（Ｘ軸,Ｙ軸）
+projID = 1302                  ;飛び道具のＩＤナンバー（NumProjIDなどで判断）
+projanim = 8004                ;飛び道具のアニメ（アクションナンバー）
+projhitanim = 8004             ;飛び道具がヒットした時のアニメ（アクションナンバー）
+projremanim = 8004             ;飛び道具が消える時のアニメ（アクションナンバー）
+projcancelanim = 8004
+projscale = 1.0,1.0                ;飛び道具の大きさ（Ｘ軸,Ｙ軸）※現在２倍
+projshadow = 255,0,0             ;飛び道具の影の色合い（赤,緑,青）※現在影無し
+projhits = 2                   ;飛び道具のヒット数（２以上なら多段ヒットになる）
+projmisstime = 30               ;飛び道具の連続でヒットしない間隔　※projhitsが２以上の時のみ
+projpriority = 3               ;飛び道具の攻撃優先度・相手のProjectileよりも高いと消しながら進む
+projremovetime = 27            ;飛び道具の消えるまでの時間（フレーム）※-1なら当たるか画面外に出るまで消えない
+;-----------------------------------これ以外にまだまだある。docsフォルダ参照。
+guardflag = MA
+hitflag = MAFD
+priority = 3
+sparkno = -1
+sparkxy = -600,600
+guard.sparkno = 40
+hitsound = 5,3
+guardsound = 6,0
+ground.type = High
+ground.slidetime = 10+ceil(var(18)/2)
+ground.hittime = 10+ceil(var(18)/2)
+ground.velocity = -6,0
+air.velocity = -2,-4
+air.juggle = 4 ;Projectileの場合はここで設定しないとヒットした時ジャグルが消費しない
+air.fall = 1
+fall.recovertime = 10+var(18)
+envshake.time = 8
+envshake.ampl = 6
+envshake.freq = 100
+
+[State 303, 飛び道具];HitDefに飛び道具専用のパラメータを加えたようなものが「Projectile」
+type = Projectile
+trigger1 = AnimElem = 2
+attr = S, SP ;立ち必殺飛び道具（Standing, Special Projectile）
+damage = ceil(20+var(5)*10),7 ;Var(5)をここなどに代入すれば活かされる
+getpower = 20,10
+animtype = Hard
+pausetime = 0,4+ceil(var(18)/8)
+;-----------------------------------Projectile専用のパラメータ
+offset = 0,0                ;飛び道具を発射する位置（Ｘ軸,Ｙ軸）
+velocity = 0,0  ;ceil(4+var(5)*2),-3 ;飛び道具の移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0                 ;飛び道具の加速度(float)（Ｘ軸,Ｙ軸）
+projID = 1302                  ;飛び道具のＩＤナンバー（NumProjIDなどで判断）
+projanim = 8005                ;飛び道具のアニメ（アクションナンバー）
+projhitanim = 8005             ;飛び道具がヒットした時のアニメ（アクションナンバー）
+projremanim = 8005             ;飛び道具が消える時のアニメ（アクションナンバー）
+projcancelanim = 8005
+projscale = 1.0,1.0                ;飛び道具の大きさ（Ｘ軸,Ｙ軸）※現在２倍
+projshadow = 255,0,0             ;飛び道具の影の色合い（赤,緑,青）※現在影無し
+projhits = 2                   ;飛び道具のヒット数（２以上なら多段ヒットになる）
+projmisstime = 30               ;飛び道具の連続でヒットしない間隔　※projhitsが２以上の時のみ
+projpriority = 3               ;飛び道具の攻撃優先度・相手のProjectileよりも高いと消しながら進む
+projremovetime = 41            ;飛び道具の消えるまでの時間（フレーム）※-1なら当たるか画面外に出るまで消えない
+;-----------------------------------これ以外にまだまだある。docsフォルダ参照。
+guardflag = MA
+hitflag = MAFD
+priority = 3
+sparkno = -1
+sparkxy = 0,0
+guard.sparkno = 40
+hitsound = 5,3
+guardsound = 6,0
+ground.type = High
+ground.slidetime = 17+ceil(var(18)/4)
+ground.hittime = 15+ceil(var(18)/4)
+ground.velocity = 6+ceil(var(18)/4),0
+air.velocity = 2+ceil(var(18)/24),-4
+air.juggle = 4 ;Projectileの場合はここで設定しないとヒットした時ジャグルが消費しない
+air.fall = 1
+fall.recovertime = 10+var(18)
+envshake.time = 8
+envshake.ampl = 6
+envshake.freq = 100
+
+[State 303, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;空中プルート
+[Statedef 304]
+type    = A
+movetype= A
+physics = A
+juggle  = 1
+;velset = 0,0
+ctrl = 0
+anim = 304
+poweradd = -100
+sprpriority = 1
+
+[State 290, アンチ重力]
+type = veladd
+trigger1 = 1
+y = -0.1
+
+[State 303, 変数リセット]
+type = varset
+trigger1 = animtime = 0
+v = 17
+value = 0
+
+[State 303, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 1
+value = 61, 1
+channel = 10
+
+[State 303, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 2
+value = 60, 3
+
+[State 303, 飛び道具];HitDefに飛び道具専用のパラメータを加えたようなものが「Projectile」
+type = Projectile
+trigger1 = AnimElem = 2
+attr = S, SP ;立ち必殺飛び道具（Standing, Special Projectile）
+damage = ceil(20+var(5)*10),7 ;Var(5)をここなどに代入すれば活かされる
+getpower = 20,10
+animtype = Hard
+pausetime = 0,4
+;-----------------------------------Projectile専用のパラメータ
+offset = 0,0                ;飛び道具を発射する位置（Ｘ軸,Ｙ軸）
+velocity = 0,0  ;ceil(4+var(5)*2),-3 ;飛び道具の移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0                 ;飛び道具の加速度(float)（Ｘ軸,Ｙ軸）
+projID = 1302                  ;飛び道具のＩＤナンバー（NumProjIDなどで判断）
+projanim = 8004                ;飛び道具のアニメ（アクションナンバー）
+projhitanim = 804             ;飛び道具がヒットした時のアニメ（アクションナンバー）
+projremanim = 804             ;飛び道具が消える時のアニメ（アクションナンバー）
+projcancelanim = 8004
+projscale = 1.0,1.0                ;飛び道具の大きさ（Ｘ軸,Ｙ軸）※現在２倍
+projshadow = 255,0,0             ;飛び道具の影の色合い（赤,緑,青）※現在影無し
+projhits = 2                   ;飛び道具のヒット数（２以上なら多段ヒットになる）
+projmisstime = 300               ;飛び道具の連続でヒットしない間隔　※projhitsが２以上の時のみ
+projpriority = 3               ;飛び道具の攻撃優先度・相手のProjectileよりも高いと消しながら進む
+projremovetime = 27            ;飛び道具の消えるまでの時間（フレーム）※-1なら当たるか画面外に出るまで消えない
+;-----------------------------------これ以外にまだまだある。docsフォルダ参照。
+guardflag = MA
+hitflag = MAFD
+priority = 3
+sparkno = -1
+sparkxy = -600,600
+guard.sparkno = 40
+hitsound = 5,3
+guardsound = 6,0
+ground.type = High
+ground.slidetime = 18
+ground.hittime = 24
+ground.velocity = -6,0
+air.velocity = -2,-4
+air.juggle = 4 ;Projectileの場合はここで設定しないとヒットした時ジャグルが消費しない
+envshake.time = 8
+envshake.ampl = 6
+envshake.freq = 100
+
+[State 303, 飛び道具];HitDefに飛び道具専用のパラメータを加えたようなものが「Projectile」
+type = Projectile
+trigger1 = AnimElem = 2
+attr = S, SP ;立ち必殺飛び道具（Standing, Special Projectile）
+damage = ceil(20+var(5)*10),7 ;Var(5)をここなどに代入すれば活かされる
+getpower = 20,10
+animtype = Hard
+pausetime = 0,4
+;-----------------------------------Projectile専用のパラメータ
+offset = 0,0                ;飛び道具を発射する位置（Ｘ軸,Ｙ軸）
+velocity = 0,0  ;ceil(4+var(5)*2),-3 ;飛び道具の移動速度（Ｘ軸,Ｙ軸）
+accel = 0,0                 ;飛び道具の加速度(float)（Ｘ軸,Ｙ軸）
+projID = 1302                  ;飛び道具のＩＤナンバー（NumProjIDなどで判断）
+projanim = 8005                ;飛び道具のアニメ（アクションナンバー）
+projhitanim = 8005             ;飛び道具がヒットした時のアニメ（アクションナンバー）
+projremanim = 8005             ;飛び道具が消える時のアニメ（アクションナンバー）
+projcancelanim = 8005
+projscale = 1.0,1.0                ;飛び道具の大きさ（Ｘ軸,Ｙ軸）※現在２倍
+projshadow = 255,0,0             ;飛び道具の影の色合い（赤,緑,青）※現在影無し
+projhits = 2                   ;飛び道具のヒット数（２以上なら多段ヒットになる）
+projmisstime = 300               ;飛び道具の連続でヒットしない間隔　※projhitsが２以上の時のみ
+projpriority = 3               ;飛び道具の攻撃優先度・相手のProjectileよりも高いと消しながら進む
+projremovetime = 41            ;飛び道具の消えるまでの時間（フレーム）※-1なら当たるか画面外に出るまで消えない
+;-----------------------------------これ以外にまだまだある。docsフォルダ参照。
+guardflag = MA
+hitflag = MAFD
+priority = 3
+sparkno = -1
+sparkxy = 0,0
+guard.sparkno = 40
+hitsound = 5,3
+guardsound = 6,0
+ground.type = High
+ground.slidetime = 9
+ground.hittime = 9
+ground.velocity = 6,0
+air.velocity = 2,-4
+air.juggle = 4 ;Projectileの場合はここで設定しないとヒットした時ジャグルが消費しない
+envshake.time = 8
+envshake.ampl = 6
+envshake.freq = 100
+
+[State 304, 角度を有効にする];これを有効にしないと角度が適用されない
+type = AngleDraw
+trigger1 = animtime < 0
+;value = 0;(atan( (P2Dist X-(P2Dist x=0))/(P2Dist Y-(P2Dist y=0)) )*180/pi ) - (1) *90
+
+[State 304, 角度を有効にする];これを有効にしないと角度が適用されない
+type = AngleSet
+trigger1 =  time = 0
+value = -30;(atan( (P2Dist X-(P2Dist x=0))/(P2Dist Y-(P2Dist y=0)) )*180/pi ) - (1) *90
+
+[State 304, 透過処理];これがあれば角度を変えた画像にも透過処理を適用出来る
+type = Trans
+trigger1 = 1
+Trans = AddAlpha
+Alpha = 256,0
+
+[state 50, 空中制御];前
+type = velset
+triggerall = prevstateno != [5000,5210]
+triggerall = fvar(11) = 0
+triggerall = var(59) = 0
+trigger1 = command = "holdfwd"
+x = fvar(10)
+
+[state 50, 空中制御];後ろ
+type = velset
+triggerall = prevstateno != [5000,5210]
+triggerall = fvar(11) = 0
+triggerall = var(59) = 0
+trigger1 = command = "holdback"
+x = -fvar(10)
+
+[state 50, 空中制御];待機
+type = velset
+triggerall = prevstateno != [5000,5210]
+triggerall = fvar(11) = 0
+triggerall = var(59) = 0
+triggerall = fvar(1) = 0
+trigger1 = command != "holdfwd"
+trigger1 = command != "holdback"
+x = 0
+
+[State 304, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 50
+ctrl = 1
+
+
+
+;---------------------------------------------------------------------------
+;ランタンファイア
+[Statedef 320]
+type    = S
+movetype= I
+physics = S
+juggle  = 1
+velset = 0,0
+ctrl = 0
+anim = 320
+poweradd = -100
+sprpriority = 1
+
+[State 320, ランタン変数]
+type = varset
+trigger1 = time = 0
+v = 17
+value = 322
+
+[State 320, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 51, 0
+channel = 0
+
+[State 320, 音を鳴らす]
+type = ctrlset
+trigger1 = Time = 30
+value = 1
+
+;---------------------------------------------------------------------------
+;ランタンファイア ショタ中
+[Statedef 321]
+type    = S
+movetype= I
+physics = S
+juggle  = 1
+velset = 0,0
+ctrl = 0
+anim = 321
+poweradd = -100
+sprpriority = 1
+
+[State 320, ランタン変数]
+type = varset
+trigger1 = time = 0
+v = 17
+value = 322
+
+[State 320, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 51, 0
+channel = 0
+
+[State 320, 音を鳴らす]
+type = ctrlset
+trigger1 = Time = 15
+value = 1
+
+;---------------------------------------------------------------------------
+;ランタンファイア 発動
+[Statedef 322]
+type    = S
+movetype= A
+physics = S
+juggle  = 1
+velset = -2,0
+ctrl = 0
+anim = 322
+poweradd = 0
+sprpriority = 1
+
+[State 320, 変数リセット]
+type = varset
+trigger1 = animtime = 0
+v = 17
+value = 0
+
+
+[State 320, 音を鳴らす]
+type = PlaySnd
+trigger1 = animelem = 2
+value = 61, 7
+
+[State 320, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 57, 0
+channel = 0
+
+[State 1102, チャージ時間の調整]
+type = varset
+trigger1 = var(18) >= 48
+v = 18
+value = 48
+
+
+
+;--------
+2つ目
+
+[State 320, 爆発用ヘルパー]
+type = Helper
+stateno = 319
+trigger1 = animelem = 2
+trigger1 = NumProjID(8050) = 1
+id = 8051
+name = "rantan"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 5,-55
+postype = p1
+
+[State 320, 火の玉エフェクト]
+type = Explod
+trigger1 = AnimElem = 2
+trigger1 = NumProjID(8050) = 1
+anim = 8050
+postype = p1
+scale = (0.4+0.00625*var(18)),(0.4+0.00625*var(18))
+pos = -5,-55
+velocity = 5,0.1
+accel = 0.01,-0.01
+persistent = 0
+sprpriority = 3
+ignorehitpause = 1
+ownpal = 1
+removetime = 300
+id = 8053
+
+[State 320, 飛び道具];HitDefに飛び道具専用のパラメータを加えたようなものが「Projectile」
+type = Projectile
+trigger1 = AnimElem = 2
+trigger1 = NumProjID(8050) = 1
+attr = S, SP ;立ち必殺飛び道具（Standing, Special Projectile）
+damage = ceil(45+var(5)*10),7 ;Var(5)をここなどに代入すれば活かされる
+getpower = 50,10
+animtype = Hard
+pausetime = 0,4
+;-----------------------------------Projectile専用のパラメータ
+offset = -5,-55                ;飛び道具を発射する位置（Ｘ軸,Ｙ軸）
+velocity = 5,0.1  ;ceil(4+var(5)*2),-3 ;飛び道具の移動速度（Ｘ軸,Ｙ軸）
+accel = 0.01,-0.01                 ;飛び道具の加速度(float)（Ｘ軸,Ｙ軸）
+projID = 8051                  ;飛び道具のＩＤナンバー（NumProjIDなどで判断）
+projanim = 8054                ;飛び道具のアニメ（アクションナンバー）
+projhitanim = 8052             ;飛び道具がヒットした時のアニメ（アクションナンバー）
+projremanim = 8052             ;飛び道具が消える時のアニメ（アクションナンバー）
+projcancelanim = 8052
+projscale = (0.4+0.00625*var(18)),(0.4+0.00625*var(18))                 ;飛び道具の大きさ（Ｘ軸,Ｙ軸）※現在２倍
+projshadow = 255,0,0             ;飛び道具の影の色合い（赤,緑,青）※現在影無し
+projhits = 1                   ;飛び道具のヒット数（２以上なら多段ヒットになる）
+projmisstime = 3               ;飛び道具の連続でヒットしない間隔　※projhitsが２以上の時のみ
+projpriority = 2               ;飛び道具の攻撃優先度・相手のProjectileよりも高いと消しながら進む
+projremovetime = 300            ;飛び道具の消えるまでの時間（フレーム）※-1なら当たるか画面外に出るまで消えない
+;-----------------------------------これ以外にまだまだある。docsフォルダ参照。
+guardflag = MA
+priority = 3
+sparkno = -1
+sparkxy = 0,0
+guard.sparkno = 40
+hitsound = 5,3
+guardsound = 6,0
+ground.type = High
+ground.slidetime = 14
+ground.hittime = 10
+ground.velocity = -6,0
+air.velocity = -3,-4
+air.juggle = 4 ;Projectileの場合はここで設定しないとヒットした時ジャグルが消費しない
+envshake.time = 8
+envshake.ampl = 6
+envshake.freq = 100
+
+;-------
+1つ目
+
+[State 320, 爆発用ヘルパー]
+type = Helper
+stateno = 327
+trigger1 = animelem = 2
+trigger1 = NumProjID(8050) = 0
+id = 8051
+name = "rantan"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 5,-55
+postype = p1
+
+[State 320, 発動時エフェクト]
+type = Explod
+trigger1 = AnimElem = 2
+anim = 8051
+postype = p1
+scale = (0.4+0.00625*var(18)),(0.4+0.00625*var(18))
+pos = 15,-55
+velocity = 0.8,0
+persistent = 0
+sprpriority = 3
+ignorehitpause = 1
+ownpal = 1
+
+[State 320, 火の玉エフェクト]
+type = Explod
+trigger1 = AnimElem = 2
+trigger1 = NumProjID(8050) = 0
+anim = 8050
+postype = p1
+scale = (0.4+0.00625*var(18)),(0.4+0.00625*var(18))
+pos = -5,-55
+velocity = 5,0.1
+accel = 0.01,-0.01
+persistent = 0
+sprpriority = 3
+ignorehitpause = 1
+ownpal = 1
+removetime = 300
+id = 8051
+
+[State 320, 飛び道具];HitDefに飛び道具専用のパラメータを加えたようなものが「Projectile」
+type = Projectile
+trigger1 = AnimElem = 2
+trigger1 = NumProjID(8050) = 0
+attr = S, SP ;立ち必殺飛び道具（Standing, Special Projectile）
+damage = ceil(45+var(5)*10),7 ;Var(5)をここなどに代入すれば活かされる
+getpower = 50,10
+animtype = Hard
+pausetime = 0,4
+;-----------------------------------Projectile専用のパラメータ
+offset = -5,-55                ;飛び道具を発射する位置（Ｘ軸,Ｙ軸）
+velocity = 5,0.1  ;ceil(4+var(5)*2),-3 ;飛び道具の移動速度（Ｘ軸,Ｙ軸）
+accel = 0.01,-0.01                 ;飛び道具の加速度(float)（Ｘ軸,Ｙ軸）
+projID = 8050                  ;飛び道具のＩＤナンバー（NumProjIDなどで判断）
+projanim = 8054                ;飛び道具のアニメ（アクションナンバー）
+projhitanim = 8052             ;飛び道具がヒットした時のアニメ（アクションナンバー）
+projremanim = 8052             ;飛び道具が消える時のアニメ（アクションナンバー）
+projcancelanim = 8052
+projscale = (0.4+0.00625*var(18)),(0.4+0.00625*var(18))                 ;飛び道具の大きさ（Ｘ軸,Ｙ軸）※現在２倍
+projshadow = 255,0,0             ;飛び道具の影の色合い（赤,緑,青）※現在影無し
+projhits = 1                   ;飛び道具のヒット数（２以上なら多段ヒットになる）
+projmisstime = 3               ;飛び道具の連続でヒットしない間隔　※projhitsが２以上の時のみ
+projpriority = 2               ;飛び道具の攻撃優先度・相手のProjectileよりも高いと消しながら進む
+projremovetime = 300            ;飛び道具の消えるまでの時間（フレーム）※-1なら当たるか画面外に出るまで消えない
+;-----------------------------------これ以外にまだまだある。docsフォルダ参照。
+guardflag = MA
+priority = 3
+sparkno = -1
+sparkxy = 0,0
+guard.sparkno = 40
+hitsound = 5,3
+guardsound = 6,0
+ground.type = High
+ground.slidetime = 14
+ground.hittime = 10
+ground.velocity = -6,0
+air.velocity = -3,-4
+air.juggle = 4 ;Projectileの場合はここで設定しないとヒットした時ジャグルが消費しない
+envshake.time = 8
+envshake.ampl = 6
+envshake.freq = 100
+
+[State 300, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;空中ランタンファイア
+[Statedef 325]
+type    = A
+movetype= A
+physics = N
+juggle  = 1
+velset = 0,0;-1.1,-4
+ctrl = 0
+anim = 325
+poweradd = -100
+sprpriority = 1
+
+[State 320, ランタン変数]
+type = varset
+triggerall = var(16) >= 1
+trigger1 = animelemtime(4) = 25
+v = 17
+value = 0
+
+[State 320, ランタン変数]
+type = varset
+triggerall = var(16) = 0
+trigger1 = animelemtime(5) = 0
+v = 17
+value = 0
+
+
+[State 325, 速度設定]
+type = velset
+trigger1 = animelem = 4
+x = -8.1
+y = -4
+
+[State 325, 速度設定]
+type = veladd
+trigger1 = animelemtime(4) >= 0
+trigger1 = vel X <= -2
+x = 0.3
+
+[State 325, 速度設定]
+type = veladd
+trigger1 = animelemtime(4) >= 0
+y = 0.3
+
+[State 325, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 3
+value = 57, 0
+channel = 0
+
+[State 320, 音を鳴らす]
+type = PlaySnd
+trigger1 = animelem = 4
+value = 61, 7
+
+[State 1102, チャージ時間の調整]
+type = varset
+trigger1 = var(18) >= 48
+v = 18
+value = 48
+
+[State 320, 発動時エフェクト]
+type = Explod
+trigger1 = AnimElem = 4
+anim = 8032
+postype = p1
+scale = (0.4+0.00625*var(18)),(0.4+0.00625*var(18))
+pos = 35,-55
+velocity = 0.8,0
+persistent = 0
+sprpriority = 3
+ignorehitpause = 1
+ownpal = 1
+
+
+
+[State 320, 爆発用ヘルパー]
+type = Helper
+stateno = 318
+trigger1 = animelem = 4
+trigger1 = NumProjID(8033) = 1
+id = 8051
+name = "rantan"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 5,-85
+postype = p1
+
+[State 320, 火の玉エフェクト]
+type = Explod
+trigger1 = AnimElem = 4
+trigger1 = NumProjID(8033) = 1
+anim = 8033
+postype = p1
+scale = (0.4+0.00625*var(18)),(0.4+0.00625*var(18))
+pos = 5,-85
+velocity = 5,5
+accel = 0.01,-0.01
+persistent = 0
+sprpriority = 3
+ignorehitpause = 1
+ownpal = 1
+removetime = 300
+id = 8054
+
+[State 325, 飛び道具];HitDefに飛び道具専用のパラメータを加えたようなものが「Projectile」
+type = Projectile
+trigger1 = AnimElem = 4
+trigger1 = NumProjID(8033) = 1
+attr = S, SP ;立ち必殺飛び道具（Standing, Special Projectile）
+damage = ceil(45+var(5)*10),7 ;Var(5)をここなどに代入すれば活かされる
+getpower = 50,10
+animtype = Hard
+pausetime = 0,4
+;-----------------------------------Projectile専用のパラメータ
+offset = 5,-85                ;飛び道具を発射する位置（Ｘ軸,Ｙ軸）
+velocity = 5,5  ;ceil(4+var(5)*2),-3 ;飛び道具の移動速度（Ｘ軸,Ｙ軸）
+accel = 0.01,-0.01                 ;飛び道具の加速度(float)（Ｘ軸,Ｙ軸）
+projID = 8034                  ;飛び道具のＩＤナンバー（NumProjIDなどで判断）
+projanim = 8034                ;飛び道具のアニメ（アクションナンバー）
+projhitanim = 8052             ;飛び道具がヒットした時のアニメ（アクションナンバー）
+projremanim = 8052             ;飛び道具が消える時のアニメ（アクションナンバー）
+projcancelanim = 8052
+projscale = (0.4+0.00625*var(18)),(0.4+0.00625*var(18))                ;飛び道具の大きさ（Ｘ軸,Ｙ軸）※現在２倍
+projshadow = 255,0,0             ;飛び道具の影の色合い（赤,緑,青）※現在影無し
+projhits = 1                   ;飛び道具のヒット数（２以上なら多段ヒットになる）
+projmisstime = 3               ;飛び道具の連続でヒットしない間隔　※projhitsが２以上の時のみ
+projpriority = 2               ;飛び道具の攻撃優先度・相手のProjectileよりも高いと消しながら進む
+projremovetime = 300            ;飛び道具の消えるまでの時間（フレーム）※-1なら当たるか画面外に出るまで消えない
+;-----------------------------------これ以外にまだまだある。docsフォルダ参照。
+hitflage = MAFD
+guardflag = MA
+priority = 3
+sparkno = -1
+sparkxy = 0,0
+guard.sparkno = 40
+hitsound = 5,3
+guardsound = 6,0
+ground.type = High
+ground.slidetime = 14
+ground.hittime = 10
+ground.velocity = -6,0
+air.velocity = -3,-4
+air.juggle = 4 ;Projectileの場合はここで設定しないとヒットした時ジャグルが消費しない
+envshake.time = 8
+envshake.ampl = 6
+envshake.freq = 100
+
+;--------------
+1つ目
+
+[State 320, 爆発用ヘルパー]
+type = Helper
+stateno = 329
+trigger1 = animelem = 4
+trigger1 = NumProjID(8033) = 0
+id = 8051
+name = "rantan"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 5,-85
+postype = p1
+
+[State 320, 火の玉エフェクト]
+type = Explod
+trigger1 = AnimElem = 4
+trigger1 = NumProjID(8033) = 0
+anim = 8033
+postype = p1
+scale = (0.4+0.00625*var(18)),(0.4+0.00625*var(18))
+pos = 5,-85
+velocity = 5,5
+accel = 0.01,-0.01
+persistent = 0
+sprpriority = 3
+ignorehitpause = 1
+ownpal = 1
+removetime = 300
+id = 8052
+
+[State 325, 飛び道具];HitDefに飛び道具専用のパラメータを加えたようなものが「Projectile」
+type = Projectile
+trigger1 = AnimElem = 4
+trigger1 = NumProjID(8033) = 0
+attr = S, SP ;立ち必殺飛び道具（Standing, Special Projectile）
+damage = ceil(45+var(5)*10),7 ;Var(5)をここなどに代入すれば活かされる
+getpower = 50,10
+animtype = Hard
+pausetime = 0,4
+;-----------------------------------Projectile専用のパラメータ
+offset = 5,-85                ;飛び道具を発射する位置（Ｘ軸,Ｙ軸）
+velocity = 5,5  ;ceil(4+var(5)*2),-3 ;飛び道具の移動速度（Ｘ軸,Ｙ軸）
+accel = 0.01,-0.01                 ;飛び道具の加速度(float)（Ｘ軸,Ｙ軸）
+projID = 8033                  ;飛び道具のＩＤナンバー（NumProjIDなどで判断）
+projanim = 8034                ;飛び道具のアニメ（アクションナンバー）
+projhitanim = 8052             ;飛び道具がヒットした時のアニメ（アクションナンバー）
+projremanim = 8052             ;飛び道具が消える時のアニメ（アクションナンバー）
+projcancelanim = 8052
+projscale = (0.4+0.00625*var(18)),(0.4+0.00625*var(18))                ;飛び道具の大きさ（Ｘ軸,Ｙ軸）※現在２倍
+projshadow = 255,0,0             ;飛び道具の影の色合い（赤,緑,青）※現在影無し
+projhits = 1                   ;飛び道具のヒット数（２以上なら多段ヒットになる）
+projmisstime = 3               ;飛び道具の連続でヒットしない間隔　※projhitsが２以上の時のみ
+projpriority = 2               ;飛び道具の攻撃優先度・相手のProjectileよりも高いと消しながら進む
+projremovetime = 300            ;飛び道具の消えるまでの時間（フレーム）※-1なら当たるか画面外に出るまで消えない
+;-----------------------------------これ以外にまだまだある。docsフォルダ参照。
+hitflage = MAFD
+guardflag = MA
+priority = 3
+sparkno = -1
+sparkxy = 0,0
+guard.sparkno = 40
+hitsound = 5,3
+guardsound = 6,0
+ground.type = High
+ground.slidetime = 14
+ground.hittime = 10
+ground.velocity = -6,0
+air.velocity = -3,-4
+air.juggle = 4 ;Projectileの場合はここで設定しないとヒットした時ジャグルが消費しない
+envshake.time = 8
+envshake.ampl = 6
+envshake.freq = 100
+
+[state 325, コントロール];ショタ中
+type = ctrlset
+triggerall = var(16) >= 1
+trigger1 = animelemtime(4) = 25
+value = 1
+
+[state 325, コントロール]
+type = ctrlset
+trigger1 = animelem = 5
+value = 1
+
+[State 325, 空中ランタンへ]
+type = varset
+trigger1 = command = "hadou_a"
+v = 17
+value = 325
+
+[State 325, ステート変更]
+type = ChangeState
+trigger1 = var(17) = 325
+trigger1 = AnimTime = 0
+value = 325
+
+[State 325, ステート変更]
+type = ChangeState
+trigger1 = var(17) = 0
+trigger1 = AnimTime = 0
+value = 50
+ctrl = 1
+
+[State 325, ステート変更]
+type = ChangeState
+trigger1 = pos Y >= 0
+value = 52
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;フローレスセント 詠唱
+[Statedef 330]
+type    = S
+movetype= I
+physics = S
+juggle  = 1
+velset = 0,0
+ctrl = 0
+anim = 330
+poweradd = -200
+sprpriority = 1
+
+[State 330, フローレスセント変数]
+type = varset
+trigger1 = time = 0
+v = 17
+value = 332
+
+[State 330, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 87, 0
+channel = 0
+
+[State 330, 音を鳴らす]
+type = ctrlset
+trigger1 = Time = 30
+value = 1
+
+;---------------------------------------------------------------------------
+;フローレスセント 詠唱
+[Statedef 331]
+type    = S
+movetype= I
+physics = S
+juggle  = 1
+velset = 0,0
+ctrl = 0
+anim = 331
+poweradd = -200
+sprpriority = 1
+
+[State 330, フローレスセント変数]
+type = varset
+trigger1 = time = 0
+v = 17
+value = 332
+
+[State 330, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 87, 0
+channel = 0
+
+[State 330, 音を鳴らす]
+type = ctrlset
+trigger1 = Time = 15
+value = 1
+
+;---------------------------------------------------------------------------
+;フローレスセント 発動
+[Statedef 332]
+type    = S
+movetype= A
+physics = S
+juggle  = 1
+velset = 0,0
+ctrl = 0
+anim = 332
+poweradd = 0
+sprpriority = 1
+
+[State 332, 変数リセット]
+type = varset
+trigger1 = animtime = 0
+v = 17
+value = 0
+
+[State 332, 変数リセット]
+type = varset
+trigger1 = animtime = 0
+v = 51
+value = 100
+
+
+
+[State 332, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 86, 0
+channel = 0
+
+[State 332, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 2
+value = 104, 0
+
+[State 332, チャージ時間の調整]
+type = varset
+trigger1 = var(18) >= 20
+v = 18
+value = 48
+
+[State 332, 速度設定]
+type = null;velset
+trigger1 = animelem = 2
+y = -2
+
+[State 332, 速度補正]
+type = null;veladd
+trigger1 = animelemtime(2) >= 0
+trigger1 = pos y < 0
+y = 0.4
+
+[State 332, 速度補正]
+type = null;veladd
+trigger1 = animelemtime(2) >= 0
+trigger1 = pos y < 0
+trigger1 = vel y >= 0
+y = 2
+
+[State 332, 位置補正]
+type = null;posset
+trigger1 = animelemtime(2) >= 0
+trigger1 = vel y > 0
+trigger1 = pos y >= 0
+y = 0
+
+
+[State 332, フローレスセント１]
+type = Helper
+stateno = 333
+trigger1 = animelem = 2
+id = 1013
+name = "fro1"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,-15
+postype = p1
+
+[State 332, フローレスセント２]
+type = Helper
+stateno = 334
+trigger1 = animelem = 2
+id = 1013
+name = "fro2"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,-15
+postype = p1
+
+[State 332, フローレスセント３]
+type = Helper
+stateno = 335
+trigger1 = animelem = 2
+id = 1013
+name = "fro3"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,-15
+postype = p1
+
+[State 332, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;古代の図書館
+[Statedef 500]
+type    = S
+movetype= I
+physics = S
+velset = 0,0
+ctrl = 0
+anim = 500
+poweradd = 0
+sprpriority = 1
+
+[State 500, 変数リセット]
+type = varset
+trigger1 = animelem = 2
+v = 23
+value = 1
+
+[State 500, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 83, 0
+channel = 0
+
+[State 500, ステート変更]
+type = changestate
+trigger1 = animtime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;古代の図書館 ショタ中
+[Statedef 501]
+type    = S
+movetype= I
+physics = S
+velset = 0,0
+ctrl = 0
+anim = 501
+poweradd = 0
+sprpriority = 1
+
+[State 501, 変数リセット]
+type = varset
+trigger1 = animelem = 2
+v = 23
+value = 1
+
+[State 501, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 83, 0
+channel = 0
+
+[State 501, ステート変更]
+type = changestate
+trigger1 = animtime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;古代の記憶
+[Statedef 502]
+type    = S
+movetype= I
+physics = S
+velset = 0,0
+ctrl = 0
+anim = 502
+poweradd = 0
+sprpriority = 1
+
+[State 502, 変数リセット]
+type = varset
+trigger1 = animelem = 2
+v = 24
+value = 1
+
+[State 502, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 84, 0
+channel = 0
+
+[State 502, ステート変更]
+type = changestate
+trigger1 = animtime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;古代の記憶 ショタ中
+[Statedef 503]
+type    = S
+movetype= I
+physics = S
+velset = 0,0
+ctrl = 0
+anim = 503
+poweradd = 0
+sprpriority = 1
+
+[State 503, 変数リセット]
+type = varset
+trigger1 = animelem = 2
+v = 24
+value = 1
+
+[State 503, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 84, 0
+channel = 0
+
+[State 503, ステート変更]
+type = changestate
+trigger1 = animtime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;ショータイム
+[Statedef 505]
+type    = S
+movetype= I
+physics = S
+velset = 0,0
+ctrl = 0
+anim = 505
+poweradd = 0
+sprpriority = 1
+
+[State 502, 変数リセット]
+type = varset
+trigger1 = animelem = 2
+v = 16
+value = 1
+
+[State 502, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 94, 0
+channel = 0
+
+[State 502, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 2
+value = 100, 0
+channel = 17
+loop = 1
+
+[State 502, ステート変更]
+type = changestate
+trigger1 = animtime = 0
+value = 0
+ctrl = 1
+
+;===========================================================================
+; 投げ技
+;===========================================================================
+;---------------------------------------------------------------------------
+;投げ 相手を押す
+[Statedef 800]
+type    = S
+movetype= A
+physics = S
+juggle  = 0
+velset = 0,0
+ctrl = 0
+anim = 800
+sprpriority = 1
+
+[state 800, 速度]
+type = velset
+trigger1 = animelem = 3
+x = -4
+
+[State 800, 音を鳴らす]
+type = PlaySnd
+trigger1 = animelem = 2
+value = 38, 0
+
+[state 830, 無敵]
+type = nothitby
+trigger1 = time < 4
+value = SCA
+
+[State 800, ヒット定義（投げ用）]
+type = HitDef
+trigger1 = Time = 0
+attr = S, NT ;立ち通常投げ（Standing, Normal Throw）
+hitflag = M-  ;マイナスが付加されてるので相手が食らい中の時は掴めない
+priority = 1, Miss
+sparkno = -1  ;-1だからヒットスパークは表示しない
+p1sprpriority = 1
+p1facing = 1
+p2facing = 1
+p1stateno = 801
+p2stateno = 805
+guard.dist = 0 ;相手のガード態勢に入る距離を０にしてるので、ガード不可
+fall = 1
+
+[State 800, ステート変更]
+type = ChangeState
+Trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;投げ 相手を押す
+[Statedef 801]
+type    = A
+movetype= I
+physics = N
+anim = 803
+poweradd = 60
+
+[State -2, 魔方陣]
+type = Helper
+stateno = 804
+trigger1 = animelemtime(3) = 0
+id = 804
+name = "circle"
+supermovetime = 9999
+pausemovetime = 9999
+supermove = 1
+ignorehitpause = 1
+ownpal = 1
+pos = 0,-60
+postype = p1
+
+[State -2, 魔方陣]
+type = Helper
+stateno = 804
+trigger1 = animelemtime(3) = -2
+id = 804
+name = "circle"
+supermovetime = 9999
+pausemovetime = 9999
+supermove = 1
+ignorehitpause = 1
+ownpal = 1
+pos = 0,-60
+postype = p1
+
+[State -2, 魔方陣]
+type = Helper
+stateno = 804
+trigger1 = animelemtime(3) = -4
+id = 804
+name = "circle"
+supermovetime = 9999
+pausemovetime = 9999
+supermove = 1
+ignorehitpause = 1
+ownpal = 1
+pos = 0,-60
+postype = p1
+
+[State 801, 音を鳴らす];掴み用
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 1, 1
+
+[State 801, voice]
+type = PlaySnd
+trigger1 = AnimElemtime(3) = -4
+value = 52, 0
+
+[State 801, 軸位置移動]
+type = veladd
+trigger1 = animelemtime(3) >= 0
+y = 0.4
+
+[State 801, 軸位置移動]
+type = velset
+trigger1 = animelem = 3
+x = -2
+y = -5
+
+[State -2, 空中ランタンへ]
+type = varset
+triggerall = var(25) = 0
+trigger1 = command = "hadou_a"
+v = 17
+value = 325
+
+[State 840, 掴んだ相手のライフ増減]
+type = TargetLifeAdd
+trigger1 = AnimElem = 3
+value = -40
+
+[State 801, ステート変更]
+type = ChangeState
+trigger1 = var(17) = 325
+trigger1 = AnimTime = 0
+value = 325
+
+[State 801, ステート変更]
+type = ChangeState
+trigger1 = var(17) = 0
+trigger1 = AnimTime = 0
+value = 50
+ctrl = 1
+
+;----------------------------------------------------------------
+;相手やられ
+[Statedef 805]
+type    = A
+movetype= H
+physics = N
+velset = 0,0
+
+[State 805, 相手のアニメ変更]
+type = ChangeAnim2
+trigger1 = Time <= 13
+value = 5001
+elem = 1
+
+[State 805, 相手のアニメ変更]
+type = Changeanim2
+trigger1 = Time = 14
+value = 5050
+
+[State 805, 速度調整]
+type = velset
+trigger1 = time = 14
+x = -2
+y = -4
+
+[State 805, 速度調整]
+type = veladd
+trigger1 = time >= 14
+y = 0.4
+
+[State 805, 相手ステートに戻す]
+type = SelfState
+trigger1 = time >= 15
+trigger1 = Pos Y >= -1
+trigger2 = time >= 100
+value = 5100
+
+;---------------------------------------------------------------------------
+;投げ 背後へ
+[Statedef 830]
+type    = S
+movetype= A
+physics = S
+juggle  = 0
+velset = 0,0
+ctrl = 0
+anim = 830
+sprpriority = 2
+
+[State 801, 音を鳴らす];掴み用
+type = PlaySnd
+trigger1 = AnimElem = 2
+value = 60, 0
+
+[state 830, 無敵]
+type = nothitby
+trigger1 = time < 4
+value = SCA
+
+[State 830, ヒット定義（投げ用）]
+type = HitDef
+trigger1 = Time = 0
+attr = S, NT ;立ち通常投げ（Standing, Normal Throw）
+hitflag = MAFD  ;マイナスが付加されてるので相手が食らい中の時は掴めない
+priority = 1, Miss
+sparkno = -1  ;-1だからヒットスパークは表示しない
+p1sprpriority = 1
+p1facing = 1
+p2facing = 1
+p1stateno = 831
+p2stateno = 835
+guard.dist = 0 ;相手のガード態勢に入る距離を０にしてるので、ガード不可
+fall = 1
+
+[State 830, ステート変更]
+type = ChangeState
+Trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;：成功（放り投げる）
+[Statedef 831]
+type    = S
+movetype= I
+physics = N
+anim = 801
+poweradd = 60
+
+[State 831, 音を鳴らす];掴み用
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 1, 1
+
+[State 831, voice]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 50, 0
+
+[State 831, 煙]
+type = Explod
+trigger1 = AnimElem = 1
+anim = 8027
+postype = p1
+pos = 0, -30
+velocity = 0, 0
+accel = 0, 0
+scale = 0.8,0.8
+persistent = 0
+sprpriority = 5
+ownpal = 1
+
+[State 831, チャージ時間の調整]
+type = varadd
+trigger1 = time = 1
+v = 39
+value = -1
+
+[State 831, わら人形]
+type = Helper
+stateno = 1405
+trigger1 = animelemtime(1) = 5
+id = 1405
+name = "doll"
+supermovetime = 9999
+pausemovetime = 9999
+supermove = 1
+ignorehitpause = 1
+ownpal = 1
+pos = 0,0
+postype = p1
+
+[State 831, 特殊効果]
+type = AssertSpecial
+trigger1 = animelemtime(1) >= 5
+flag = NoShadow
+IgnoreHitPause = 1
+Persistent = 1
+
+[State 831, 透過処理];これがあれば角度を変えた画像にも透過処理を適用出来る
+type = Trans
+trigger1 = 1
+Trans = AddAlpha
+Alpha = 256-time*20,0+time*20
+
+[State 831, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 832
+
+;---------------------------------------------------------------------------
+;：成功（放り投げる）
+[Statedef 832]
+type    = A
+movetype= A
+physics = A
+anim = 45
+
+[State 832, posset]
+type = posset
+trigger1 = time = 0
+trigger1 = facing = -1
+x = target,pos x - 50
+y = -100
+
+[State 832, posset]
+type = posset
+trigger1 = time = 0
+trigger1 = facing = 1
+x = target,pos x + 50
+y = -100
+
+[State 832, 向き変更]
+type = turn
+trigger1 = time = 1
+
+[State 832, 煙]
+type = Explod
+trigger1 = AnimElem = 1
+anim = 8027
+postype = p1
+pos = 0, 0
+velocity = 0, 0
+accel = 0, 0
+scale = 0.8,0.8
+persistent = 0
+sprpriority = 5
+ownpal = 1
+
+[State 832, 透過処理]
+type = Trans
+trigger1 = 1
+Trans = AddAlpha
+Alpha = 0+time*20,256-time*20
+
+[State 832, ステート変更]
+type = ChangeAnim
+trigger1 = time = 5
+value = 290
+
+[State 290, ヒット定義]
+type = HitDef
+trigger1 = AnimElem = 2
+attr = S, NA ;立ち通常打撃（Standing, Normal Attack）
+damage = 30, 0
+animtype = Light
+guardflag = MA
+hitflag = MAF
+priority = 1, Hit
+pausetime = 8, 8
+sparkno = 0
+sparkxy = 0, -26
+hitsound = 5, 1
+guardsound = 6, 0
+ground.type = High
+ground.slidetime = 25
+ground.hittime  = 20
+ground.velocity = -4,-3
+airguard.velocity = -4,-3
+air.type = High
+air.velocity = -4,-3
+air.hittime = 12
+fall = 1
+fall.recover = 0
+
+;---------------------------------------------------------------------------
+;：相手側１（掴まれて放り投げられるまで）
+[Statedef 835]
+type    = S
+movetype= H
+physics = N
+velset = 0,0
+
+[State 835, 位置補正]
+type = posadd
+trigger1 = FrontEdgeBodyDist < 5
+x = -10
+
+[State 835, 位置補正]
+type = posadd
+trigger1 = BackEdgeBodyDist < 5
+x = 10
+
+[State 835, 相手のアニメ変更]
+type = ChangeAnim2
+trigger1 = 1
+value = 5000
+elem = 1
+
+[State 835, 相手ステートに戻す]
+type = SelfState
+trigger1 = time = 60
+value = 0
+ctrl = 1
+
+;===========================================================================
+; 必殺技
+;===========================================================================
+;サンバースト
+[Statedef 1000]
+type    = S
+movetype= I
+physics = S
+juggle  = 4
+poweradd= -300
+velset = 0,0
+anim = 1000
+ctrl = 0
+sprpriority = 1
+
+
+
+[State 1000, 相手の特定の攻撃属性無効]
+type = NotHitBy
+trigger1 = ctrl = 0
+value = SCA
+time = 1
+
+[State 1000, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 0
+value = 63, 0
+channel = 0
+
+
+
+[State 1000, サンバースト変数]
+type = varset
+trigger1 = time = 0
+v = 17
+value = 1002
+
+[State 1000, サンバースト変数]
+type = varset
+trigger1 = time = 0
+v = 18
+value = 1
+
+[State 301, コントロール]
+type = ctrlset
+trigger1 = var(16) = 0
+trigger1 = Time = 12
+trigger2 = var(16) >= 1
+trigger2 = Time = 6
+value = 1
+
+
+;-----------------------------------------------
+;サンバースト 発動
+[Statedef 1002]
+type    = S
+movetype= A
+physics = S
+juggle  = 4
+poweradd= -700
+velset = 0,0
+anim = 1002
+ctrl = 0
+sprpriority = 1
+
+[State 1002, チャージ時間の調整]
+type = varset
+trigger1 = var(57) = 1
+v = 18
+value = 48
+
+[State 1002, チャージ時間の調整]
+type = varset
+trigger1 = var(18) >= 10
+v = 18
+value = 48
+
+[State 1000, サンバースト変数]
+type = varset
+trigger1 = time = 0
+v = 36
+value = 150
+
+[State 1002, 変数リセット]
+type = varset
+trigger1 = animtime = 0
+v = 17
+value = 0
+
+[State 1002, 緊急フラグリセット]
+type = varset
+trigger1 = var(57) = 1
+v = 57
+value = 0
+
+
+[State 1002, 相手の特定の攻撃属性無効]
+type = NotHitBy
+trigger1 = AnimElem = 1
+value = SCA
+time = 8+var(18)/4
+
+[State 3000, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 0
+value = 61, 3
+
+[State 1000, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 0
+value = 60, 5
+channel = 0
+
+[State 1000, サンバ電撃1]
+type = Explod
+trigger1 = Movehit = 1
+anim = 8112
+postype = p2
+pos = 0, -80
+persistent = 0
+sprpriority = 5
+ignorehitpause = 1
+ownpal = 1
+
+
+[State 1000, 電撃]
+type = Helper
+stateno = 8110
+trigger1 = Movehit = 1
+id = 8110
+name = "elect"
+supermovetime = 9999
+pausemovetime = 9999
+supermove = 1
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,0
+postype = p2
+
+[State 1000, 電撃]
+type = Helper
+stateno = 8110
+trigger1 = Movehit = 1
+id = 8110
+name = "elect"
+supermovetime = 9999
+pausemovetime = 9999
+supermove = 1
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,0
+postype = p2
+
+
+
+[State 1000, サンバ追加エフェクト]
+type = Explod
+trigger1 = AnimElem = 1
+anim = 8105
+postype = p1
+pos = 0, -80
+persistent = 0
+sprpriority = 5
+ignorehitpause = 1
+ownpal = 1
+
+[State 1000, ヒット定義]
+type = HitDef
+trigger1 = time = 0
+trigger2 = var(18) >= 5
+trigger2 = animelem = 3
+trigger3 = var(18) >= 10
+trigger3 = animelem = 4
+attr = S, SP
+animtype  = Hard
+damage    = 65,5
+getpower  = 50
+priority  = 7,hit
+hitflag   = MAFP
+guardflag = MA
+pausetime = 0,4
+sparkxy = -10,-60
+hitsound   = -1
+guardsound = -1
+ground.type = Low
+ground.slidetime = 15
+ground.hittime  = 24
+ground.velocity = -8,-5
+air.velocity = -8,-5
+fall = 1
+fall.recover = 0
+ground.cornerpush.veloff = 0
+envshake.time = 8
+envshake.ampl = 6
+envshake.freq = 100
+palfx.time       = 60
+palfx.add        = 60,100,256
+palfx.sinadd     = 100,100,180,3
+
+
+[State 3000, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+
+;-----------------------------------------------
+;ヴォイド 詠唱
+[Statedef 1100]
+type    = S
+movetype= I
+physics = S
+juggle  = 4
+poweradd= -1000
+velset = 0,0
+anim = 320
+ctrl = 0
+sprpriority = 1
+
+[State 1100, ヴォイド変数]
+type = varset
+trigger1 = time = 0
+v = 17
+value = 1102
+
+[State 1100, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 0
+value = 46, 0
+channel = 0
+
+
+
+[State 1100, 音を鳴らす]
+type = ctrlset
+trigger1 = Time = 48
+value = 1
+
+;-----------------------------------------------
+;ヴォイド 詠唱ショタ
+[Statedef 1101]
+type    = S
+movetype= I
+physics = S
+juggle  = 4
+poweradd= -1000
+velset = 0,0
+anim = 321
+ctrl = 0
+sprpriority = 1
+
+[State 1100, ヴォイド変数]
+type = varset
+trigger1 = time = 0
+v = 17
+value = 1102
+
+[State 1100, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 0
+value = 46, 0
+channel = 0
+
+
+
+[State 1100, 音を鳴らす]
+type = ctrlset
+trigger1 = Time = 24
+value = 1
+
+;-----------------------------------------------
+;ヴォイド 発動
+[Statedef 1102]
+type    = S
+movetype= A
+physics = S
+juggle  = 4
+poweradd= 0
+velset = -2,0
+anim = 322
+ctrl = 0
+sprpriority = 1
+
+[State 1102, 変数リセット]
+type = varset
+trigger1 = animtime = 0
+v = 17
+value = 0
+
+[State 1102, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0
+value = 44, 0
+channel = 0
+
+[State 1102, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 0
+value = 61, 2
+
+[State 1102, チャージ時間の調整]
+type = varset
+trigger1 = var(18) >= 60
+v = 18
+value = 60
+
+[State 1102, 飛び道具];HitDefに飛び道具専用のパラメータを加えたようなものが「Projectile」
+type = Projectile
+trigger1 = AnimElem = 2
+attr = S, SP
+damage = ceil(5+var(5)*10),4 ;Var(5)をここなどに代入すれば活かされる
+getpower = 0,0
+animtype = Light
+pausetime = 0,4
+;-----------------------------------Projectile専用のパラメータ
+offset = 35,-55                ;飛び道具を発射する位置（Ｘ軸,Ｙ軸）
+velocity = 0.8,0  ;ceil(4+var(5)*2),-3 ;飛び道具の移動速度（Ｘ軸,Ｙ軸）
+projID = 8070                  ;飛び道具のＩＤナンバー（NumProjIDなどで判断）
+projanim = ifelse(var(18)>=60,8072,ifelse((var(18)=[30,59]),8071,8070))                ;飛び道具のアニメ（アクションナンバー）
+projhitanim = ifelse(var(18)>=60,8072,ifelse((var(18)=[30,59]),8071,8070))             ;飛び道具がヒットした時のアニメ（アクションナンバー）
+projremanim = 8008             ;飛び道具が消える時のアニメ（アクションナンバー）
+projcancelanim = 8008
+projscale = (0.5+0.005*var(18)),(0.5+0.005*var(18))                ;飛び道具の大きさ（Ｘ軸,Ｙ軸）※現在２倍
+projshadow = 0,0,0             ;飛び道具の影の色合い（赤,緑,青）※現在影無し
+projhits = 80                   ;飛び道具のヒット数（２以上なら多段ヒットになる）
+projmisstime = 10               ;飛び道具の連続でヒットしない間隔　※projhitsが２以上の時のみ
+projpriority = 7               ;飛び道具の攻撃優先度・相手のProjectileよりも高いと消しながら進む
+projremovetime = 260+var(18)*4            ;飛び道具の消えるまでの時間（フレーム）※-1なら当たるか画面外に出るまで消えない
+;-----------------------------------これ以外にまだまだある。docsフォルダ参照。
+guardflag = MA
+hitflag = MAF
+priority = 3,dodge
+sparkno = -1
+sparkxy = 0,0
+guard.sparkno = 40
+hitsound = 5,3
+guardsound = 6,0
+ground.type = High
+ground.slidetime = 10
+ground.hittime = 18
+ground.velocity = 0,0
+air.velocity = 0,0
+air.juggle = 0 ;Projectileの場合はここで設定しないとヒットした時ジャグルが消費しない
+envshake.time = 8
+envshake.ampl = 6
+envshake.freq = 100
+air.fall = 1
+fall.recover = 0
+
+[State 1102, ヴォイド中の加算]
+type = Explod
+trigger1 = AnimElem = 2
+anim = 8006
+postype = p1
+scale = (0.5+0.005*var(18)),(0.5+0.005*var(18))
+pos = 35,-55
+velocity = 0.8,0
+persistent = 0
+ownpal = 1
+sprpriority = ifelse(var(35)=0,2,ifelse(var(35)=1,3,ifelse(var(35)=2,4,5)))
+removetime = 260+var(18)*4 
+ignorehitpause = 1
+id = 1102
+
+[State 1102, ヴォイド中の減算]
+type = Explod
+trigger1 = AnimElem = 2
+anim = 8011
+postype = p1
+scale = (0.5+0.005*var(18)),(0.5+0.005*var(18))
+pos = 35,-55
+velocity = 0.8,0
+persistent = 0
+ownpal = 1
+sprpriority = ifelse(var(35)=0,2,ifelse(var(35)=1,3,ifelse(var(35)=2,4,5)))
+removetime = 260+var(18)*4 
+ignorehitpause = 1
+id = 1102
+
+
+[State 1102, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;-----------------------------------------------
+;ヴォイド 空中
+[Statedef 1103]
+type    = A
+movetype= A
+physics = N
+juggle  = 4
+poweradd= -1000
+velset = 0,0
+anim = 325
+ctrl = 0
+sprpriority = 1
+
+[State 320, 変数リセット]
+type = varset
+triggerall = var(16) >= 1
+trigger1 = animelemtime(4) = 25
+v = 17
+value = 0
+
+[State 320, 変数リセット]
+type = varset
+triggerall = var(16) = 0
+trigger1 = animelemtime(5) = 0
+v = 17
+value = 0
+
+[State 1102, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0
+value = 44, 0
+channel = 0
+
+[State 1102, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 0
+value = 61, 2
+
+
+[State 325, 速度設定]
+type = velset
+trigger1 = animelem = 4
+x = -4.1
+y = -4
+
+[State 325, 速度設定]
+type = veladd
+trigger1 = animelemtime(4) >= 0
+trigger1 = vel X <= -2
+x = 0.3
+
+[State 325, 速度設定]
+type = veladd
+trigger1 = animelemtime(4) >= 0
+y = 0.3
+
+[State 1102, チャージ時間の調整]
+type = varset
+trigger1 = var(18) >= 60
+v = 18
+value = 60
+
+[State 1102, 飛び道具];HitDefに飛び道具専用のパラメータを加えたようなものが「Projectile」
+type = Projectile
+trigger1 = AnimElem = 2
+attr = S, SP
+damage = ceil(4+var(5)*1),4 ;Var(5)をここなどに代入すれば活かされる
+getpower = 0,0
+animtype = Light
+pausetime = 0,4
+;-----------------------------------Projectile専用のパラメータ
+offset = 35,-55                ;飛び道具を発射する位置（Ｘ軸,Ｙ軸）
+velocity = 0.8,0  ;ceil(4+var(5)*2),-3 ;飛び道具の移動速度（Ｘ軸,Ｙ軸）
+projID = 8070                  ;飛び道具のＩＤナンバー（NumProjIDなどで判断）
+projanim = ifelse(var(18)>=60,8072,ifelse((var(18)=[30,59]),8071,8070))                ;飛び道具のアニメ（アクションナンバー）
+projhitanim = ifelse(var(18)>=60,8072,ifelse((var(18)=[30,59]),8071,8070))             ;飛び道具がヒットした時のアニメ（アクションナンバー）
+projremanim = 8008             ;飛び道具が消える時のアニメ（アクションナンバー）
+projcancelanim = 8008
+projscale = (0.5+0.005*var(18)),(0.5+0.005*var(18))                ;飛び道具の大きさ（Ｘ軸,Ｙ軸）※現在２倍
+projshadow = 0,0,0             ;飛び道具の影の色合い（赤,緑,青）※現在影無し
+projhits = 80                   ;飛び道具のヒット数（２以上なら多段ヒットになる）
+projmisstime = 10               ;飛び道具の連続でヒットしない間隔　※projhitsが２以上の時のみ
+projpriority = 7               ;飛び道具の攻撃優先度・相手のProjectileよりも高いと消しながら進む
+projremovetime = 260+var(18)*4             ;飛び道具の消えるまでの時間（フレーム）※-1なら当たるか画面外に出るまで消えない
+;-----------------------------------これ以外にまだまだある。docsフォルダ参照。
+guardflag = MA
+hitflag = MAF
+priority = 3,dodge
+sparkno = -1
+sparkxy = 0,0
+guard.sparkno = 40
+hitsound = 5,3
+guardsound = 6,0
+ground.type = High
+ground.slidetime = 0
+ground.hittime = 18
+ground.velocity = 0,0
+air.velocity = -0.2,-4
+air.juggle = 0 ;Projectileの場合はここで設定しないとヒットした時ジャグルが消費しない
+envshake.time = 8
+envshake.ampl = 6
+envshake.freq = 100
+air.fall = 1
+fall.recover = 0
+
+[State 1102, ヴォイド中の加算]
+type = Explod
+trigger1 = AnimElem = 2
+anim = 8006
+postype = p1
+scale = (0.5+0.005*var(18)),(0.5+0.005*var(18))
+pos = 35,-55
+velocity = 0.8,0
+persistent = 0
+ownpal = 1
+sprpriority = ifelse(var(35)=0,2,ifelse(var(35)=1,3,ifelse(var(35)=2,4,5)))
+removetime = 260+var(18)*4 
+ignorehitpause = 1
+id = 1102
+
+[State 1102, ヴォイド中の減算]
+type = Explod
+trigger1 = AnimElem = 2
+anim = 8011
+postype = p1
+scale = (0.5+0.005*var(18)),(0.5+0.005*var(18))
+pos = 35,-55
+velocity = 0.8,0
+persistent = 0
+ownpal = 1
+sprpriority = ifelse(var(35)=0,2,ifelse(var(35)=1,3,ifelse(var(35)=2,4,5)))
+removetime = 260+var(18)*4 
+ignorehitpause = 1
+id = 1102
+
+
+[state 325, コントロール];ショタ中
+type = ctrlset
+triggerall = var(16) >= 1
+trigger1 = animelemtime(4) = 25
+value = 1
+
+[state 325, コントロール]
+type = ctrlset
+trigger1 = animelem = 5
+value = 1
+
+[State 325, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 50
+ctrl = 1
+
+[State 325, ステート変更]
+type = ChangeState
+trigger1 = pos Y >= 0
+value = 52
+ctrl = 1
+
+
+;-----------------------------------------------
+;フレイムストライク
+[Statedef 1200]
+type    = S
+movetype= A
+physics = S
+juggle  = 3
+velset = 0,0
+ctrl = 0
+anim = 1150
+poweradd = -800
+sprpriority = 1
+
+[State 320, 変数リセット]
+type = varset
+trigger1 = animtime = 0
+v = 17
+value = 0
+
+[State 320, 速度補正]
+type = velset
+trigger1 = animelem = 3
+x = -2
+
+
+[State 1200, 魔方陣]
+type = Helper
+stateno = 1201
+trigger1 = animelem = 1
+id = 1200
+name = "circle"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 1
+pos = 80,0
+postype = p1
+
+[State 1200, 音を鳴らす]
+type = null;PlaySnd
+trigger1 = Time = 1
+value = 0, 1
+
+[State 1200, フレイムストライク距離算出 - ctrl]
+type = varset
+trigger1 = AnimElem = 1
+var(52) = 30
+
+[State 1200, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 97, 0
+
+[State 1200, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+;-------------------------------------------
+;フレイムストライクAI
+[Statedef 1206]
+type    = S
+movetype= A
+physics = S
+juggle  = 3
+velset = 0,0
+ctrl = 0
+anim = 1150
+poweradd = -800
+sprpriority = 1
+
+[State 1206, 変数リセット]
+type = varset
+trigger1 = animtime = 0
+v = 17
+value = 0
+
+[State 1206, 速度補正]
+type = velset
+trigger1 = animelem = 3
+x = -2
+
+
+[State 1206, 魔方陣]
+type = Helper
+stateno = 1205
+trigger1 = animelem = 1
+id = 1200
+name = "circle"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 1
+pos = 80,0
+postype = p1
+
+[State 1206, 音を鳴らす]
+type = null;PlaySnd
+trigger1 = Time = 1
+value = 0, 1
+
+[State 1206, フレイムストライク距離算出 - ctrl]
+type = varset
+trigger1 = AnimElem = 1
+var(52) = 30
+
+[State 1206, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 97, 0
+
+[State 1206, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;-----------------------------------------------
+;フレイムストライク ショタ中
+[Statedef 1203]
+type    = S
+movetype= A
+physics = S
+juggle  = 3
+velset = 0,0
+ctrl = 0
+anim = 1151
+poweradd = -800
+sprpriority = 1
+
+[State 320, 変数リセット]
+type = varset
+trigger1 = animtime = 0
+v = 17
+value = 0
+
+[State 320, 速度補正]
+type = velset
+trigger1 = animelem = 3
+x = -2
+
+[State 1200, 魔方陣]
+type = Helper
+stateno = 1201
+trigger1 = animelem = 1
+id = 1200
+name = "circle"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 1
+pos = 80,0
+postype = p1
+
+[State 1200, 音を鳴らす]
+type = null;PlaySnd
+trigger1 = Time = 1
+value = 0, 1
+
+[State 1200, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 1
+value = 97, 0
+
+[State 1200, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;-----------------------------------------------
+;アイスニードル 詠唱
+[Statedef 1300]
+type    = S
+movetype= I
+physics = S
+juggle  = 4
+poweradd= -300
+velset = 0,0
+anim = 1000
+ctrl = 0
+sprpriority = 1
+
+[State 1300, アイスニードル変数]
+type = varset
+trigger1 = time = 0
+v = 17
+value = 1302
+
+[State 1300, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 0
+value = 98, 0
+channel = 0
+
+
+[State 1300, コントロール]
+type = ctrlset
+trigger1 = Time = 20
+value = 1
+
+;-----------------------------------------------
+;アイスニードル 詠唱 ショタ中
+[Statedef 1301]
+type    = S
+movetype= I
+physics = S
+juggle  = 4
+poweradd= -300
+velset = 0,0
+anim = 1000
+ctrl = 0
+sprpriority = 1
+
+[State 1300, アイスニードル変数]
+type = varset
+trigger1 = time = 0
+v = 17
+value = 1302
+
+[State 1300, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 0
+value = 98, 0
+channel = 0
+
+
+
+[State 1300, コントロール]
+type = ctrlset
+trigger1 = Time = 10
+value = 1
+
+;-----------------------------------------------
+;アイスニードル 発動
+[Statedef 1302]
+type    = S
+movetype= A
+physics = S
+juggle  = 4
+poweradd= 0
+velset = 0,0
+anim = 3000
+ctrl = 0
+sprpriority = 1
+
+[State 1302, アニメ固定]
+type = changeanim
+trigger1 = 1
+value = 3000
+elem = 2
+
+[State 1302, 変数リセット]
+type = varset
+trigger1 = time = 20
+v = 17
+value = 0
+
+
+[State 1302, アイスヒットチェック - ctrl]
+type = varset
+triggerall = var(59) = 1
+trigger1 = time = 20
+v = 37
+value = 1
+
+[State -2, アイスニードル出現用]
+type = Helper
+stateno = 1304
+trigger1 = animelem = 2
+id = 1300
+name = "Ice_parent"
+supermovetime = 9999
+pausemovetime = 9999
+supermove = 1
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,0
+postype = p2
+
+[State 1302, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0
+value = 99, 0
+channel = 0
+
+[State 1302, チャージ時間の調整]
+type = varset
+trigger1 = var(18) >= 60
+v = 18
+value = 60
+
+[State 1302, ステート変更]
+type = ChangeState
+trigger1 = time = 20
+value = 0
+ctrl = 1
+
+;--------------------------------------------------
+;位相転移 ワープ前
+[Statedef 1400]
+type    = S
+movetype= I
+physics = N
+velset = 0,0
+ctrl = 0
+anim = 1400
+poweradd = 20
+sprpriority = 0
+
+[State 1400, 無敵]
+type = NotHitBy
+trigger1 = time < 6
+value = SCA
+
+[State 1400, アニメ固定]
+type = ChangeAnim
+trigger1 = 1
+value = var(34)
+anim = 1
+
+[State 1302, チャージ時間の調整]
+type = varadd
+trigger1 = time = 1
+v = 39
+value = -1
+
+[State 1400, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 1
+value = 0, 0
+
+[State 832, 煙]
+type = Explod
+trigger1 = AnimElem = 1
+anim = 8027
+postype = p1
+pos = 0, -50
+velocity = 0, 0
+accel = 0, 0
+scale = 0.8,0.8
+persistent = 0
+sprpriority = 5
+ownpal = 1
+
+[State 831, わら人形]
+type = Helper
+stateno = 1405
+trigger1 = time = 6
+id = 1405
+name = "doll"
+supermovetime = 9999
+pausemovetime = 9999
+supermove = 1
+ignorehitpause = 1
+ownpal = 1
+pos = 0,0
+postype = p1
+
+[State 831, 透過処理];これがあれば角度を変えた画像にも透過処理を適用出来る
+type = Trans
+trigger1 = 1
+Trans = AddAlpha
+Alpha = 256-time*40,0+time*40
+
+[State 1400, ステート変更]
+type = ChangeState
+trigger1 = time = 6
+value = 1401
+ctrl = 1
+
+;--------------------------------------------------
+;位相転移 ワープ後
+[Statedef 1401]
+type    = S
+movetype= I
+physics = S
+velset = 0,0
+ctrl = 0
+anim = 6
+poweradd = 20
+sprpriority = 1
+
+[State 1400, Y軸 0]
+type = PosSet
+triggerall = Time = 0
+trigger1 = command != "holdup"
+trigger2 = command = "holddown"
+y = 0
+
+[State 1400, Y軸 -120]
+type = PosAdd
+triggerall = Time = 0
+trigger1 = command = "holdup"
+y = -120
+
+[State 1400, X軸 -120]
+type = PosAdd
+triggerall = Time = 0
+trigger1 = command = "holdback"
+trigger2 = command != "holdfwd"
+x = -300
+
+[State 1400, X軸 120]
+type = PosAdd
+triggerall = Time = 0
+trigger1 = command = "holdfwd"
+x = 300
+
+[State 832, 透過処理]
+type = Trans
+trigger1 = 1
+Trans = AddAlpha
+Alpha = 0+time*20,256-time*20
+
+
+[State 832, 煙]
+type = Explod
+trigger1 = time = 0
+anim = 8027
+postype = p1
+pos = 0, -50
+velocity = 0, 0
+accel = 0, 0
+scale = 0.8,0.8
+persistent = 0
+sprpriority = 5
+ownpal = 1
+
+[State 1400, ステートタイプ]
+type = StateTypeSet
+trigger1 = Pos Y < 0
+Statetype = A
+physics   = A
+
+[State 1400, 浮力]
+type = VelAdd
+trigger1 = Statetype = A
+y = -0.1
+
+[State 1400, ステートタイプ]
+type = StateTypeSet
+trigger1 = Pos Y >= 0
+Statetype = C
+physics   = C
+
+[State 1400, ステート変更]
+type = ChangeState
+trigger1 = time = 20
+trigger1 = Pos Y < 0
+value = 50
+ctrl = 1
+
+[State 1400, ステート変更]
+type = ChangeState
+trigger1 = time = 20
+trigger1 = Pos Y >= 0
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+
+
+;===========================================================================
+; 超必殺技
+;===========================================================================
+;サンダーコーリング 詠唱
+[Statedef 3000]
+type    = S
+movetype= I
+physics = S
+juggle  = 4
+velset = 0,0
+anim = 3000
+ctrl = 0
+sprpriority = 1
+
+[State 3000, 超必殺技暗転時間停止]
+type = SuperPause
+trigger1 = AnimElem = 1
+anim = 3000       ;超必エフェクトのアクションナンバー。通常は「fightfx.air」のアニメを使うが、
+                 ;左に「s」を付ければ「自分のairファイル」のアクションナンバーが使える。
+pos = 25, -57    ;超必エフェクトの座標（Ｘ軸,Ｙ軸）
+sound = s110, 0    ;超必発動サウンド。通常は「common.snd」の音を使うが、
+                 ;左に「s」を付ければ「自分のsndファイル」の音が使える。
+poweradd = -2000 ;パワーゲージ増減量
+time = 30       ;ポーズする時間（フレーム）
+movetime = 30    ;ポーズ中に動ける時間。timeよりも多いとバグる（デフォルトは０）
+darken = 0      ;ポーズ中画面を暗転するか否か（0=しない・1=する）
+                 ;暗転する色は「ownpal」の有無により「Explod」や「ヘルパー」にも影響するので注意。
+;p2defmul = 1.0  ;直前のステートを「SuperPauseを設置したステート」でキャンセルした場合、
+                 ;『相手に一時的に与える防御力乗算値(float)』。
+                 ;デフォルトは０。（相手の防御力が上がり、ダメージ量に下方修正が掛かる）
+                 ;１にすれば『ダメージ補正が掛からなくなる』事になる。
+                 ;相手が食らい状態以外（相手のMoveTypeが「H」以外）になれば解除される。
+unhittable = 1  ;ポーズ中自分を無敵状態にするか否か（0=しない・1=する）
+                 ;デフォルトは１。
+
+[State 3000, 背景カラー]
+type = BGPalFx
+trigger1 = 1
+add = 256-time*6,160-time*4,160-time*4
+time = 2
+
+[State 1300, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0
+value = 95, 0
+
+[State 1300, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0
+value = 103, 0
+channel = 18
+loop = 1
+
+[State 3000, AI用セット - ctrl]
+type = varset
+trigger1 = time = 0
+v = 48
+value = 3
+
+
+[State 3000, 残像]
+type = AfterImage
+trigger1 = AnimElem = 1
+time = 2
+
+[State 3000, 残像表示時間]
+type = AfterImageTime
+trigger1 = AnimElemTime(2) >= 1 && Time < 60
+time = 2
+
+[State 3000, 相手の特定の攻撃属性無効]
+type = NotHitBy
+trigger1 = AnimElem = 1
+value = SCA
+time = 11
+
+[State 3000, サンダーコーリングフラグ]
+type = varset
+trigger1 = time = 0
+v = 25
+value = 1
+
+[State 3000, カットイン]
+type = Helper
+stateno = 22222
+trigger1 = animelem = 1
+id = 22222
+name = "Cutin"
+supermovetime = 9999
+pausemovetime = 9999
+supermove = 1
+ignorehitpause = 1
+ownpal = 1
+facing = -1
+persistent = 0
+keyctrl = 0
+pos = 0,0
+postype = p1
+
+
+[State 3000, カットイン]
+type = Helper
+stateno = 22223
+trigger1 = animelem = 1
+id = 22222
+name = "Cutin"
+supermovetime = 9999
+pausemovetime = 9999
+supermove = 1
+ignorehitpause = 1
+ownpal = 1
+facing = -1
+persistent = 0
+keyctrl = 0
+pos = 0,0
+postype = p1
+
+[State 3000, ステート変更]
+type = ChangeState
+trigger1 = time = 40
+value = 0
+ctrl = 1
+
+;--------------------------------------------------------
+;サンダーコーリング 発動1 通常立ち
+[Statedef 3001]
+type    = S
+movetype= A
+physics = S
+juggle  = 4
+velset = 0,0
+anim = 3000
+ctrl = 0
+sprpriority = 1
+
+[State 1300, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 0
+value = 96, 0
+
+[State 3001, 変数リセット]
+type = varset
+trigger1 = var(16) = 0
+trigger1 = time = 50
+trigger2 = var(16) >= 1
+trigger2 = time = 25
+v = 17
+value = 0
+
+[State 3001, 相手の特定の攻撃属性無効]
+type = NotHitBy
+trigger1 = time <= 30
+value = SCA
+time = 1
+
+[State 3001, サンダーコーリングフラグ]
+type = varadd
+trigger1 = time = 0
+v = 25
+value = 1
+
+[State 3001, サンダーコーリング]
+type = Helper
+stateno = 3010
+trigger1 = animelem = 1
+id = 3010
+name = "ThunderCalling"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,0
+facing = 1
+postype = p1
+
+[State -3, AI用回数減少]
+type = VarAdd
+trigger1 = Time = 0
+var(48) = -1
+
+[State 3000, ステート変更]
+type = ChangeState
+trigger1 = var(16) = 0
+trigger1 = time = 60
+trigger2 = var(16) >= 1
+trigger2 = time = 30
+value = 0
+ctrl = 1
+
+;--------------------------------------------------------
+;サンダーコーリング 発動2 上昇中 高速度
+[Statedef 3002]
+type    = A
+movetype= A
+physics = N
+juggle  = 4
+anim = 332
+ctrl = 0
+sprpriority = 1
+
+[State 3001, 減速]
+type = Velmul
+trigger1 = 1
+x = 0.95
+y = 0.95
+
+[State 1300, 音を鳴らす]
+type = PlaySnd
+trigger1 = var(16) = 0
+trigger1 = time = 18
+trigger2 = var(16) >= 1
+trigger2 = time = 10
+value = 91, 0
+
+[State 3001, 減速]
+type = Velmul
+trigger1 = pos y = 0
+x = 0.8
+
+[State 3001, 重力]
+type = Veladd
+trigger1 = 1
+y = 0.1
+
+
+[State 3001, 重力]
+type = Veladd
+trigger1 = vel Y > 0
+y = 0.2
+
+[State 3001, 停止]
+type = velset
+trigger1 = pos y >= 0
+y = 0
+
+[State 3001, 位置修正]
+type = posset
+trigger1 = pos y >= 0
+y = 0
+
+
+[State 3001, アニメ固定]
+type = Changeanim
+trigger1 = var(16) = 0
+trigger1 = time < 18
+trigger2 = var(16) >= 1
+trigger2 = time < 10
+value = 332
+elem = 1
+
+[State 3001, アニメ固定]
+type = Changeanim
+trigger1 = var(16) = 0
+trigger1 = time = 18
+trigger2 = var(16) >= 1
+trigger2 = time = 10
+value = 332
+elem = 2
+
+[State 3001, 加速]
+type = velset
+trigger1 = anim = 332
+trigger1 = animelemtime(2) = 0
+trigger1 = pos y = 0
+y = -5
+
+[State 3001, 変数リセット]
+type = varset
+trigger1 = var(16) = 0
+trigger1 = time = 50
+trigger2 = var(16) >= 1
+trigger2 = time = 25
+v = 17
+value = 0
+
+[State 3001, 相手の特定の攻撃属性無効]
+type = NotHitBy
+trigger1 = time <= 30
+value = SCA
+time = 1
+
+[State 3001, サンダーコーリングフラグ]
+type = varadd
+trigger1 = time = 0
+v = 25
+value = 1
+
+[State 3001, サンダーコーリング]
+type = Helper
+stateno = 3010
+trigger1 = animelem = 1
+id = 3010
+name = "ThunderCalling"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,0
+facing = 1
+postype = p1
+
+[State 3000, ステート変更]
+type = ChangeState
+triggerall = pos y < 0
+trigger1 = var(16) = 0
+trigger1 = time = 60
+trigger2 = var(16) >= 1
+trigger2 = time = 30
+value = 50
+ctrl = 1
+
+[State 3000, ステート変更]
+type = ChangeState
+triggerall = pos y >= 0
+trigger1 = var(16) = 0
+trigger1 = time = 60
+trigger2 = var(16) >= 1
+trigger2 = time = 30
+value = 0
+ctrl = 1
+
+;--------------------------------------------------------
+;サンダーコーリング 発動3 前押し 落花モーション
+[Statedef 3003]
+type    = S
+movetype= A
+physics = S
+juggle  = 4
+velset = 0,0
+anim = 210
+ctrl = 0
+sprpriority = 1
+
+[State 1300, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 5
+value = 90, 0
+
+[State 3001, アニメ固定]
+type = Changeanim
+trigger1 = var(16) = 0
+trigger1 = time < 18
+trigger2 = var(16) >= 1
+trigger2 = time < 10
+value = 210
+elem = 1
+
+[State 3001, アニメ固定]
+type = Changeanim
+trigger1 = var(16) = 0
+trigger1 = time = 18
+trigger2 = var(16) >= 1
+trigger2 = time = 10
+value = 211
+elem = 2
+
+[State 3001, オフセット]
+type = offset
+trigger1 = var(16) = 0
+trigger1 = time >= 18
+trigger2 = var(16) >= 1
+trigger2 = time >= 10
+x = ifelse(facing=1,17,-17)
+
+[State 3001, 変数リセット]
+type = varset
+trigger1 = var(16) = 0
+trigger1 = time = 50
+trigger2 = var(16) >= 1
+trigger2 = time = 25
+v = 17
+value = 0
+
+[State 3001, 相手の特定の攻撃属性無効]
+type = NotHitBy
+trigger1 = time <= 30
+value = SCA
+time = 1
+
+[State 3001, サンダーコーリングフラグ]
+type = varadd
+trigger1 = time = 0
+v = 25
+value = 1
+
+[State 3001, サンダーコーリング]
+type = Helper
+stateno = 3010
+trigger1 = animelem = 1
+id = 3010
+name = "ThunderCalling"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,0
+facing = 1
+postype = p1
+
+[State 3000, ステート変更]
+type = ChangeState
+trigger1 = var(16) = 0
+trigger1 = time = 60
+trigger2 = var(16) >= 1
+trigger2 = time = 30
+value = 0
+ctrl = 1
+
+;--------------------------------------------------------
+;サンダーコーリング 発動4 上昇中 低速度
+[Statedef 3004]
+type    = A
+movetype= A
+physics = N
+juggle  = 4
+anim = 290
+ctrl = 0
+sprpriority = 1
+
+[State 1300, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 18
+value = 80, 0
+
+[State 3001, 減速]
+type = Velmul
+trigger1 = 1
+x = 0.95
+y = 0.95
+
+[State 3001, 減速]
+type = Velmul
+trigger1 = pos y = 0
+x = 0.8
+
+[State 3001, 重力]
+type = Veladd
+trigger1 = 1
+y = 0.1
+
+
+[State 3001, 重力]
+type = Veladd
+trigger1 = vel Y > 0
+y = 0.2
+
+[State 3001, 停止]
+type = velset
+trigger1 = pos y >= 0
+y = 0
+
+[State 3001, 位置修正]
+type = posset
+trigger1 = pos y >= 0
+y = 0
+
+
+[State 3001, アニメ固定]
+type = Changeanim
+trigger1 = time < 18
+value = 290
+elem = 1
+
+[State 3001, アニメ固定]
+type = Changeanim
+trigger1 = time = 18
+value = 290
+elem = 2
+
+[State 3001, 重力]
+type = Veladd
+trigger1 = anim = 290
+trigger1 = animelemtime(2) >= 0
+y = 10
+persistent = 0
+
+[State 3001, アニメ固定]
+type = null;Changeanim
+trigger1 = pos y = 0
+trigger1 = time > 24
+value = 141
+elem = 1
+
+[State 3001, 変数リセット]
+type = varset
+trigger1 = var(16) = 0
+trigger1 = time = 50
+trigger2 = var(16) >= 1
+trigger2 = time = 25
+v = 17
+value = 0
+
+[State 3001, 相手の特定の攻撃属性無効]
+type = NotHitBy
+trigger1 = time <= 30
+value = SCA
+time = 1
+
+[State 3001, サンダーコーリングフラグ]
+type = varadd
+trigger1 = time = 0
+v = 25
+value = 1
+
+[State 3001, サンダーコーリング]
+type = Helper
+stateno = 3010
+trigger1 = animelem = 1
+id = 3010
+name = "ThunderCalling"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,0
+facing = 1
+postype = p1
+
+[State 3000, ステート変更]
+type = ChangeState
+triggerall = pos y < 0
+trigger1 = var(16) = 0
+trigger1 = time = 60
+trigger2 = var(16) >= 1
+trigger2 = time = 30
+value = 50
+ctrl = 1
+
+[State 3000, ステート変更]
+type = ChangeState
+triggerall = pos y >= 0
+trigger1 = var(16) = 0
+trigger1 = time = 60
+trigger2 = var(16) >= 1
+trigger2 = time = 30
+value = 0
+ctrl = 1
+
+;--------------------------------------------------------
+;サンダーコーリング 発動5 落下中
+[Statedef 3005]
+type    = A
+movetype= A
+physics = N
+juggle  = 4
+anim = 325
+ctrl = 0
+velset = 0,0
+sprpriority = 1
+
+[State 1300, 音を鳴らす]
+type = PlaySnd
+trigger1 = animelem = 4
+value = 60, 5
+
+[State 325, 速度設定]
+type = velset
+trigger1 = animelem = 4
+x = -8.1
+y = -4
+
+[State 325, 速度設定]
+type = veladd
+trigger1 = animelemtime(4) >= 0
+trigger1 = vel X <= -2
+x = 0.3
+
+[State 325, 速度設定]
+type = veladd
+trigger1 = animelemtime(4) >= 0
+y = 0.3
+
+[State 3001, 重力]
+type = Veladd
+trigger1 = anim = 290
+trigger1 = animelemtime(2) >= 0
+y = 10
+persistent = 0
+
+
+
+[State 3001, 停止]
+type = velset
+trigger1 = pos y >= 0
+y = 0
+
+[State 3001, 位置修正]
+type = posset
+trigger1 = pos y >= 0
+y = 0
+
+[State 3001, 減速]
+type = Velmul
+trigger1 = pos y = 0
+x = 0.8
+
+[State 3001, アニメ固定]
+type = Changeanim
+trigger1 = anim != 1300
+trigger1 = pos y = 0
+value = 141
+elem = 1
+
+[State 3001, アニメ固定]
+type = Changeanim
+triggerall = pos y = 0
+trigger1 = var(16) = 0
+trigger1 = time = 18
+trigger2 = var(16) >= 1
+trigger2 = time = 10
+value = 1300
+elem = 2
+
+[State 1300, 音を鳴らす]
+type = PlaySnd
+triggerall = anim = 1300
+trigger1 = var(16) = 0
+trigger1 = time = 18
+trigger2 = var(16) >= 1
+trigger2 = time = 10
+value = 60, 5
+
+[State 3001, 変数リセット]
+type = varset
+trigger1 = var(16) = 0
+trigger1 = time = 50
+trigger2 = var(16) >= 1
+trigger2 = time = 25
+v = 17
+value = 0
+
+[State 3001, 相手の特定の攻撃属性無効]
+type = NotHitBy
+trigger1 = time <= 30
+value = SCA
+time = 1
+
+[State 3001, サンダーコーリングフラグ]
+type = varadd
+trigger1 = time = 0
+v = 25
+value = 1
+
+[State 3001, サンダーコーリング]
+type = Helper
+stateno = 3010
+trigger1 = animelem = 1
+id = 3010
+name = "ThunderCalling"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,0
+facing = 1
+postype = p1
+
+[State 3000, ステート変更]
+type = ChangeState
+triggerall = pos y < 0
+trigger1 = var(16) = 0
+trigger1 = time = 60
+trigger2 = var(16) >= 1
+trigger2 = time = 30
+value = 50
+ctrl = 1
+
+[State 3000, ステート変更]
+type = ChangeState
+triggerall = pos y >= 0
+trigger1 = var(16) = 0
+trigger1 = time = 60
+trigger2 = var(16) >= 1
+trigger2 = time = 30
+value = 0
+ctrl = 1
+
+;--------------------------------------------------------
+;サンダーコーリング 発動 後ろ押し
+[Statedef 3006]
+type    = S
+movetype= A
+physics = S
+juggle  = 4
+anim = 3006
+ctrl = 0
+sprpriority = 1
+
+[State 1300, 音を鳴らす]
+type = PlaySnd
+trigger1 = var(16) = 0
+trigger1 = time = 18
+trigger2 = var(16) >= 1
+trigger2 = time = 8
+value = 92, 0
+
+[State 3001, アニメ固定]
+type = Changeanim
+trigger1 = var(16) >= 1
+trigger1 = time = 8
+value = 3006
+elem = 2
+
+[State 3001, アニメ固定]
+type = Changeanim
+trigger1 = var(16) >= 1
+trigger1 = anim = 3006
+trigger1 = animelemtime(2) = 1
+value = 3006
+elem = 3
+
+[State 3001, アニメ固定]
+type = Changeanim
+trigger1 = var(16) >= 1
+trigger1 = anim = 3006
+trigger1 = animelemtime(3) = 1
+value = 3006
+elem = 4
+
+[State 3001, ターン]
+type = turn
+triggerall = prevstateno != 20
+trigger1 = time = 0
+trigger2 = animelem = 2
+
+[State 3001, オフセット]
+type = offset
+trigger1 = prevstateno = 20
+trigger1 = animelemtime(2) < 0
+x = ifelse(facing=1,10,-10)
+
+[State 3001, 移動速度]
+type = velset
+trigger1 = animelemtime(3) = 0
+x = 5
+
+[State 3001, 変数リセット]
+type = varset
+trigger1 = var(16) = 0
+trigger1 = time = 50
+trigger2 = var(16) >= 1
+trigger2 = time = 25
+v = 17
+value = 0
+
+[State 3001, 相手の特定の攻撃属性無効]
+type = NotHitBy
+trigger1 = time <= 30
+value = SCA
+time = 1
+
+[State 3001, サンダーコーリングフラグ]
+type = varadd
+trigger1 = time = 0
+v = 25
+value = 1
+
+[State 3001, サンダーコーリング]
+type = Helper
+stateno = 3010
+trigger1 = animelem = 1
+id = 3010
+name = "ThunderCalling"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,0
+facing = 1
+postype = p1
+
+[State 3000, ステート変更]
+type = ChangeState
+trigger1 = var(16) = 0
+trigger1 = time = 60
+trigger2 = var(16) >= 1
+trigger2 = time = 30
+value = 0
+ctrl = 1
+
+;--------------------------------------------------------
+;サンダーコーリング 発動 バクステ中
+[Statedef 3007]
+type    = A
+movetype= A
+physics = N
+juggle  = 4
+anim = 3006
+ctrl = 0
+sprpriority = 1
+
+[State 1300, 音を鳴らす]
+type = PlaySnd
+trigger1 = time = 0
+value = 89, 0
+
+
+[State 3001, 減速]
+type = Velmul
+trigger1 = var(16) = 0
+trigger1 = prevStateno = 105
+x = 0.95
+
+[State 3001, 減速]
+type = Velmul
+trigger1 = prevStateno = 105
+trigger1 = pos y = 0
+x = 0.8
+
+[State 3001, 重力]
+type = Veladd
+trigger1 = var(16) >= 1
+trigger1 = prevStateno = 105
+y = 0.2
+
+
+[State 3001, 重力]
+type = Veladd
+trigger1 = pos y < 0
+y = 0.4
+
+[State 3001, 停止]
+type = velset
+trigger1 = pos y >= 0
+y = 0
+
+[State 3001, 位置補正]
+type = posset
+trigger1 = pos y >= 0
+y = 0
+
+[State 3001, Statetypeset]
+type = Statetypeset
+trigger1 = pos y >= 0
+Statetype = S
+
+[State 3001, アニメ固定]
+type = Changeanim
+trigger1 = var(16) = 0
+trigger1 = time < 5
+trigger2 = var(16) >= 1
+trigger2 = time < 2
+value = 830
+elem = 1
+
+[State 3001, アニメ固定]
+type = Changeanim
+trigger1 = var(16) = 0
+trigger1 = time = 5
+trigger2 = var(16) >= 1
+trigger2 = time = 2
+value = 1300
+elem = 2
+
+[State 3001, アニメ固定]
+type = Changeanim
+trigger1 = var(16) = 0
+trigger1 = time >= 20
+trigger2 = var(16) >= 1
+trigger2 = time >= 10
+value = 1100
+elem = 1
+
+
+[State 3001, 変数リセット]
+type = varset
+trigger1 = var(16) = 0
+trigger1 = time = 50
+trigger2 = var(16) >= 1
+trigger2 = time = 25
+v = 17
+value = 0
+
+[State 3001, 相手の特定の攻撃属性無効]
+type = NotHitBy
+trigger1 = time <= 30
+value = SCA
+time = 1
+
+[State 3001, サンダーコーリングフラグ]
+type = varadd
+trigger1 = time = 0
+v = 25
+value = 1
+
+[State 3001, サンダーコーリング]
+type = Helper
+stateno = 3010
+trigger1 = animelem = 1
+id = 3010
+name = "ThunderCalling"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,0
+facing = 1
+postype = p1
+
+[State 3000, ステート変更]
+type = ChangeState
+trigger1 = var(16) = 0
+trigger1 = time = 60
+trigger2 = var(16) >= 1
+trigger2 = time = 30
+value = 0
+ctrl = 1
+
+;------------------------------------------------------------
+;サンダーコーリング しゃがみ 下押し
+[Statedef 3008]
+type    = C
+movetype= A
+physics = C
+juggle  = 4
+anim = 325
+ctrl = 0
+velset = 0,0
+sprpriority = 1
+
+[State 1300, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 0
+value = 88, 0
+channel = 4
+
+[State 3001, アニメ固定]
+type = Changeanim
+trigger1 = var(16) = 0
+trigger1 = time < 18
+trigger2 = var(16) >= 1
+trigger2 = time < 10
+value = 1100
+elem = 1
+
+[State 3001, アニメ固定]
+type = Changeanim
+trigger1 = var(16) = 0
+trigger1 = time = 18
+trigger2 = var(16) >= 1
+trigger2 = time = 10
+value = 1300
+elem = 2
+
+[State 3001, 変数リセット]
+type = varset
+trigger1 = var(16) = 0
+trigger1 = time = 50
+trigger2 = var(16) >= 1
+trigger2 = time = 25
+v = 17
+value = 0
+
+[State 3001, 相手の特定の攻撃属性無効]
+type = NotHitBy
+trigger1 = time <= 30
+value = SCA
+time = 1
+
+[State 3001, サンダーコーリングフラグ]
+type = varadd
+trigger1 = time = 0
+v = 25
+value = 1
+
+[State 3001, サンダーコーリング]
+type = Helper
+stateno = 3010
+trigger1 = animelem = 1
+id = 3010
+name = "ThunderCalling"
+ignorehitpause = 1
+ownpal = 1
+persistent = 0
+keyctrl = 0
+pos = 0,0
+facing = 1
+postype = p1
+
+[State 3000, ステート変更]
+type = ChangeState
+trigger1 = var(16) = 0
+trigger1 = time = 60
+trigger2 = var(16) >= 1
+trigger2 = time = 30
+value = 0
+ctrl = 1
+
+;---------------------------------------------------------------------------
+;弾装供給
+[Statedef 3100]
+type    = S
+movetype= A
+physics = S
+juggle  = 0
+velset = 0,0
+anim = 3200
+ctrl = 0
+sprpriority = 0
+
+[State 3100, 超必殺技暗転時間停止]
+type = SuperPause
+trigger1 = AnimElem = 2
+anim = 3200       ;超必エフェクトのアクションナンバー。通常は「fightfx.air」のアニメを使うが、
+                 ;左に「s」を付ければ「自分のairファイル」のアクションナンバーが使える。
+pos = 25, -57    ;超必エフェクトの座標（Ｘ軸,Ｙ軸）
+sound = 20, 0    ;超必発動サウンド。通常は「common.snd」の音を使うが、
+                 ;左に「s」を付ければ「自分のsndファイル」の音が使える。
+poweradd = -1000 ;パワーゲージ増減量
+time = 20       ;ポーズする時間（フレーム）
+movetime = 4    ;ポーズ中に動ける時間。timeよりも多いとバグる（デフォルトは０）
+;darken = 1      ;ポーズ中画面を暗転するか否か（0=しない・1=する）
+                 ;暗転する色は「ownpal」の有無により「Explod」や「ヘルパー」にも影響するので注意。
+;p2defmul = 1.0  ;直前のステートを「SuperPauseを設置したステート」でキャンセルした場合、
+                 ;『相手に一時的に与える防御力乗算値(float)』。
+                 ;デフォルトは０。（相手の防御力が上がり、ダメージ量に下方修正が掛かる）
+                 ;１にすれば『ダメージ補正が掛からなくなる』事になる。
+                 ;相手が食らい状態以外（相手のMoveTypeが「H」以外）になれば解除される。
+unhittable = 1  ;ポーズ中自分を無敵状態にするか否か（0=しない・1=する）
+                 ;デフォルトは１。
+
+
+[State 3100, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 3
+value = 38, 0
+
+
+[State 3100, 変数]			
+type = VarSet
+trigger1 = AnimElem = 3
+v = 12
+value = 3
+IgnoreHitPause = 1
+Persistent = 1
+
+
+[State 3100, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+;----------------------------------------------------------------------------------
+
+;灼熱弾
+[Statedef 3200]
+type    = S
+movetype= A
+physics = S
+juggle  = 0
+velset = 0,0
+anim = 3200
+ctrl = 0
+sprpriority = 0
+
+[State 3200, 超必殺技暗転時間停止]
+type = SuperPause
+trigger1 = AnimElem = 2
+anim = 3200       ;超必エフェクトのアクションナンバー。通常は「fightfx.air」のアニメを使うが、
+                 ;左に「s」を付ければ「自分のairファイル」のアクションナンバーが使える。
+pos = 25, -57    ;超必エフェクトの座標（Ｘ軸,Ｙ軸）
+sound = 20, 0    ;超必発動サウンド。通常は「common.snd」の音を使うが、
+                 ;左に「s」を付ければ「自分のsndファイル」の音が使える。
+poweradd = -1000 ;パワーゲージ増減量
+time = 20       ;ポーズする時間（フレーム）
+movetime = 4    ;ポーズ中に動ける時間。timeよりも多いとバグる（デフォルトは０）
+;darken = 1      ;ポーズ中画面を暗転するか否か（0=しない・1=する）
+                 ;暗転する色は「ownpal」の有無により「Explod」や「ヘルパー」にも影響するので注意。
+;p2defmul = 1.0  ;直前のステートを「SuperPauseを設置したステート」でキャンセルした場合、
+                 ;『相手に一時的に与える防御力乗算値(float)』。
+                 ;デフォルトは０。（相手の防御力が上がり、ダメージ量に下方修正が掛かる）
+                 ;１にすれば『ダメージ補正が掛からなくなる』事になる。
+                 ;相手が食らい状態以外（相手のMoveTypeが「H」以外）になれば解除される。
+unhittable = 1  ;ポーズ中自分を無敵状態にするか否か（0=しない・1=する）
+                 ;デフォルトは１。
+
+
+[State 3200, 音を鳴らす]
+type = PlaySnd
+trigger1 = AnimElem = 3
+value = 38, 0
+
+
+[State 3200, 変数]			
+type = VarSet
+trigger1 = Time = 10
+v = 13
+value = 1000
+IgnoreHitPause = 1
+Persistent = 1
+
+
+[State 3200, ステート変更]
+type = ChangeState
+trigger1 = AnimTime = 0
+value = 0
+ctrl = 1
+
+;--------------------------------------------------------
+
+
+;===========================================================================
+; ちょっとこ丸が追加したステート
+;===========================================================================
+;---------------------------------------------------------------------------
+; ここから下の５つのステートは僕が修正前の和訳ＫＦＭに
+; 追加パッチとして入れていたものです。修正と調整も済んでます。
+; 本家のカンフーマンには存在しません。
+; 見慣れないステートコントローラ・トリガーやテクニックがあるので
+; キャラ作りのスキルを上げたい人は参考にしてください。
+;
+; ただし、作成者自身のスキルアップのためにわざと「不完全な状態」にしてます。
+; 試行錯誤考えながら改善して、あなたが今作っているキャラに流用してください。
+;===========================================================================
+;---------------------------------------------------------------------------
+; 単なるパワーゲージを溜めるためのステート。
+; 攻撃用のステートじゃないので、movetypeは「I」にしてます。
+;
+; このステートで「hold_c」のコマンドを入力し続けてる間（押しっぱなし）は、
+;「PowerAdd」にてパワーゲージが毎フレーム６ポイント増加するようになってる。
+;
+; エフェクト画像を消すための命令（RemoveExplod）を
+;『常時監視ステート（－２）』にて設定しているので、そちらも参照してね。
+;---------------------------------------------------------------------------
+;パワー溜め（特殊行動）
+[Statedef 700]
+type     = S
+movetype = I
+physics  = S
+ctrl     = 0
+velset   = 0,0
+anim     = 700
+sprpriority = 1
+
+[State 700, パワーゲージ増減]
+type = PowerAdd
+trigger1 = 1
+value = 6
+
+;[State 700, 音を鳴らす]
+;type = PlaySnd
+;trigger1 = Time = 1
+;value = 60, 0
+
+[State 700, 押し判定]
+type = PlayerPush
+trigger1 = 1
+value = 0 ;相手を押さず、すり抜ける事が出来る。
+
+[State 700, エフェクト];「テンプレート.txt」参照
+type = Explod
+trigger1 = NumExplod(130) = 0 ;ＩＤナンバー「130」のExplodが画面中に１枚も出ていない時
+anim = f130
+facing = -1
+postype = p1
+pos = -5,0
+sprpriority = 3
+ownpal = 1
+removetime = -1 ;「-1」なのでアニメーションが終わらず常に繰り返す
+ID = 130
+
+[State 700, ステート変更]
+type = ChangeState
+trigger1 = command != "hold_c" ;「hold_c」のコマンドではない時（Ｃボタンが離されたら）
+trigger2 = Power >= 5000       ;パワーゲージがレベル３まで溜まったら
+value = 0
+ctrl = 1
+
+;===========================================================================
+
+;クイックスタンディング
+[Statedef 10001]
+type     = L
+movetype = I
+physics  = N
+anim     = 10001
+ctrl     = 0
+velset   = -3,0
+
+[State 10001, 無敵]
+type = NotHitBy
+trigger1 = 1 ;トリガーを何も書かず「1」にする事により、『無条件で常に実行させる命令』になる。
+value = SCA
+time = 3
+
+[State 10001, 押し判定]
+type = PlayerPush
+trigger1 = Time = [0,10]  ;０～１０フレームの間
+value = 0                 ;相手を押さず、すり抜ける事が出来る。
+
+[State 10001, ダウン判定]
+type = HitFallSet
+trigger1 = 1
+value = 0  ;「ダウン状態」にしない
+
+[State 10001, 残像]
+type = AfterImage
+trigger1 = Time = 0
+Time = 16                 ;残像が出ている時間（フレーム）
+PalContrast = 120,120,120 ;残像の色合い（赤,緑,青・ＲＧＢ）
+Trans = Add1              ;残像の透過処理（Add,Add1,Sub,None,AddAlpha）
+TimeGap  = 4              ;残像の表示をスキップする間隔（デフォルトは1）
+FrameGap = 1              ;残像の形を変化させる間隔（デフォルトは4）
+length = 3                ;残像の表示する長さ（最大60・デフォルト20）
+
+[State 10001, 画像の色]
+type = PalFX
+trigger1 = Time = 0
+add = 255,255,255    ;画像の色合い（赤,緑,青・ＲＧＢ）
+time = 3             ;画像の色を変化させる時間（フレーム）
+IgnoreHitPause = 1
+
+[State 10001, fightfxのエフェクト]
+type = GameMakeAnim
+trigger1 = Time = 1
+value = 61  ;fightfx.airの[Begin Action 61]を使う
+pos = 0,0   ;表示する位置（Ｘ軸,Ｙ軸）
+under = 1   ;常にキャラの奥に表示する（画像表示優先度を無視）
+Persistent = 0
+
+[State 10001, 埃]
+type = MakeDust
+trigger1 = Time = 1
+pos = -20,0
+spacing = 1
+
+[State 10001, 軸位置]
+type = PosSet
+trigger1 = 1
+y = 0
+
+[State 10001, 移動速度]
+type = VelSet
+trigger1 = Time = 12
+x = 0
+
+[State 10001, 音を鳴らす]
+type = PlaySnd
+trigger1 = Time = 0
+value = 0,20
+channel = 1
+
+[State 10001, ステート変更]
+type = ChangeState
+trigger1 = (Time > 15)
+value = 11
+ctrl = 1
+
+;---------------------------------------------------------------------------
+
+
+;===========================================================================
+;---------------------------------------------------------------------------
+; ＫＯされた時に吹っ飛ばず「崩れ落ち倒れる様」を表現したステート。
+; -2でこれを発生させるChangeStateを設定してるけど、
+; 現状では「相手の攻撃をガードしてライフが削られた時」でのみ有効。
+; 相手の弱攻撃を判断して実行するのは非常に難しい。研究中。
+;---------------------------------------------------------------------------
+;崩れＫＯ
+[Statedef 10004]
+type     = U
+movetype = H
+physics  = S
+ctrl     = 0
+
+[State 10004, アニメ変更]
+type = ChangeAnim
+trigger1 = !(HitOver)
+value = ifelse(var(37)=1,5020,5000)
+IgnoreHitPause = 1
+
+[State 10004, アニメ変更]
+type = ChangeAnim
+trigger1 = (HitOver) ;「食らい状態」が解除されたら
+value = 10004
+IgnoreHitPause = 1
+Persistent = 0
+
+[State 10004, 無敵]
+type = NotHitBy
+trigger1 = 1
+value = SCA
+time = 2
+
+[State 10004, ダウン判定]
+type = HitFallSet
+trigger1 = 1
+value = 0
+
+[State 10004, 押し判定]
+type = PlayerPush
+trigger1 = 1
+value = 0
+
+[State 10004, 軸位置]
+type = PosSet
+trigger1 = 1
+y = 0
+
+[State 10004, 移動速度]
+type = VelSet
+trigger1 = 1
+y = 0
+
+[State 10004, 食らい中の速度]
+type = HitVelSet
+trigger1 = Time = 0
+x = GetHitVar(XVel) ;攻撃を食らった場合、相手のHitDefにあるＸ軸のvelocity系パラメータを適用する
+                    ;GetHitVarについてはTech.cnsを見てね
+
+[State 10004, fightfxのエフェクト]
+type = GameMakeAnim
+triggerall = (Anim = 10004)
+trigger1 = (AnimElemTime(5) = 1)
+value = 61
+pos = 0,0
+under = 1
+Persistent = 0
+
+[State 10004, 音を鳴らす]
+type = PlaySnd
+triggerall = (Anim = 10004)
+trigger1 = (AnimElemTime(5) = 1)
+value = 0,20
+
+[State 10004, ステート変更]
+type = ChangeState
+triggerall = (Anim = 10004)
+trigger1 = (AnimElemTime(5) > 1)
+value = ifelse((Lose),5150,5110)
+
+
