@@ -1,0 +1,447 @@
+;Variables: Daño, RespawnTime
+;Var 1 del helper es cuánto lleva "fuera"
+;Idle animation - anim 2
+;Lo tocan
+;Explota - anim 0
+;Cambia a anim 6 y es invisible durante RespawnTime
+;Pop - termina RespawnTime y anim 6...
+;Anims: 1 popL, 11 IdleL; 3 popR, 33 IdleR; 0 is boom; 822 burn
+;------------------------------------------------------------------------------------------------------------------------------------------------------
+[Statedef 334];Blow up
+type    = S                      ;State-type: S-stand, C-crouch, A-air, L-liedown
+movetype= A                      ;Move-type: A-attack, I-idle, H-gethit
+physics = N                      ;Physics: S-stand, C-crouch, A-air
+juggle  = 1                     ;Number of air juggle points move takes
+;Commonly-used controllers:
+velset = 0,0                     ;Set velocity (x,y) (Def: no change)
+ctrl = 0                         ;Set ctrl (Def: no change)
+anim = 0                        ;Change animation (Def: no change)
+poweradd = 0                    ;Power to add (Def: 0)
+sprpriority = 9                  ;Set p1's sprite layering priority to 2 (in front)
+
+;Record every player's ID at all times
+[State 334, ShowMeYourIDs]
+Trigger1 = var(11) := playerid(getplayerid(1)), ID
+Trigger1 = var(12) := playerid(getplayerid(2)), ID
+Trigger1 = var(13) := playerid(getplayerid(3)), ID
+Trigger1 = var(14) := playerid(getplayerid(4)), ID
+Trigger1 = var(15) := playerid(getplayerid(5)), ID
+Trigger1 = var(16) := playerid(getplayerid(6)), ID
+Trigger1 = var(17) := playerid(getplayerid(7)), ID
+Trigger1 = var(18) := playerid(getplayerid(8)), ID
+Trigger1 = 1
+type = null
+
+[State 334, 1];Allow to move out of camera
+type = Screenbound
+trigger1 = 0
+[State 334, 2];No turn around
+type = AssertSpecial
+trigger1 = 1
+flag = noautoturn
+[State 334, 3];No Push
+trigger1 = 1
+type = PlayerPush
+value = 0
+[State 334, 4];No blocking triggered on P2
+type = AttackDist
+trigger1 = 1
+value = 0
+[State 334, 5];draw behind dammit
+type = SprPriority
+trigger1 = 1
+value = -5
+[State 334, NoShadowMines]
+type = AssertSpecial
+trigger1 = 1
+flag = noshadow
+flag2 = NoHardcodedKeys
+flag3 = noautoturn
+
+[State 334, Boom]
+Trigger1 = 1
+type = HitDef
+attr = S, NA                     ;Attribute: Standing, Normal Attack
+damage = 20, 0                   ;Damage that move inflicts, guard damage
+animtype = Heavy                 ;Animation type: Light, Medium, Heavy, Back (def: Light)
+guardflag =                      ;Flags on how move is to be guarded against; unblockable
+hitflag = MAFD                  ;Flags of conditions that move can hit
+guard.dist = 1 ;don't trigger blocking
+fall = 1						;enemy must fall
+priority = 7, Hit                ;Attack priority: 0 (least) to 7 (most), 4 default
+;Hit/Miss/Dodge type (Def: Hit)
+pausetime = 0, 0                 ;Time attacker pauses, time opponent shakes
+sparkno = 0;S14                      ;Spark anim no (Def: set above)
+sparkxy = 0,170; (enemynear, pos y - enemynear,Const(size.height/2);
+;X-offset for the "hit spark" rel. to p2, Y-offset for the spark rel. to p1
+;hitsound = S0, 0                  ;Sound to play on hit
+;guardsound = S0, 0                ;Sound to play on guard
+ground.type =  Trip              ;Type: High, Low, Trip (def: Normal)
+ground.slidetime = 5             ;Time that the opponent slides back
+ground.hittime  = 11             ;Time opponent is in hit state
+ground.velocity = -8             ;Velocity at which opponent is pushed
+airguard.velocity = -1.9,-.8     ;Guard velocity in air (def: (air.xvel*1.5, air.yvel/2))
+air.type = High                  ;Type: High, Low, Trip (def: same as ground.type)
+air.velocity = -1.4,-3           ;X-velocity at which opponent is pushed,
+;Y-velocity at which opponent is pushed
+air.hittime = 15                 ;Time before opponent regains control in air
+ground.cornerpush.veloff = 0
+ID = 69
+p2stateno = 820
+
+[State 334, 0]
+type = PlaySnd
+Trigger1 = MoveContact = 1
+persistent = 0
+value = 5,0;BOOOM
+
+[State 333, DramaticPause]
+triggerall = Time % 3 = 0
+Trigger1 = NumExplod(Var(11)) = 1
+Trigger2 = NumExplod(Var(12)) = 1
+Trigger3 = NumExplod(Var(13)) = 1
+Trigger4 = NumExplod(Var(14)) = 1
+Trigger5 = NumExplod(Var(15)) = 1
+Trigger6 = NumExplod(Var(16)) = 1
+Trigger7 = NumExplod(Var(17)) = 1
+Trigger8 = NumExplod(Var(18)) = 1
+type = Pause
+time = 2
+
+[State 334, BlastP1]
+type = Explod
+Triggerall = Anim = 0;HitDef conditions
+Trigger1 = PlayerID(Var(11)), gethitvar(ChainID) = 69
+Trigger1 = PlayerID(Var(11)), StateNo = 820
+Trigger1 = NumExplod(Var(11)) < 1
+type = explod
+anim = 822;burn
+bindtime = -1
+space = stage
+pos = 0,-55
+facing = PlayerID(Var(11)), facing
+vel = 0,0
+sprpriority = 9
+Ontop = 1
+removetime = 200
+ownpal = 1
+facing = 1
+ID = Var(11)
+bindID = Var(11)
+[State 339, EndBlastP1]
+type = RemoveExplod
+ID = Var(11)
+trigger1 = PlayerID(Var(11)), Pos Y >= -1 && PlayerID(Var(11)), Vel Y > 0
+
+[State 334, BlastP2]
+type = Explod
+Triggerall = Anim = 0;HitDef conditions
+Trigger1 = PlayerID(Var(12)), gethitvar(ChainID) = 69
+Trigger1 = PlayerID(Var(12)), StateNo = 820
+Trigger1 = NumExplod(Var(12)) < 1
+type = explod
+anim = 822;burn
+bindtime = -1
+space = stage
+pos = 0,-55
+facing = PlayerID(Var(12)), facing
+vel = 0,0
+sprpriority = 9
+Ontop = 1
+removetime = 200
+ownpal = 1
+facing = 1
+ID = Var(12)
+bindID = Var(12)
+[State 339, EndBlastP2]
+type = RemoveExplod
+ID = Var(12)
+trigger1 = PlayerID(Var(12)), Pos Y >= -1 && PlayerID(Var(12)), Vel Y > 0
+
+[State 334, BlastP3]
+type = Explod
+Triggerall = Anim = 0;HitDef conditions
+Trigger1 = PlayerID(Var(13)), gethitvar(ChainID) = 69
+Trigger1 = PlayerID(Var(13)), StateNo = 820
+Trigger1 = NumExplod(Var(13)) < 1
+type = explod
+anim = 822;burn
+bindtime = -1
+space = stage
+pos = 0,-55
+facing = PlayerID(Var(13)), facing
+vel = 0,0
+sprpriority = 9
+Ontop = 1
+removetime = 200
+ownpal = 1
+facing = 1
+ID = Var(13)
+bindID = Var(13)
+[State 339, EndBlastP3]
+type = RemoveExplod
+ID = Var(13)
+trigger1 = PlayerID(Var(13)), Pos Y >= -1  && PlayerID(Var(13)), Vel Y > 0
+
+[State 334, BlastP4]
+type = Explod
+Triggerall = Anim = 0;HitDef conditions
+Trigger1 = PlayerID(Var(14)), gethitvar(ChainID) = 69
+Trigger1 = PlayerID(Var(14)), StateNo = 820
+Trigger1 = NumExplod(Var(14)) < 1
+type = explod
+anim = 822;burn
+bindtime = -1
+space = stage
+pos = 0,-55
+facing = PlayerID(Var(14)), facing
+vel = 0,0
+sprpriority = 9
+Ontop = 1
+removetime = 200
+ownpal = 1
+facing = 1
+ID = Var(14)
+bindID = Var(14)
+[State 339, EndBlastP4]
+type = RemoveExplod
+ID = Var(14)
+trigger1 = PlayerID(Var(14)), Pos Y >= -1  && PlayerID(Var(14)), Vel Y > 0
+
+[State 334, BlastP5]
+type = Explod
+Triggerall = Anim = 0;HitDef conditions
+Trigger1 = PlayerID(Var(15)), gethitvar(ChainID) = 69
+Trigger1 = PlayerID(Var(15)), StateNo = 820
+Trigger1 = NumExplod(Var(15)) < 1
+type = explod
+anim = 822;burn
+bindtime = -1
+space = stage
+pos = 0,-55
+facing = PlayerID(Var(15)), facing
+vel = 0,0
+sprpriority = 9
+Ontop = 1
+removetime = 200
+ownpal = 1
+facing = 1
+ID = Var(15)
+bindID = Var(15)
+[State 339, EndBlastP5]
+type = RemoveExplod
+ID = Var(15)
+trigger1 = PlayerID(Var(15)), Pos Y >= -1  && PlayerID(Var(15)), Vel Y > 0
+
+[State 334, BlastP6]
+type = Explod
+Triggerall = Anim = 0;HitDef conditions
+Trigger1 = PlayerID(Var(16)), gethitvar(ChainID) = 69
+Trigger1 = PlayerID(Var(16)), StateNo = 820
+Trigger1 = NumExplod(Var(16)) < 1
+type = explod
+anim = 822;burn
+bindtime = -1
+space = stage
+pos = 0,-55
+facing = PlayerID(Var(16)), facing
+vel = 0,0
+sprpriority = 9
+Ontop = 1
+removetime = 200
+ownpal = 1
+facing = 1
+ID = Var(16)
+bindID = Var(16)
+[State 339, EndBlastP6]
+type = RemoveExplod
+ID = Var(16)
+trigger1 = PlayerID(Var(16)), Pos Y >= -1  && PlayerID(Var(16)), Vel Y > 0
+
+[State 334, BlastP7]
+type = Explod
+Triggerall = Anim = 0;HitDef conditions
+Trigger1 = PlayerID(Var(17)), gethitvar(ChainID) = 69
+Trigger1 = PlayerID(Var(17)), StateNo = 820
+Trigger1 = NumExplod(Var(17)) < 1
+type = explod
+anim = 822;burn
+bindtime = -1
+space = stage
+pos = 0,-55
+facing = PlayerID(Var(17)), facing
+vel = 0,0
+sprpriority = 9
+Ontop = 1
+removetime = 200
+ownpal = 1
+facing = 1
+ID = Var(17)
+bindID = Var(17)
+[State 339, EndBlastP7]
+type = RemoveExplod
+ID = Var(17)
+trigger1 = PlayerID(Var(17)), Pos Y >= -1  && PlayerID(Var(17)), Vel Y > 0
+
+[State 334, BlastP8]
+type = Explod
+Triggerall = Anim = 0;HitDef conditions
+Trigger1 = PlayerID(Var(18)), gethitvar(ChainID) = 69
+Trigger1 = PlayerID(Var(18)), StateNo = 820
+Trigger1 = NumExplod(Var(18)) < 1
+type = explod
+anim = 822;burn
+bindtime = -1
+space = stage
+pos = 0,-55
+facing = PlayerID(Var(18)), facing
+vel = 0,0
+sprpriority = 9
+Ontop = 1
+removetime = 200
+ownpal = 1
+facing = 1
+ID = Var(18)
+bindID = Var(18)
+[State 339, EndBlastP8]
+type = RemoveExplod
+ID = Var(18)
+trigger1 = PlayerID(Var(18)), Pos Y >= -1  && PlayerID(Var(18)), Vel Y > 0
+
+[State 339, PS]
+type = PosSet
+trigger1 = numhelper(4101) = 1
+x = ceil(helper(4101),pos x * 0.6875);delta x = 1,1137
+
+;-----------------------------------------------------------------------------------------------------------------------------------------------------
+[State 339, DTC];
+Trigger1 = 1
+type = DisplayToClipBoard
+text="NumHelpers:%d, RespawnTime:%d, TimeSinceBlast:%d"
+params = NumHelper, Var(1), Var(2)
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+;Enemy Falling after being hit, copied from KFM throw
+[Statedef 820]
+type    = A
+movetype= H
+physics = N
+poweradd = 0
+
+[State 820, InvisbleWhileBurning]
+type = AssertSpecial
+trigger1 = 1
+flag = invisible
+flag2 = NoHardcodedKeys
+flag3 = noautoturn
+flag4 = noshadow
+
+[State 820, 0];Hurt anim
+type = ChangeAnim2
+Trigger1 = Time = 0
+value = 820
+
+[State 820, 2];Invinc to avoid double hit by blast AND juggling - this is accurate to source
+trigger1 = 1
+type = NotHitBy
+value = SCA
+
+[State 820, Forward];
+trigger1 = Time = 1
+persistent = 0
+Type = VelSet
+x = 5
+y = -6
+
+[State 820, Backward];Speed other way
+triggerall = Time = 1
+trigger1 = StageBackEdge > StageFrontEdge;bump into, neg speed
+persistent = 0
+Type = VelSet
+x = -5
+y = -6
+
+[State 820, 5] ;Gravity
+type = VelAdd
+Trigger1 = Time > 1
+y = .4
+
+[State 820, 6] ;Hit ground
+type = SelfState
+trigger1 = Vel Y > 0
+trigger1 = Pos Y >= 0
+value = 5100 ;Hit ground
+
+;--------------------------------------------------------------------------
+;Code taken from a RicePigeon and PotS thread in Guild
+;x= ceil(helper(123),pos x * 0.75); simulates "delta = 0.75, 1"
+; Delta Helper;Special Thanks for PotS and RicePigeon's Delta code for helpers
+[Statedef 4101]
+movetype = I
+velSet = 0,0
+sprPriority = 0
+anim = 2 ;<-- BLANK ANIM
+ctrl = 0
+
+[State 4101, 1];Allow to move out of camera
+type = Screenbound
+trigger1 = 0
+
+[State 4101, Zeeky]
+type = destroyself
+trigger1 = root,alive = 0
+
+[State 4101, Invisble]
+type = AssertSpecial
+trigger1 = 1
+flag = invisible
+flag2 = NoHardcodedKeys
+flag3 = noautoturn
+flag4 = noshadow
+
+;---------------------------------------------------------------
+[Statedef -4]
+[State 1, 0];Spawn Helper 1
+type = helper
+ignorehitpause = 1
+trigger1 = !ishelper
+trigger1 = NumHelper = 0
+name = "Walls"
+ID = 1
+stateno = 334
+pos = -20,-220;
+facing = 1
+keyctrl = 0
+ownpal = 0
+supermovetime = 99999
+pausemovetime = 99999
+size.ground.back = 20
+size.ground.front = 20
+size.height = 100
+immortal = 1
+
+[State 1, 1];Spawn Delta Helper
+type = helper
+trigger1 = time = 0
+trigger1 = numhelper < 2
+persistent = 0
+helpertype = normal
+name = "Delta_Pos"
+ID = 4101
+pos = 0,0
+stateno = 4101
+pausemovetime = 999999
+
+[State 1, 2];Fix Player
+type = TagOut
+trigger1 = !ishelper
+ignorehitpause = 1
+
+[State 1, 3];Fix Player
+type = Assertspecial
+trigger1 = !ishelper
+persistent = 0
+flag = invisible
+flag2 = NoHardcodedKeys
+flag3 = noautoturn
+flag4 = noshadow
+ignorehitpause = 1

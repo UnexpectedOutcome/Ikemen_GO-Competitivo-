@@ -1461,6 +1461,24 @@ value = 111
 
 ;---------------------------------------------------------------------------
 ; Dodge
+;---------------------------------------------------------------------------
+; Recuperacion tras esquivar/rodar: sin control y golpeable unos frames,
+; para que no se pueda encadenar sin riesgo.
+;---------------------------------------------------------------------------
+[Statedef 1003]
+type = S
+movetype = I
+physics = S
+ctrl = 0
+anim = 0
+velset = 0,0
+
+[State 1003, Fin de la recuperacion]
+type = ChangeState
+trigger1 = Time >= 12
+value = 0
+ctrl = 1
+
 [Statedef 700]
 type = S
 movetype = I
@@ -1507,8 +1525,8 @@ value = s700,0
 [State 700, ChangeState]
 type = ChangeState
 trigger1 = AnimTime = 0
-value = 0
-ctrl = 1
+value = 1003
+ctrl = 0
 
 ;---------------------------------------------------------------------------
 ; Air Dodge
@@ -1616,8 +1634,8 @@ value = s710,0
 [State 710, ChangeState]
 type = ChangeState
 trigger1 = AnimTime = 0
-value = 0
-ctrl = 1
+value = 1003
+ctrl = 0
 
 ;---------------------------------------------------------------------------
 ; Throw
