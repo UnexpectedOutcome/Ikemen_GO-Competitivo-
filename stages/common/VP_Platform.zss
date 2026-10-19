@@ -1,0 +1,1841 @@
+
+#===============================================================================
+# Configuration
+#===============================================================================
+
+[Function F_Vnix_Platform_Config()]
+
+for i = 1; 8; 1 {
+	if playerNoExist($i) {
+		mapset{map: "_vnix_aircontrol_cfg_enable"; value: 1; redirectID: player($i), ID;}			# Enable Air Acceleration, 0 to disable
+		mapset{map: "_vnix_plathold_cfg_enable"; value: 0; redirectID: player($i), ID;}				# Enable Platform Ledge Hold, 0 to disable
+	}
+}
+
+mapset{map: "_vnix_enemy_cfg_enable"; value: 1;}													# Enable Enemies, 0 to disable
+
+#===============================================================================
+
+[Statedef 0; anim:-2;]
+
+if roundState > 1 {
+	if stagevar(info.name) = "V-Nix Miiverse" {
+		# Platform A
+		persistent(0) if numHelper(64000) = 0 {
+			helper{id: 64000; stateno: 64000;}
+		}
+
+		# Platform B
+		persistent(0) if numHelper(64010) = 0 {
+			helper{id: 64010; stateno: 64010;}
+		}
+
+		# Platform C
+		persistent(0) if numHelper(64020) = 0 {
+			helper{id: 64020; stateno: 64020;}
+		}
+		
+		# Main Platform
+		persistent(0) if numHelper(64100) = 0 {
+			helper{id: 64100; stateno: 64100;}
+		}
+	}
+	
+	if stagevar(info.name) = "V-Nix Plains" {
+		# Platform A
+		persistent(0) if numHelper(65000) = 0 {
+			helper{id: 65000; stateno: 65000;}
+		}
+	}
+}
+
+if stagevar(info.name) = "V-Nix Plains" {
+	# Crystal
+	persistent(0) if numHelper(65010) = 0 {
+		helper{id: 65010; stateno: 65010;}
+	}
+	# Shop
+	persistent(0) if numHelper(65020) = 0 {
+		helper{id: 65020; stateno: 65020;}
+	}
+	# Weapon Shop
+	persistent(0) if numHelper(65030) = 0 {
+		helper{id: 65030; stateno: 65030;}
+	}
+	
+	# Enemy Monsters
+	if roundState = 2 {
+		if map(_vnix_enemy_cfg_enable) {
+			if numHelper(65100) < 8 && gameTime % 300 = 0 {
+				if random = [0, 300] {
+					helper{
+						helpertype: normal;
+						id: 65100;
+						stateno: 65110;
+						name: "Bat Monster";
+						postype: p1;
+						pos: randomRange(-400,400), cond(random <= 500, 0, -138);
+						supermovetime: 0;
+						pausemovetime: 0;
+						size.xscale: .75;
+						size.yscale: .75;
+						ownclsnscale: 1;
+						ownpal: 1;
+					}
+				} else if random = [301, 600] {
+					helper{
+						helpertype: normal;
+						id: 65100;
+						stateno: 65120;
+						name: "Skeleton Monster";
+						postype: p1;
+						pos: randomRange(-400,400), cond(random <= 500, 0, -138);
+						supermovetime: 0;
+						pausemovetime: 0;
+						size.xscale: .55;
+						size.yscale: .55;
+						ownclsnscale: 1;
+						ownpal: 1;
+					}
+				} else {
+					helper{
+						helpertype: normal;
+						id: 65100;
+						stateno: 65100;
+						name: "Slime Monster";
+						postype: p1;
+						pos: randomRange(-400,400), cond(random <= 500, 0, -138);
+						supermovetime: 0;
+						pausemovetime: 0;
+						size.xscale: .5;
+						size.yscale: .5;
+						ownclsnscale: 1;
+						ownpal: 1;
+					}		
+				}
+			}
+		}
+	}
+	
+	if time = 0 || gameTime % 780 = 0 {
+		playSnd{value: 0, 3; volume: 200;}
+	}
+	if time = 0 || gameTime % 170 = 0 {
+		playSnd{value: 0, 4; volume: 200;}
+	}
+}
+
+# ========================================================================================================================================
+# Platfrom A - Miiverse
+[StateDef 64000; anim: -2;]
+
+for i = 1 ; 8; 1 {
+	if playerNoExist($i) {
+		if (player($i), pos x + player($i), cameraPos x) = [-495, -90] && (player($i), pos y + player($i), groundLevel) = [-120, -107]
+		&& player($i), getHitVar(isbound) = 0 && player($i), p2, getHitVar(isbound) = 0 && player($i), incustomstate = 0 {
+			player($i), map(_vnix_platform_a) := 1;
+			player($i), map(_vnix_platform_b) := 0;
+			player($i), map(_vnix_platform_c) := 0;
+		}
+		
+		if player($i), map(_vnix_platform_a) {
+			groundLevelOffset{value: -107; redirectID: player($i), ID;}
+		}
+		
+		if player($i), map(_vnix_platform_cmd_222) > 20 {
+			groundLevelOffset{value: 0; redirectID: player($i), ID;}
+			player($i), map(_vnix_platform_a) := 0;	
+		}
+		
+		# Ledges
+		if player($i), map(_vnix_plathold_cfg_enable) {
+			if (player($i), pos x + player($i), cameraPos x) = [-550, -496] && (player($i), pos y + player($i), groundLevel) = [-20, -10]
+			&& player($i), moveType != H && player($i), map(_vnix_platform_a_left) = 0 && player($i), vel y > 0 {
+				playSnd{value: 0, 1; volume: 200;}
+				palfx{time: 30; add: 255,255,255; sinadd: -255,-255,-255,120; redirectID: player($i), ID;}
+				player($i), map(_vnix_platform_a_left) := 1;
+			}
+			
+			if (player($i), pos x + player($i), cameraPos x) = [-90, -60] && (player($i), pos y + player($i), groundLevel) = [-20, -10]
+			&& player($i), moveType != H && player($i), map(_vnix_platform_a_right) = 0 && player($i), vel y > 0 {
+				playSnd{value: 0, 1; volume: 200;}
+				palfx{time: 30; add: 255,255,255; sinadd: -255,-255,-255,120; redirectID: player($i), ID;}
+				player($i), map(_vnix_platform_a_right) := 1;
+			}
+			
+			# Holding Ledge
+			if player($i), map(_vnix_platform_a_left) {
+				if player($i), facing = -1 {
+					turn{redirectID: player($i), ID;}
+				}
+				posSet{y: -10; redirectID: player($i), ID;}
+				velSet{x: 0; y: 0; redirectID: player($i), ID;}
+				
+				# StateNo while holding
+				if player($i), stateNo != 50 {
+					selfState{value: 50; redirectID: player($i), ID;}
+				}
+				if player($i), stateNo = 50 {
+					changeAnim{value: 50; elem: 1; redirectID: player($i), ID;}
+					assertSpecial{flag: animfreeze; redirectID: player($i), ID;}
+				}
+				
+				# Release Ledge
+				if player($i), command = "holdup" {
+					player($i), map(_vnix_platform_a_left) := 0;
+					selfState{value: 50; redirectID: player($i), ID;}
+					velSet{y: -10; redirectID: player($i), ID;}
+				}
+				if player($i), command = "holddown" || player($i), command = "holdfwd" || player($i), command = "holdback"
+				|| (player($i), pos x + player($i), cameraPos x) != [-550, -496] {
+					player($i), map(_vnix_platform_a_left) := 0;
+					velSet{y: 5; redirectID: player($i), ID;}
+				}
+				if player($i), getHitVar(frame) {
+					player($i), map(_vnix_platform_a_left) := 0;
+					selfState{value: 5000; redirectID: player($i), ID;}
+				}
+			}
+			
+			if player($i), map(_vnix_platform_a_right) {
+				if player($i), facing = 1 {
+					turn{redirectID: player($i), ID;}
+				}
+				posSet{y: -10; redirectID: player($i), ID;}
+				velSet{x: 0; y: 0; redirectID: player($i), ID;}
+				
+				# StateNo while holding
+				if player($i), stateNo != 50 {
+					selfState{value: 50; redirectID: player($i), ID;}
+				}
+				if player($i), stateNo = 50 {
+					changeAnim{value: 50; elem: 1; redirectID: player($i), ID;}
+					assertSpecial{flag: animfreeze; redirectID: player($i), ID;}
+				}
+				
+				# Release Ledge
+				if player($i), command = "holdup" {
+					player($i), map(_vnix_platform_a_right) := 0;
+					selfState{value: 50; redirectID: player($i), ID;}
+					velSet{y: -10; redirectID: player($i), ID;}
+				}
+				if player($i), command = "holddown" || player($i), command = "holdfwd" || player($i), command = "holdback"
+				|| (player($i), pos x + player($i), cameraPos x) != [-90, -60] {
+					player($i), map(_vnix_platform_a_right) := 0;
+					velSet{y: 5; redirectID: player($i), ID;}
+				}
+				if player($i), getHitVar(frame) {
+					player($i), map(_vnix_platform_a_right) := 0;
+					selfState{value: 5000; redirectID: player($i), ID;}
+				}
+			}
+		}
+		
+		if (player($i), pos x + player($i), cameraPos x) != [-495, -90] && (player($i), pos y + player($i), groundLevel) < 0
+		{
+			player($i), map(_vnix_platform_a) := 0;			
+		}
+	}
+}
+
+# ========================================================================================================================================
+# Platfrom B
+[StateDef 64010; anim: -2;]
+
+for i = 1 ; 8; 1 {
+	if playerNoExist($i) {
+		if (player($i), pos x + player($i), cameraPos x) = [90, 495] && (player($i), pos y + player($i), groundLevel) = [-120, -107]
+		&& player($i), getHitVar(isbound) = 0 && player($i), p2, getHitVar(isbound) = 0 && player($i), incustomstate = 0 {
+			player($i), map(_vnix_platform_b) := 1;
+			player($i), map(_vnix_platform_a) := 0;
+			player($i), map(_vnix_platform_c) := 0;
+		}
+		
+		if player($i), map(_vnix_platform_b) {
+			groundLevelOffset{value: -107; redirectID: player($i), ID;}
+		}
+		
+		if player($i), map(_vnix_platform_cmd_222) > 20 {
+			groundLevelOffset{value: 0; redirectID: player($i), ID;}
+			player($i), map(_vnix_platform_b) := 0;	
+		}
+		
+		# Ledges
+		if player($i), map(_vnix_plathold_cfg_enable) {
+			if (player($i), pos x + player($i), cameraPos x) = [60, 90] && (player($i), pos y + player($i), groundLevel) = [-20, -10]
+			&& player($i), moveType != H && player($i), map(_vnix_platform_b_left) = 0 && player($i), vel y > 0 {
+				playSnd{value: 0, 1; volume: 200;}
+				palfx{time: 30; add: 255,255,255; sinadd: -255,-255,-255,120; redirectID: player($i), ID;}
+				player($i), map(_vnix_platform_b_left) := 1;
+			}
+			
+			if (player($i), pos x + player($i), cameraPos x) = [495, 550] && (player($i), pos y + player($i), groundLevel) = [-20, -10]
+			&& player($i), moveType != H && player($i), map(_vnix_platform_b_right) = 0 && player($i), vel y > 0 {
+				playSnd{value: 0, 1; volume: 200;}
+				palfx{time: 30; add: 255,255,255; sinadd: -255,-255,-255,120; redirectID: player($i), ID;}
+				player($i), map(_vnix_platform_b_right) := 1;
+			}
+			
+			# Holding Ledge
+			if player($i), map(_vnix_platform_b_left) {
+				if player($i), facing = -1 {
+					turn{redirectID: player($i), ID;}
+				}
+				posSet{y: -10; redirectID: player($i), ID;}
+				velSet{x: 0; y: 0; redirectID: player($i), ID;}
+				
+				# StateNo while holding
+				if player($i), stateNo != 50 {
+					selfState{value: 50; redirectID: player($i), ID;}
+				}
+				if player($i), stateNo = 50 {
+					changeAnim{value: 50; elem: 1; redirectID: player($i), ID;}
+					assertSpecial{flag: animfreeze; redirectID: player($i), ID;}
+				}
+				
+				# Release Ledge
+				if player($i), command = "holdup" {
+					player($i), map(_vnix_platform_b_left) := 0;
+					selfState{value: 50; redirectID: player($i), ID;}
+					velSet{y: -10; redirectID: player($i), ID;}
+				}
+				if player($i), command = "holddown" || player($i), command = "holdfwd" || player($i), command = "holdback"
+				|| (player($i), pos x + player($i), cameraPos x) != [60, 90] {
+					player($i), map(_vnix_platform_b_left) := 0;
+					velSet{y: 5; redirectID: player($i), ID;}
+				}
+				if player($i), getHitVar(frame) {
+					player($i), map(_vnix_platform_b_left) := 0;
+					selfState{value: 5000; redirectID: player($i), ID;}
+				}
+			}
+			
+			if player($i), map(_vnix_platform_b_right) {
+				if player($i), facing = 1 {
+					turn{redirectID: player($i), ID;}
+				}
+				posSet{y: -10; redirectID: player($i), ID;}
+				velSet{x: 0; y: 0; redirectID: player($i), ID;}
+				
+				# StateNo while holding
+				if player($i), stateNo != 50 {
+					selfState{value: 50; redirectID: player($i), ID;}
+				}
+				if player($i), stateNo = 50 {
+					changeAnim{value: 50; elem: 1; redirectID: player($i), ID;}
+					assertSpecial{flag: animfreeze; redirectID: player($i), ID;}
+				}
+				
+				# Release Ledge
+				if player($i), command = "holdup" {
+					player($i), map(_vnix_platform_b_right) := 0;
+					selfState{value: 50; redirectID: player($i), ID;}
+					velSet{y: -10; redirectID: player($i), ID;}
+				}
+				if player($i), command = "holddown" || player($i), command = "holdfwd" || player($i), command = "holdback"
+				|| (player($i), pos x + player($i), cameraPos x) != [495, 550] {
+					player($i), map(_vnix_platform_b_right) := 0;
+					velSet{y: 5; redirectID: player($i), ID;}
+				}
+				if player($i), getHitVar(frame) {
+					player($i), map(_vnix_platform_b_right) := 0;
+					selfState{value: 5000; redirectID: player($i), ID;}
+				}
+			}
+		}
+		
+		if (player($i), pos x + player($i), cameraPos x) != [90, 495] && (player($i), pos y + player($i), groundLevel) < 0
+		{
+			player($i), map(_vnix_platform_b) := 0;			
+		}
+	}
+}
+
+# ========================================================================================================================================
+# Platfrom C
+[StateDef 64020; anim: -2;]
+
+for i = 1 ; 8; 1 {
+	if playerNoExist($i) {
+		if (player($i), pos x + player($i), cameraPos x) = [-325, 325] && (player($i), pos y + player($i), groundLevel) <= -204
+		&& player($i), getHitVar(isbound) = 0 && player($i), p2, getHitVar(isbound) = 0 && player($i), incustomstate = 0 {
+			player($i), map(_vnix_platform_c) := 1;
+			player($i), map(_vnix_platform_b) := 0;
+			player($i), map(_vnix_platform_a) := 0;
+		}
+		
+		if player($i), map(_vnix_platform_c) {
+			groundLevelOffset{value: -204; redirectID: player($i), ID;}
+		}
+		
+		if player($i), map(_vnix_platform_cmd_222) > 20 {
+			groundLevelOffset{value: 0; redirectID: player($i), ID;}
+			player($i), map(_vnix_platform_c) := 0;	
+		}
+		
+		# Ledges
+		if player($i), map(_vnix_plathold_cfg_enable) {
+			if (player($i), pos x + player($i), cameraPos x) = [-355, -326] && (player($i), pos y + player($i), groundLevel) = [-120, -110]
+			&& player($i), moveType != H && player($i), map(_vnix_platform_c_left) = 0 && player($i), vel y > 0 {
+				playSnd{value: 0, 1; volume: 200;}
+				palfx{time: 30; add: 255,255,255; sinadd: -255,-255,-255,120; redirectID: player($i), ID;}
+				player($i), map(_vnix_platform_c_left) := 1;
+			}
+			
+			if (player($i), pos x + player($i), cameraPos x) = [326, 355] && (player($i), pos y + player($i), groundLevel) = [-120, -110]
+			&& player($i), moveType != H && player($i), map(_vnix_platform_c_right) = 0 && player($i), vel y > 0 {
+				playSnd{value: 0, 1; volume: 200;}
+				palfx{time: 30; add: 255,255,255; sinadd: -255,-255,-255,120; redirectID: player($i), ID;}
+				player($i), map(_vnix_platform_c_right) := 1;
+			}
+			
+			# Holding Ledge
+			if player($i), map(_vnix_platform_c_left) {
+				if player($i), facing = -1 {
+					turn{redirectID: player($i), ID;}
+				}
+				posSet{y: -10; redirectID: player($i), ID;}
+				velSet{x: 0; y: 0; redirectID: player($i), ID;}
+				
+				# StateNo while holding
+				if player($i), stateNo != 50 {
+					selfState{value: 50; redirectID: player($i), ID;}
+				}
+				if player($i), stateNo = 50 {
+					changeAnim{value: 50; elem: 1; redirectID: player($i), ID;}
+					assertSpecial{flag: animfreeze; redirectID: player($i), ID;}
+				}
+				
+				# Release Ledge
+				if player($i), command = "holdup" {
+					player($i), map(_vnix_platform_c_left) := 0;
+					selfState{value: 50; redirectID: player($i), ID;}
+					velSet{y: -10; redirectID: player($i), ID;}
+				}
+				if player($i), command = "holddown" || player($i), command = "holdfwd" || player($i), command = "holdback"
+				|| (player($i), pos x + player($i), cameraPos x) != [-355, -326] {
+					player($i), map(_vnix_platform_c_left) := 0;
+					velSet{y: 5; redirectID: player($i), ID;}
+				}
+				if player($i), getHitVar(frame) {
+					player($i), map(_vnix_platform_c_left) := 0;
+					selfState{value: 5000; redirectID: player($i), ID;}
+				}
+			}
+			
+			if player($i), map(_vnix_platform_c_right) {
+				if player($i), facing = 1 {
+					turn{redirectID: player($i), ID;}
+				}
+				posSet{y: -10; redirectID: player($i), ID;}
+				velSet{x: 0; y: 0; redirectID: player($i), ID;}
+				
+				# StateNo while holding
+				if player($i), stateNo != 50 {
+					selfState{value: 50; redirectID: player($i), ID;}
+				}
+				if player($i), stateNo = 50 {
+					changeAnim{value: 50; elem: 1; redirectID: player($i), ID;}
+					assertSpecial{flag: animfreeze; redirectID: player($i), ID;}
+				}
+				
+				# Release Ledge
+				if player($i), command = "holdup" {
+					player($i), map(_vnix_platform_c_right) := 0;
+					selfState{value: 50; redirectID: player($i), ID;}
+					velSet{y: -10; redirectID: player($i), ID;}
+				}
+				if player($i), command = "holddown" || player($i), command = "holdfwd" || player($i), command = "holdback"
+				|| (player($i), pos x + player($i), cameraPos x) != [326, 355] {
+					player($i), map(_vnix_platform_c_right) := 0;
+					velSet{y: 5; redirectID: player($i), ID;}
+				}
+				if player($i), getHitVar(frame) {
+					player($i), map(_vnix_platform_c_right) := 0;
+					selfState{value: 5000; redirectID: player($i), ID;}
+				}
+			}
+		}
+		
+		if (player($i), pos x + player($i), cameraPos x) != [-325, 325] && (player($i), pos y + player($i), groundLevel) < 0
+		{
+			player($i), map(_vnix_platform_c) := 0;			
+		}
+	}
+}
+
+# ========================================================================================================================================
+# Main Platform
+[StateDef 64100; anim: -2;]
+
+for i = 1 ; 8; 1 {
+	if playerNoExist($i) && player($i), alive {
+		# ----------------------------------------
+		# Ledges
+		# ----------------------------------------
+		if (player($i), pos x + player($i), cameraPos x) = [-640, -590] && (player($i), pos y + player($i), groundLevel) = [50, 80]
+		&& player($i), moveType != H && player($i), map(_vnix_platform_main_left) = 0 && player($i), vel y > 0 {
+			playSnd{value: 0, 1; volume: 200;}
+			palfx{time: 30; add: 255,255,255; sinadd: -255,-255,-255,120; redirectID: player($i), ID;}
+			player($i), map(_vnix_platform_main_left) := 1;
+		}
+		
+		if (player($i), pos x + player($i), cameraPos x) = [590, 640] && (player($i), pos y + player($i), groundLevel) = [50, 80]
+		&& player($i), moveType != H && player($i), map(_vnix_platform_main_right) = 0 && player($i), vel y > 0 {
+			playSnd{value: 0, 1; volume: 200;}
+			palfx{time: 30; add: 255,255,255; sinadd: -255,-255,-255,120; redirectID: player($i), ID;}
+			player($i), map(_vnix_platform_main_right) := 1;
+		}
+		
+		# Holding Ledge
+		if player($i), map(_vnix_platform_main_left) {
+			if player($i), facing = -1 {
+				turn{redirectID: player($i), ID;}
+			}
+			hitBy{value: SCA, AA, AP, AT; redirectID: player($i), ID;}
+			posSet{y: -180; redirectID: player($i), ID;}
+			velSet{x: 0; y: 0; redirectID: player($i), ID;}
+			
+			# StateNo while holding
+			if player($i), stateNo != 50 {
+				selfState{value: 50; redirectID: player($i), ID;}
+			}
+			if player($i), stateNo = 50 {
+				changeAnim{value: 50; elem: 1; redirectID: player($i), ID;}
+				assertSpecial{flag: animfreeze; redirectID: player($i), ID;}
+			}
+			
+			# Release Ledge
+			if player($i), command = "holdup" || player($i), command = "holdfwd" || player($i), command = "holdback" {
+				player($i), map(_vnix_platform_main_left) := 0;
+				selfState{value: 50; redirectID: player($i), ID;}
+				velSet{y: -10; redirectID: player($i), ID;}
+				if player($i), command = "holdfwd" {
+					velSet{x: 5; redirectID: player($i), ID;}
+				}
+				if player($i), command = "holdback" {
+					velSet{x: -5; redirectID: player($i), ID;}
+				}
+			}
+			if player($i), command = "holddown"
+			|| (player($i), pos x + player($i), cameraPos x) != [-640, -590] {
+				player($i), map(_vnix_platform_main_left) := 0;
+				velSet{y: 5; redirectID: player($i), ID;}
+			}
+			if player($i), getHitVar(frame) {
+				player($i), map(_vnix_platform_main_left) := 0;
+				selfState{value: 5000; redirectID: player($i), ID;}
+			}
+			
+			if player($i), AILevel > 0 {
+				player($i), map(_vnix_platform_main_left) := 0;
+				selfState{value: 50; redirectID: player($i), ID;}
+				velSet{x: 5; y: -10; redirectID: player($i), ID;}			
+			}
+		}
+		
+		if player($i), map(_vnix_platform_main_right) {
+			if player($i), facing = 1 {
+				turn{redirectID: player($i), ID;}
+			}
+			hitBy{value: SCA, AA, AP, AT; redirectID: player($i), ID;}
+			posSet{y: -180; redirectID: player($i), ID;}
+			velSet{x: 0; y: 0; redirectID: player($i), ID;}
+			
+			# StateNo while holding
+			if player($i), stateNo != 50 {
+				selfState{value: 50; redirectID: player($i), ID;}
+			}
+			if player($i), stateNo = 50 {
+				changeAnim{value: 50; elem: 1; redirectID: player($i), ID;}
+				assertSpecial{flag: animfreeze; redirectID: player($i), ID;}
+			}
+			
+			# Release Ledge
+			if player($i), command = "holdup" || player($i), command = "holdfwd" || player($i), command = "holdback" {
+				player($i), map(_vnix_platform_main_right) := 0;
+				selfState{value: 50; redirectID: player($i), ID;}
+				velSet{y: -10; redirectID: player($i), ID;}
+				if player($i), command = "holdfwd" {
+					velSet{x: 5; redirectID: player($i), ID;}
+				}
+				if player($i), command = "holdback" {
+					velSet{x: -5; redirectID: player($i), ID;}
+				}
+			}
+			if player($i), command = "holddown"
+			|| (player($i), pos x + player($i), cameraPos x) != [590, 640] {
+				player($i), map(_vnix_platform_main_right) := 0;
+				velSet{y: 5; redirectID: player($i), ID;}
+			}
+			if player($i), getHitVar(frame) {
+				player($i), map(_vnix_platform_main_right) := 0;
+				selfState{value: 5000; redirectID: player($i), ID;}
+			}
+			
+			if player($i), AILevel > 0 {
+				player($i), map(_vnix_platform_main_right) := 0;
+				selfState{value: 50; redirectID: player($i), ID;}
+				velSet{x: 5; y: -10; redirectID: player($i), ID;}			
+			}
+		}
+		
+		# ----------------------------------------
+	}
+}
+
+
+# ========================================================================================================================================
+# Platfrom A - Plains
+[StateDef 65000; anim: -2;]
+
+for i = 1; 8; 1 {
+	if playerNoExist($i) {
+		if (player($i), pos y + player($i), groundLevel) <= -138
+		&& player($i), getHitVar(isbound) = 0 {
+			player($i), map(_vnix_platform_a) := 1;
+		}
+		
+		if player($i), map(_vnix_platform_a) {
+			groundLevelOffset{value: -138; redirectID: player($i), ID;}
+		}
+		
+		if player($i), map(_vnix_platform_cmd_222) > 20 {
+			groundLevelOffset{value: 0; redirectID: player($i), ID;}
+			player($i), map(_vnix_platform_a) := 0;	
+		}
+	}
+}
+
+# ========================================================================================================================================
+# Crystal - Plains
+[StateDef 65010; anim: -2;]
+
+if roundState < 2 {
+	if numExplod(6501000) = 0 {
+		explod{
+			anim: 1;
+			id: 6501000;
+			postype: none;
+			pos: 0,-138;
+			scale: .33,.33;
+			angle: 0;
+			facing: 1;
+			ontop: 0;
+			sprpriority: -5;
+			removetime: -1;
+			pausemovetime: -1;
+			supermovetime: -1;
+			window: -320,-240,320,-1;
+			ownpal: 1;
+			palfx.time: -1;
+			palfx.color: 0;
+		}
+	}
+} else {
+	removeExplod{id: 6501000;}
+}
+
+ignoreHitPause {
+	explod{
+		anim: 1;
+		postype: none;
+		pos: 0,-138;
+		scale: .33,.33;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		sprpriority: -4;
+		removetime: 5;
+		#pausemovetime: -1;
+		#supermovetime: -1;
+		window: -320,-240,320,-1;
+		ownpal: 1;
+		palfx.time: -1;
+		palfx.color: 0 + (root, map(_vnix_crystal_power) * 5.12);
+	}
+}
+
+for i = 1; 8; 1 {
+	if playerNoExist($i) {
+		if player($i), getHitVar(frame) && player($i), getHitVar(guarded) = 0 && root, map(_vnix_crystal_power) < 50 {
+			mapAdd{map: "_vnix_crystal_power"; value: 1; redirectID: root, ID;}
+		}
+	}
+}
+
+if root, map(_vnix_crystal_power) = 50 {
+	changeState{value: 65011;}
+}
+
+# Crystal Full - Plains
+[StateDef 65011; anim: -2;]
+
+if time = 0 {
+	playSnd{value: 0, 5; volume: 200;}
+	explod{
+		anim: 2;
+		postype: none;
+		pos: 0,-158;
+		scale: 1,1;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		sprpriority: -5;
+		removetime: -2;
+		pausemovetime: -1;
+		supermovetime: -1;
+		ownpal: 1;
+	}
+	bgpalfx{time: 30; add: -60,-60,-60; sinadd: 60,60,60,120; color: 0; sincolor: 256, 120;}
+	envshake{
+		time: 30;
+		freq: 160;
+		ampl: 2;
+	}
+}
+
+if numExplod(6501100) = 0 {
+	explod{
+		anim: 1;
+		id: 6501100;
+		postype: none;
+		pos: 0,-138;
+		scale: .33,.33;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		sprpriority: -5;
+		removetime: -1;
+		pausemovetime: -1;
+		supermovetime: -1;
+		window: -320,-240,320,-1;
+		ownpal: 1;
+		palfx.time: -1;
+		palfx.add: 25,25,25;
+		palfx.sinadd: -25,-25,-25, 120;
+	}
+}
+
+if gameTime % 60 = 0 {
+	explod{
+		anim: 1;
+		postype: none;
+		pos: 0,-138;
+		scale: .33,.33;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		sprpriority: 0;
+		removetime: 30;
+		pausemovetime: -1;
+		supermovetime: -1;
+		window: -320,-240,320,-1;
+		trans: addalpha;
+		alpha: 256,256;
+		interpolation.time: 30;
+		interpolation.scale: .35,.35;
+		interpolation.alpha: 0,256;
+	}
+	explod{
+		anim: 1;
+		postype: none;
+		pos: 0,-138;
+		scale: .33,.33;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		sprpriority: 0;
+		removetime: 60;
+		pausemovetime: -1;
+		supermovetime: -1;
+		window: -320,-240,320,-1;
+		trans: addalpha;
+		alpha: 256,256;
+		interpolation.time: 60;
+		interpolation.scale: .4,.4;
+		interpolation.alpha: 0,256;
+	}
+}
+
+for i = 1; 8; 1 {
+	if playerNoExist($i) {
+		if (player($i), pos x + player($i), cameraPos x) = [-41, 41] && (player($i), pos y + player($i), groundLevel) = -138
+		&& player($i), moveType = I && player($i), stateType != A && player($i), isHelper = 0 {
+			if cond(player($i), AILevel = 0, player($i), inputTime(s) = 1, 1) {
+				map(_vnix_player_crystal) := player($i), playerNo;
+				changeState{value: 65012;}
+			}
+		}
+	}
+}
+
+# --------------------------------------------
+# Crystal Buff - Plains
+[StateDef 65012; anim: -2;]
+
+if numExplod(6501100) = 0 {
+	explod{
+		anim: 1;
+		id: 6501100;
+		postype: none;
+		pos: 0,-138;
+		scale: .33,.33;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		sprpriority: -5;
+		removetime: -1;
+		pausemovetime: -1;
+		supermovetime: -1;
+		window: -320,-240,320,-1;
+		ownpal: 1;
+		palfx.time: -1;
+		palfx.add: 25,25,25;
+		palfx.sinadd: -25,-25,-25, 120;
+	}
+}
+
+if time = 0 {
+	lifebarAction{text: "Divine Crystal"; top: 1; redirectID: player(map(_vnix_player_crystal)), ID}
+	playsnd{value: 0, 7; volumescale: 200; freqmul: 1.0}
+	playsnd{value: 0, 7; volumescale: 200; freqmul: 1.0}
+	#lifeSet{value: player(map(_vnix_player_crystal)), lifeMax; redirectID: player(map(_vnix_player_crystal)), ID;}
+	#powerSet{value: player(map(_vnix_player_crystal)), powerMax; redirectID: player(map(_vnix_player_crystal)), ID;}
+	palfx{time: 30; add: 255,255,255; sinadd: -255,-255,-255,120; redirectID: player(map(_vnix_player_crystal)), ID;}
+	player(map(_vnix_player_crystal)), map(_vnix_crystal_buff) := 600;
+	notHitBy{value: SCA; time: 30; redirectID: player(map(_vnix_player_crystal)), ID}
+	# FX
+	explod{
+		anim: 9;
+		postype: none;
+		pos: 0, 0;
+		scale: .75,.75;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		bindID: player(map(_vnix_player_crystal)), ID;
+		sprpriority: player(map(_vnix_player_crystal)), sprPriority + 1;
+		removetime: -2;
+		pausemovetime: -1;
+		supermovetime: -1;
+		trans: addalpha;
+		alpha: 256,256;
+	}
+	envshake{
+		time: 15;
+		freq: 160;
+		ampl: 2;
+	}
+}
+
+if time = 1 {
+	root, map(_vnix_crystal_power) := 0;
+	map(_vnix_player_crystal) := 0;
+	changeState{value: 65010;}
+}
+
+# ========================================================================================================================================
+# Shop - Plains
+[StateDef 65020; anim: -2;]
+
+if time = 0 {
+	modifyBGCtrl {
+		id: 1;
+		time: 0,0;
+		value: 1;
+	}
+	modifyBGCtrl {
+		id: 2;
+		time: 0,0;
+		value: 0;
+	}
+}
+
+for i = 1; 8; 1 {
+	if playerNoExist($i) {
+		if (player($i), pos x + player($i), cameraPos x) = [340, 420] && (player($i), pos y + player($i), groundLevel) = -138
+		&& player($i), moveType = I && player($i), stateType != A && player($i), power >= 1000 && player($i), isHelper = 0 {
+			if cond(player($i), AILevel = 0, player($i), inputTime(s) = 1, 1) {
+				if random = [0, 199] {
+					map(_vnix_player_agility) := player($i), playerNo;
+					changeState{value: 65023;}				
+				} else if random = [200, 600] {
+					map(_vnix_player_power) := player($i), playerNo;
+					changeState{value: 65022;}
+				} else {
+					if player($i), life <= player($i), life * 0.75 {
+						map(_vnix_player_heal) := player($i), playerNo;
+						changeState{value: 65021;}
+					} else {
+						if random = [0, 300] {
+							map(_vnix_player_agility) := player($i), playerNo;
+							changeState{value: 65023;}				
+						} else {
+							map(_vnix_player_power) := player($i), playerNo;
+							changeState{value: 65022;}
+						}					
+					}
+				}
+			}
+		}
+	}
+}
+
+# --------------------------------------------
+# Shop Buy Red - Plains
+[StateDef 65021; anim: -2;]
+
+if time = 0 {
+	modifyBGCtrl {
+		id: 1;
+		time: 0,0;
+		value: 0;
+	}
+	modifyBGCtrl {
+		id: 2;
+		time: 0,0;
+		value: 1;
+	}
+	lifebarAction{text: "Healing Potion"; top: 1; redirectID: player(map(_vnix_player_heal)), ID;}
+	playSnd{value: 0,2; volume: 200;}
+	palfx{time: 30; add: 0,155,155; sinadd: 0,-155,-155,120; redirectID: player(map(_vnix_player_heal)), ID;}
+	powerAdd{value: -1000; redirectID: player(map(_vnix_player_heal)), ID;}
+	lifeAdd{value: player(map(_vnix_player_heal)), lifeMax * 0.25; absolute: 1; redirectID: player(map(_vnix_player_heal)), ID;}
+	notHitBy{value: SCA; time: 30; redirectID: player(map(_vnix_player_heal)), ID}
+	explod{
+		anim: 3;
+		postype: none;
+		pos: 0, player(map(_vnix_player_heal)), const(size.mid.pos.y);
+		scale: .33,.33;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		bindID: player(map(_vnix_player_heal)), ID;
+		sprpriority: player(map(_vnix_player_heal)), sprPriority + 1;
+		removetime: 60;
+		pausemovetime: -1;
+		supermovetime: -1;
+		trans: addalpha;
+		alpha: 256,0;
+		interpolation.time: 60;
+		interpolation.scale: .5,.5;
+		interpolation.alpha: 0,256;
+		interpolation.offset: 0, -20;
+	}
+}
+
+if time = 204 {
+	changeState{value: 65020;}
+}
+
+# --------------------------------------------
+# Shop Buy Power - Plains
+[StateDef 65022; anim: -2;]
+
+if time = 0 {
+	modifyBGCtrl {
+		id: 1;
+		time: 0,0;
+		value: 0;
+	}
+	modifyBGCtrl {
+		id: 2;
+		time: 0,0;
+		value: 1;
+	}
+	lifebarAction{text: "Strength Potion"; top: 1; redirectID: player(map(_vnix_player_power)), ID;}
+	playSnd{value: 0,2; volume: 200;}
+	palfx{time: 30; add: 155,75,0; sinadd: -155,-75,0,120; redirectID: player(map(_vnix_player_power)), ID;}
+	powerAdd{value: -1000; redirectID: player(map(_vnix_player_power)), ID;}
+	player(map(_vnix_player_power)), map(_vnix_potion_power) := 10;
+	notHitBy{value: SCA; time: 30; redirectID: player(map(_vnix_player_power)), ID}
+	explod{
+		anim: 5;
+		postype: none;
+		pos: 0, player(map(_vnix_player_power)), const(size.mid.pos.y);
+		scale: .33,.33;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		bindID: player(map(_vnix_player_power)), ID;
+		sprpriority: player(map(_vnix_player_power)), sprPriority + 1;
+		removetime: 60;
+		pausemovetime: -1;
+		supermovetime: -1;
+		trans: addalpha;
+		alpha: 256,0;
+		interpolation.time: 60;
+		interpolation.scale: .5,.5;
+		interpolation.alpha: 0,256;
+		interpolation.offset: 0, -20;
+	}
+}
+
+if time = 204 {
+	changeState{value: 65020;}
+}
+
+# --------------------------------------------
+# Shop Buy Agility - Plains
+[StateDef 65023; anim: -2;]
+
+if time = 0 {
+	modifyBGCtrl {
+		id: 1;
+		time: 0,0;
+		value: 0;
+	}
+	modifyBGCtrl {
+		id: 2;
+		time: 0,0;
+		value: 1;
+	}
+	lifebarAction{text: "Agility Potion"; top: 1; redirectID: player(map(_vnix_player_agility)), ID;}
+	playSnd{value: 0,2; volume: 200;}
+	palfx{time: 30; add: 155,0,155; sinadd: -155,0,-155,120; redirectID: player(map(_vnix_player_agility)), ID;}
+	powerAdd{value: -1000; redirectID: player(map(_vnix_player_agility)), ID;}
+	player(map(_vnix_player_agility)), map(_vnix_potion_agility) := 600;
+	notHitBy{value: SCA; time: 30; redirectID: player(map(_vnix_player_agility)), ID}
+	explod{
+		anim: 4;
+		postype: none;
+		pos: 0, player(map(_vnix_player_agility)), const(size.mid.pos.y);
+		scale: .33,.33;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		bindID: player(map(_vnix_player_agility)), ID;
+		sprpriority: player(map(_vnix_player_agility)), sprPriority + 1;
+		removetime: 60;
+		pausemovetime: -1;
+		supermovetime: -1;
+		trans: addalpha;
+		alpha: 256,0;
+		interpolation.time: 60;
+		interpolation.scale: .5,.5;
+		interpolation.alpha: 0,256;
+		interpolation.offset: 0, -20;
+	}
+}
+
+if time = 204 {
+	changeState{value: 65020;}
+}
+
+# ========================================================================================================================================
+# Weapon Shop - Plains
+[StateDef 65030; anim: -2;]
+
+if time = 0 {
+	modifyBGCtrl {
+		id: 3;
+		time: 0,0;
+		value: 1;
+	}
+	modifyBGCtrl {
+		id: 4;
+		time: 0,0;
+		value: 0;
+	}
+}
+
+for i = 1; 8; 1 {
+	if playerNoExist($i) {
+		if (player($i), pos x + player($i), cameraPos x) = [-450, -375] && (player($i), pos y + player($i), groundLevel) = 0
+		&& player($i), moveType = I && player($i), stateType != A && player($i), power >= 1000 && player($i), isHelper = 0 {
+			if cond(player($i), AILevel = 0, player($i), inputTime(s) = 1, 1) {
+				if random = [0, 350] {
+					map(_vnix_player_cloak) := player($i), playerNo;
+					changeState{value: 65033;}
+				} else if random = [351, 700] {
+					map(_vnix_player_shield) := player($i), playerNo;
+					changeState{value: 65032;}
+				}else {
+					map(_vnix_player_sword) := player($i), playerNo;
+					changeState{value: 65031;}
+				}
+			}
+		}
+	}
+}
+
+# --------------------------------------------
+# Weapon Shop Buy Sword - Plains
+[StateDef 65031; anim: -2;]
+
+if time = 0 {
+	modifyBGCtrl {
+		id: 3;
+		time: 0,0;
+		value: 0;
+	}
+	modifyBGCtrl {
+		id: 4;
+		time: 0,0;
+		value: 1;
+	}
+	lifebarAction{text: "Sword"; top: 1; redirectID: player(map(_vnix_player_sword)), ID;}
+	playSnd{value: 0, 8; volume: 200;}
+	palfx{time: 30; add: 125,125,125; sinadd: -125,-125,-125,120; redirectID: player(map(_vnix_player_sword)), ID;}
+	powerAdd{value: -1000; redirectID: player(map(_vnix_player_sword)), ID;}
+	player(map(_vnix_player_sword)), map(_vnix_weapon_sword) := 10;
+	notHitBy{value: SCA; time: 30; redirectID: player(map(_vnix_player_sword)), ID}
+	explod{
+		anim: 6;
+		postype: none;
+		pos: 0, player(map(_vnix_player_sword)), const(size.mid.pos.y);
+		scale: .75,.75;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		bindID: player(map(_vnix_player_sword)), ID;
+		sprpriority: player(map(_vnix_player_sword)), sprPriority + 1;
+		removetime: 60;
+		pausemovetime: -1;
+		supermovetime: -1;
+		trans: addalpha;
+		alpha: 256,0;
+		interpolation.time: 60;
+		interpolation.scale: 1,1;
+		interpolation.alpha: 0,256;
+		interpolation.offset: 0, -20;
+	}
+}
+
+if time = 204 {
+	changeState{value: 65030;}
+}
+
+# --------------------------------------------
+# Weapon Shop Buy Shield - Plains
+[StateDef 65032; anim: -2;]
+
+if time = 0 {
+	modifyBGCtrl {
+		id: 3;
+		time: 0,0;
+		value: 0;
+	}
+	modifyBGCtrl {
+		id: 4;
+		time: 0,0;
+		value: 1;
+	}
+	lifebarAction{text: "Shield"; top: 1; redirectID: player(map(_vnix_player_shield)), ID;}
+	playSnd{value: 0, 8; volume: 200;}
+	palfx{time: 30; add: 125,125,125; sinadd: -125,-125,-125,120; redirectID: player(map(_vnix_player_shield)), ID;}
+	powerAdd{value: -1000; redirectID: player(map(_vnix_player_shield)), ID;}
+	player(map(_vnix_player_shield)), map(_vnix_weapon_shield) := 10;
+	notHitBy{value: SCA; time: 30; redirectID: player(map(_vnix_player_shield)), ID}
+	explod{
+		anim: 7;
+		postype: none;
+		pos: 0, player(map(_vnix_player_shield)), const(size.mid.pos.y);
+		scale: .75,.75;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		bindID: player(map(_vnix_player_shield)), ID;
+		sprpriority: player(map(_vnix_player_shield)), sprPriority + 1;
+		removetime: 60;
+		pausemovetime: -1;
+		supermovetime: -1;
+		trans: addalpha;
+		alpha: 256,0;
+		interpolation.time: 60;
+		interpolation.scale: 1,1;
+		interpolation.alpha: 0,256;
+		interpolation.offset: 0, -20;
+	}
+}
+
+if time = 204 {
+	changeState{value: 65030;}
+}
+
+# --------------------------------------------
+# Weapon Shop Buy Cloak - Plains
+[StateDef 65033; anim: -2;]
+
+if time = 0 {
+	modifyBGCtrl {
+		id: 3;
+		time: 0,0;
+		value: 0;
+	}
+	modifyBGCtrl {
+		id: 4;
+		time: 0,0;
+		value: 1;
+	}
+	lifebarAction{text: "Cloak"; top: 1; redirectID: player(map(_vnix_player_cloak)), ID;}
+	playSnd{value: 0, 8; volume: 200;}
+	palfx{time: 30; add: 125,125,125; sinadd: -125,-125,-125,120; redirectID: player(map(_vnix_player_cloak)), ID;}
+	powerAdd{value: -1000; redirectID: player(map(_vnix_player_cloak)), ID;}
+	player(map(_vnix_player_cloak)), map(_vnix_weapon_cloak) := 600;
+	notHitBy{value: SCA; time: 30; redirectID: player(map(_vnix_player_cloak)), ID}
+	explod{
+		anim: 8;
+		postype: none;
+		pos: 0, player(map(_vnix_player_cloak)), const(size.mid.pos.y);
+		scale: .75,.75;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		bindID: player(map(_vnix_player_cloak)), ID;
+		sprpriority: player(map(_vnix_player_cloak)), sprPriority + 1;
+		removetime: 60;
+		pausemovetime: -1;
+		supermovetime: -1;
+		trans: addalpha;
+		alpha: 256,0;
+		interpolation.time: 60;
+		interpolation.scale: 1,1;
+		interpolation.alpha: 0,256;
+		interpolation.offset: 0, -20;
+	}
+}
+
+if time = 204 {
+	changeState{value: 65030;}
+}
+
+#===============================================================================
+# Slime Monster
+#===============================================================================
+
+# Appear
+[StateDef 65100; type: S; movetype: I; physics: N; anim: 10;]
+
+if time = 0 {
+	playSnd{value: 0, 11; volume: 200;}
+	palfx{time: 90; add: 255, 255, 255; sinadd: -255, -255, -255, 360}
+	map(_vnix_slime_color) := randomRange(-255,255);
+}
+
+notHitBy{value: SCA;}
+
+palfx{time: 1; hue: map(_vnix_slime_color);}
+
+if time <= 60 {
+	trans{
+		trans: addalpha;
+		alpha: time * 4.2667, 256 - (time * 4.2667);
+	}
+}
+
+if time = 100 {
+	changestate{value: 65101; ctrl: 0;}
+}
+
+if roundState = 3 {	
+	destroySelf{}
+}
+
+#-------------------------------------------------------------------------------
+# Walk
+[StateDef 65101; type: S; movetype: I; physics: N;
+juggle: 4; velset: 0, 0; facep2: 1;
+anim: 10; ctrl: 0; sprpriority: 2;]
+
+hitOverride{attr: SCA,AA,AP,AT; stateno: 65102; time: -1; forceair: 1;}
+
+for i = 1; 8; 1 {
+	if playerNoExist($i) {	
+		if clsnOverlap(clsn2, player($i),ID, clsn1) {
+			map(_vnix_slime_hit) := player($i), playerNo;
+		}
+	}
+}
+
+palfx{time: 1; hue: map(_vnix_slime_color);}
+
+if stageFrontEdgeDist < 100 || stageBackEdgeDist < 100 {
+	turn{}
+}
+
+velset{x: 1; y: 0}
+
+if roundState = 3 || stageFrontEdgeDist < 10 || stageBackEdgeDist < 10 {	
+	destroySelf{}
+}
+
+#-------------------------------------------------------------------------------
+# Hit
+[StateDef 65102; type: S; movetype: I; physics: N;
+juggle: 4; velset: 0, 0; facep2: 1;
+anim: 11; ctrl: 0; sprpriority: 2;]
+
+if time = 0 {
+	playSnd{value: 0, 9; volume: 200;}
+	playSnd{value: 0, 12; volume: 200;}
+	playSnd{value: 0, 12; volume: 200;}
+	explod{
+		anim: 2;
+		postype: p1;
+		pos: 0,0;
+		scale: .25,.25;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		sprpriority: -5;
+		removetime: -2;
+		pausemovetime: -1;
+		supermovetime: -1;
+		ownpal: 1;
+	}
+	palFx{time: 30; add: 225,225,225; sinadd: -225,-225,-225,120; redirectID: player(map(_vnix_slime_hit)), ID;}
+}
+
+palfx{time: 1; hue: map(_vnix_slime_color);}
+
+if time <= 60 {
+	trans{
+		trans: addalpha;
+		alpha: 256 - (time * 4.2667), time * 4.2667;
+	}
+}
+
+if time = 5 {
+	if player(map(_vnix_slime_hit)), helperVar(helpertype) != 1 && player(map(_vnix_slime_hit)), playerNo = player(map(_vnix_slime_hit)), teamLeader {	
+		powerAdd{value: 200; redirectID: player(map(_vnix_slime_hit)), ID;}
+	}
+}
+
+if time = 5 {	
+	destroySelf{}
+}
+
+
+#===============================================================================
+# Bat Monster
+#===============================================================================
+
+# Appear
+[StateDef 65110; type: A; movetype: I; physics: N; anim: 12;]
+
+if time = 0 {
+	playSnd{value: 0, 11; volume: 200;}
+	palfx{time: 90; add: 255, 255, 255; sinadd: -255, -255, -255, 360}
+	map(_vnix_bat_color) := randomRange(-255,255);
+	posAdd{y: -70;}
+}
+
+notHitBy{value: SCA;}
+
+palfx{time: 1; hue: map(_vnix_bat_color);}
+
+if time <= 60 {
+	trans{
+		trans: addalpha;
+		alpha: time * 4.2667, 256 - (time * 4.2667);
+	}
+}
+
+if time = 100 {
+	changestate{value: 65111; ctrl: 0;}
+}
+
+if roundState = 3 {	
+	destroySelf{}
+}
+
+#-------------------------------------------------------------------------------
+# Walk
+[StateDef 65111; type: A; movetype: I; physics: N;
+juggle: 4; velset: 0, 0; facep2: 1;
+anim: 12; ctrl: 0; sprpriority: 2;]
+
+hitOverride{attr: SCA,AA,AP,AT; stateno: 65112; time: -1; forceair: 1;}
+
+for i = 1; 8; 1 {
+	if playerNoExist($i) {	
+		if clsnOverlap(clsn2, player($i),ID, clsn1) {
+			map(_vnix_bat_hit) := player($i), playerNo;
+		}
+		if clsnOverlap(clsn2, player($i),ID, clsn2) {
+			powerAdd{value: -5; redirectID: player($i), ID;}
+			if player($i), power > 0 {
+				palfx{time: 1; add: 0,-50,-50; redirectID: player($i), ID;}
+			}
+		}
+	}
+}
+
+palfx{time: 1; hue: map(_vnix_bat_color);}
+
+if stageFrontEdgeDist < 100 || stageBackEdgeDist < 100 {
+	turn{}
+}
+
+velset{x: 1; y: 0}
+
+if roundState = 3 || stageFrontEdgeDist < 10 || stageBackEdgeDist < 10 {	
+	destroySelf{}
+}
+
+#-------------------------------------------------------------------------------
+# Hit
+[StateDef 65112; type: A; movetype: I; physics: N;
+juggle: 4; velset: 0, 0; facep2: 1;
+anim: 13; ctrl: 0; sprpriority: 2;]
+
+if time = 0 {
+	playSnd{value: 0, 9; volume: 200;}
+	playSnd{value: 0, 10; volume: 200;}
+	playSnd{value: 0, 10; volume: 200;}
+	explod{
+		anim: 2;
+		postype: p1;
+		pos: 0,0;
+		scale: .25,.25;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		sprpriority: -5;
+		removetime: -2;
+		pausemovetime: -1;
+		supermovetime: -1;
+		ownpal: 1;
+	}
+	palFx{time: 30; add: 225,225,225; sinadd: -225,-225,-225,120; redirectID: player(map(_vnix_bat_hit)), ID;}
+}
+
+palfx{time: 1; hue: map(_vnix_bat_color);}
+
+if time <= 60 {
+	trans{
+		trans: addalpha;
+		alpha: 256 - (time * 4.2667), time * 4.2667;
+	}
+}
+
+if time = 5 {
+	if player(map(_vnix_bat_hit)), helperVar(helpertype) != 1 && player(map(_vnix_bat_hit)), playerNo = player(map(_vnix_bat_hit)), teamLeader {		
+		powerAdd{value: 200; redirectID: player(map(_vnix_bat_hit)), ID;}
+	}
+}
+
+if time = 5 {	
+	destroySelf{}
+}
+
+
+#===============================================================================
+# Skeleton Monster
+#===============================================================================
+
+# Appear
+[StateDef 65120; type: S; movetype: I; physics: N; anim: 14;]
+
+if time = 0 {
+	playSnd{value: 0, 11; volume: 200;}
+	palfx{time: 90; add: 255, 255, 255; sinadd: -255, -255, -255, 360}
+	map(_vnix_skeleton_color) := randomRange(-255,255);
+}
+
+notHitBy{value: SCA;}
+
+palfx{time: 1; hue: map(_vnix_skeleton_color);}
+
+if time <= 60 {
+	trans{
+		trans: addalpha;
+		alpha: time * 4.2667, 256 - (time * 4.2667);
+	}
+}
+
+if time = 100 {
+	changestate{value: 65121; ctrl: 0;}
+}
+
+if roundState = 3 {	
+	destroySelf{}
+}
+
+#-------------------------------------------------------------------------------
+# Walk
+[StateDef 65121; type: S; movetype: I; physics: N;
+juggle: 4; velset: 0, 0; facep2: 1;
+anim: 15; ctrl: 0; sprpriority: 2;]
+
+hitOverride{attr: SCA,AA,AP,AT; stateno: 65122; time: -1; forceair: 1;}
+
+for i = 1; 8; 1 {
+	if playerNoExist($i) {	
+		if clsnOverlap(clsn2, player($i),ID, clsn1) {
+			map(_vnix_skeleton_hit) := player($i), playerNo;
+		}
+		if clsnOverlap(clsn2, player($i),ID, clsn2) {
+			changestate{value: 65123; ctrl: 0;}
+		}
+	}
+}
+
+palfx{time: 1; hue: map(_vnix_skeleton_color);}
+
+if stageFrontEdgeDist < 100 || stageBackEdgeDist < 100 {
+	turn{}
+}
+
+velset{x: 1; y: 0}
+
+if roundState = 3 || stageFrontEdgeDist < 10 || stageBackEdgeDist < 10 {	
+	destroySelf{}
+}
+
+#-------------------------------------------------------------------------------
+# Hit
+[StateDef 65122; type: S; movetype: I; physics: N;
+juggle: 4; velset: 0, 0; facep2: 1;
+anim: 14; ctrl: 0; sprpriority: 2;]
+
+if time = 0 {
+	playSnd{value: 0, 9; volume: 200;}
+	playSnd{value: 0, 13; volume: 200;}
+	playSnd{value: 0, 13; volume: 200;}
+	explod{
+		anim: 2;
+		postype: p1;
+		pos: 0,-30;
+		scale: .25,.25;
+		angle: 0;
+		facing: 1;
+		ontop: 0;
+		sprpriority: -5;
+		removetime: -2;
+		pausemovetime: -1;
+		supermovetime: -1;
+		ownpal: 1;
+	}
+	palFx{time: 30; add: 225,225,225; sinadd: -225,-225,-225,120; redirectID: player(map(_vnix_skeleton_hit)), ID;}
+}
+
+palfx{time: 1; hue: map(_vnix_skeleton_color);}
+
+if time <= 60 {
+	trans{
+		trans: addalpha;
+		alpha: 256 - (time * 4.2667), time * 4.2667;
+	}
+}
+
+if time = 5 {
+	if player(map(_vnix_skeleton_hit)), helperVar(helpertype) != 1 && player(map(_vnix_skeleton_hit)), playerNo = player(map(_vnix_skeleton_hit)), teamLeader {		
+		powerAdd{value: 200; redirectID: player(map(_vnix_skeleton_hit)), ID;}
+	}
+}
+
+if time = 5 {	
+	destroySelf{}
+}
+
+#-------------------------------------------------------------------------------
+# Attack
+[StateDef 65123; type: S; movetype: I; physics: N;
+juggle: 4; velset: 0, 0; facep2: 1;
+anim: 16; ctrl: 0; sprpriority: 2;]
+
+hitOverride{attr: SCA,AA,AP,AT; stateno: 65122; time: -1; forceair: 1;}
+
+if animElem = 5 {
+	playSnd{value: 0, 14; volume: 200;}
+	playSnd{value: 0, 14; volume: 200;}
+}
+
+if animElem = 6 || animElem = 7 {
+	stateTypeSet{movetype: A;}
+	hitDef{
+		attr: S, SA;
+		damage: 10,3;
+		animtype: Medium; 
+		guardflag: MA;
+		hitflag: MAFD;
+		priority: 3;
+		pausetime: 20,10;
+		sparkno: 1;
+		sparkxy: 0,-20;
+		hitsound: S 0, 15;
+		guardsound: F 6,0; 
+		ground.type: Low;
+		ground.slidetime: 18;
+		ground.hittime: 20;
+		ground.velocity: 0;
+		air.type: High;
+		air.velocity: -3,-1.5;
+	}
+} else {
+	stateTypeSet{movetype: I;}
+}
+
+palfx{time: 1; hue: map(_vnix_skeleton_color);}
+
+velset{x: 0; y: 0}
+
+if animTime = 0 || moveGuarded || moveContact {
+	changestate{value: 65121; ctrl: 0;}
+}
+
+if roundState = 3 || stageFrontEdgeDist < 10 || stageBackEdgeDist < 10 {	
+	destroySelf{}
+}
+
+# ========================================================================================================================================
+
+[Statedef 175; anim:-2;]
+
+[Statedef 5900; anim:-2;]
+changestate{value:0;}
+
+# ==================================================
+
+[Statedef -4] 
+ignorehitpause {
+	if roundState = 0 && time = 0 {
+		# Run Config
+		call F_Vnix_Platform_Config();
+		# Reset Maps
+		map(_vnix_crystal_power) := 0;
+		for i = 1; 8; 1 {
+			if playerNoExist($i) {
+				player($i), map(_vnix_potion_power) := 0;
+				player($i), map(_vnix_potion_agility) := 0;
+				player($i), map(_vnix_weapon_sword) := 0;
+				player($i), map(_vnix_weapon_shield) := 0;
+				player($i), map(_vnix_weapon_cloak) := 0;
+			}
+		}
+	}
+	screenBound{value: 0; movecamera: 0,0}
+	if roundState != 2 {
+		assertSpecial{flag: invisible;}
+	}
+	assertSpecial{flag: noturntarget; flag2: noinput}
+	#notHitBy{value: SCA}
+	width{value: 0,0}
+
+	
+	for i = 1; 8; 1 {
+		if playerNoExist($i) && helperVar(helpertype) != 1 {
+			if roundState = [0,1] {
+				groundLevelOffset{value: 0; redirectID: player($i), ID;}
+				posSet{y: 0; redirectID: player($i), ID;}
+			}
+			if roundState > 1 {
+				# Inputs
+				# Decrease input timers
+				if player($i), map(_vnix_platform_cmd_222) > 0 && gameTime % 5 = 0 {
+					mapadd{map: "_vnix_platform_cmd_222"; value: -1; redirectID: player($i), ID;}
+				}
+
+				if player($i), inputtime(D) = 1 && cond(player($i), teamMode = Tag, player($i), playerNo = player($i), teamleader, 1) {
+					mapAdd{map: "_vnix_platform_cmd_222"; value: 8; redirectID: player($i), ID;}
+				}
+
+				# Only D is allowed
+				if player($i), inputtime(B) > 0 || player($i), inputtime(F) > 0 || player($i), inputtime(U) > 0 || player($i), stateNo = 52 || (player($i), stateNo = 50 && player($i), time >= 10) {
+					mapset{map: "_vnix_platform_cmd_222"; value: 0; redirectID: player($i), ID;}
+				}
+				
+				# AI Precaution
+				if player($i), AILevel > 0 && player($i), moveType = I && (player($i), stateType = S || player($i), stateType = C) && gameTime % 5 = 0
+				&& (player($i), pos y + player($i), groundLevel) < (player($i), enemy, pos y + player($i), enemy, groundLevel) {
+					mapset{map: "_vnix_platform_cmd_222"; value: 50; redirectID: player($i), ID;}
+				}
+				
+				if roundstate = 2 {
+					if player($i), playerNo = player($i), teamLeader && player($i), alive {
+						zoom{
+							scale: 1.0;
+							time: 1;
+							pos: ((player($i), pos x + player($i), cameraPos x) + (player($i), p2, pos x + player($i), p2, cameraPos x)) / 2.0,
+								 max(stagevar(camera.boundhigh), ((player($i), pos y + player($i), groundLevel) + (player($i), p2, pos y + player($i), p2, groundLevel)) / 8.0);
+							lag: 0.92;
+							stagebound: 1;
+							camerabound: 1;
+						}
+					}
+					if player($i), map(_vnix_aircontrol_cfg_enable) && player($i), getHitVar(isbound) = 0 && player($i), incustomstate = 0 {
+						if player($i), vel y < 0 && player($i), moveType != H && player($i), moveType != A
+						&& (player($i), pos y + player($i), groundLevel) >= -500 && player($i), alive
+						{
+							velAdd{y: -.1 + ((-1 + (player($i), life * 1.0 / player($i), lifeMax)) * 0.2); redirectID: player($i), ID;}
+						}
+						if player($i), stateType = A && player($i), moveType != H && player($i), vel x <= 4 && player($i), command = "holdfwd" && player($i), ctrl = 1 {
+							velAdd{x: .2; redirectID: player($i), ID;}
+						}
+						if player($i), stateType = A && player($i), moveType != H && player($i), vel x >= -4 && player($i), command = "holdback" && player($i), ctrl = 1 {
+							velAdd{x: -.2; redirectID: player($i), ID;}
+						}
+					}
+					
+					# Double Jump Ability in VP_Plains
+					if stagevar(info.name) = "V-Nix Plains" {
+						if player($i), map(_vnix_double_jump) && player($i), stateType = A && player($i), moveType = I {
+							if player($i), player($i), inputTime(F) = 1 && player($i), inputTime(U) = 1 {
+								velSet{x: 5; y: -8; redirectID: player($i), ID;}
+								player($i), map(_vnix_double_jump) := 0;
+								palfx{time: 30; add: 255,255,255; sinadd: -255,-255,-255,120; redirectID: player($i), ID;}
+								lifebarAction{text: "Double Jump"; redirectID: player($i), ID;}
+								selfState{value: 50; ctrl: 1; redirectID: player($i), ID;}
+							}
+							if player($i), player($i), inputTime(B) = 1 && player($i), inputTime(U) = 1 {
+								velSet{x: -5; y: -8; redirectID: player($i), ID;}
+								player($i), map(_vnix_double_jump) := 0;
+								palfx{time: 30; add: 255,255,255; sinadd: -255,-255,-255,120; redirectID: player($i), ID;}
+								lifebarAction{text: "Double Jump"; redirectID: player($i), ID;}
+								selfState{value: 50; ctrl: 1; redirectID: player($i), ID;}
+							}
+							if player($i), inputTime(U) = 1 {
+								velSet{y: -8; redirectID: player($i), ID;}
+								player($i), map(_vnix_double_jump) := 0;
+								palfx{time: 30; add: 255,255,255; sinadd: -255,-255,-255,120; redirectID: player($i), ID;}
+								lifebarAction{text: "Double Jump"; redirectID: player($i), ID;}
+								selfState{value: 50; ctrl: 1; redirectID: player($i), ID;}
+							}
+						}
+						# Reset Double Jump Stock
+						if player($i), stateType = S {
+							player($i), map(_vnix_double_jump) := 1;
+						}
+					}
+				}
+			}
+			
+			if roundState = 3 {
+				if player($i), alive && player($i), stateType != A {
+					posFreeze{redirectID: player($i), ID;}
+					velSet{x: 0; y: 0; redirectID: player($i), ID;}
+					#posSet{y: 0; redirectID: player($i), ID;}
+				}
+			}
+		}
+	}
+}
+
+# Buffs
+for i = 1; 8; 1 {
+	if playerNoExist($i) {
+		ignorehitpause if player($i), ishelper = 0 && (player($i), teamside = 1 || player($i), teamside = 2) {
+			# Strength Potion
+			if player($i), map(_vnix_potion_power) {
+				palfx{time: 1; add: 125, 60, 0; redirectID: player($i), ID;}
+				if player($i), enemy, getHitVar(frame) && player($i), enemy, getHitVar(guarded) = 0 && player($i), enemy, getHitVar(attr) = SCA, AA, AP {
+					lifeAdd{value: player($i), enemy, getHitVar(damage) * -0.2; absolute: 1; kill: 0; redirectID: player($i), enemy, ID;}
+					if player($i), map(_vnix_potion_power_cd) = 0 {
+						mapAdd{map: "_vnix_potion_power"; value: -1; redirectID: player($i), ID;}
+						player($i), map(_vnix_potion_power_cd) := 1;
+					}
+				} else {
+					player($i), map(_vnix_potion_power_cd) := 0;
+				}
+			}
+			# Agility Potion
+			if player($i), map(_vnix_potion_agility) {
+				if player($i), map(_vnix_potion_agility) > 0 && helperVar(helpertype) != 1 {
+					mapAdd{map: "_vnix_potion_agility"; value: -1; redirectID: player($i), ID;}
+				}
+				palfx{time: 1; add: 125, 0, 125; redirectID: player($i), ID;}
+				modifyPlayer{hitpausetime: 0; redirectID: player($i), ID;}
+				if (player($i), stateno = 20 || player($i), stateno = 50 || player($i), stateno = 100) && player($i), pauseTime = 0  {
+					posadd{x: player($i), vel x * 0.3; redirectID: player($i), ID;}
+				}
+			}
+			# Sword
+			if player($i), map(_vnix_weapon_sword) {
+				palfx{time: 1; add: 125, 0, 0; redirectID: player($i), ID;}
+				assertSpecial{flag: unguardable; redirectID: player($i), ID;}
+				if player($i), enemy, getHitVar(frame) && player($i), enemy, getHitVar(guarded) = 0 && player($i), enemy, getHitVar(attr) = SCA, AA {
+					if player($i), map(_vnix_weapon_sword_cd) = 0 {
+						mapAdd{map: "_vnix_weapon_sword"; value: -1; redirectID: player($i), ID;}
+						player($i), map(_vnix_weapon_sword_cd) := 1;
+					}
+				} else {
+					player($i), map(_vnix_weapon_sword_cd) := 0;
+				}
+			}
+			# Shield
+			if player($i), map(_vnix_weapon_shield) {
+				palfx{time: 1; add: 0, 0, 125; redirectID: player($i), ID;}
+				if player($i), getHitVar(frame) && player($i), getHitVar(guarded) = 0 && player($i), getHitVar(attr) = SCA, AA, AP {
+					if player($i), map(_vnix_weapon_shield_cd) = 0 {
+						getHitVarSet{damage: 1; redirectID: player($i), ID;}
+						mapAdd{map: "_vnix_weapon_shield"; value: -1; redirectID: player($i), ID;}
+						player($i), map(_vnix_weapon_shield_cd) := 1;
+					}
+				} else {
+					player($i), map(_vnix_weapon_shield_cd) := 0;
+				}
+			}
+			# Cloak
+			if player($i), map(_vnix_weapon_cloak) {
+				if player($i), map(_vnix_weapon_cloak) > 0 && helperVar(helpertype) != 1 {
+					mapAdd{map: "_vnix_weapon_cloak"; value: -1; redirectID: player($i), ID;}
+				}
+				notHitBy{value: SCA; redirectID: player($i), ID;}
+				palfx{time: 1; add: 0, 125, 0; redirectID: player($i), ID;}
+			}
+			# Crystal Buff
+			if player($i), map(_vnix_crystal_buff) {
+				if player($i), map(_vnix_crystal_buff) > 0 && helperVar(helpertype) != 1 {
+					mapAdd{map: "_vnix_crystal_buff"; value: -1; redirectID: player($i), ID;}
+				}
+				modifyPlayer{hitpausetime: 0; redirectID: player($i), ID;}
+				powerSet{value: player($i), powerMax; redirectID: player($i), ID;}
+				assertSpecial{flag: unguardable; redirectID: player($i), ID;}
+				if (player($i), stateno = 20 || player($i), stateno = 50 || player($i), stateno = 100) && player($i), pauseTime = 0  {
+					posadd{x: player($i), vel x * 0.3; redirectID: player($i), ID;}
+				}
+				palfx{time: 1; add: 30, 30, 30; redirectID: player($i), ID;}
+				if helperVar(helpertype) != 1 {
+					explod{
+						anim: player($i), anim;
+						animfreeze: 1;
+						animelem: player($i), animelemno(0);
+						postype: none;
+						pos: 0,0;
+						bindID: player($i), ID;
+						scale: 1 * player($i), const(size.xscale), 1 * player($i), const(size.yscale);
+						angle: player($i), angle;
+						facing: player($i), facing;
+						ontop: 0;
+						removetime: 10;
+						sprpriority: player($i), sprpriority - 1;
+						pausemovetime: -1;
+						supermovetime: -1;
+						ownpal: 1;
+						palfx.time: -1;
+						trans: addalpha;
+						alpha: 128,256;
+						interpolation.time: 10;
+						interpolation.alpha: 0,256;
+						redirectID: player($i), ID;
+					}
+				}
+			}
+		}
+	}
+}
+
+[StateDef +1]
+ignorehitpause {
+
+	for i = 1; 8; 1 {
+		if playerNoExist($i) {
+			if roundState > 1 {
+				if player($i), map(_vnix_platform_a) = 0 && player($i), map(_vnix_platform_b) = 0 && player($i), map(_vnix_platform_c) = 0
+				&& player($i), pos y < 0 && player($i), moveType != H && player($i), stateType != A {
+					stateTypeSet{statetype: A; physics: A; redirectID: player($i), ID;}
+					if player($i), stateNo != 50 {
+						selfState{value: 50; redirectID: player($i), ID;}
+					}
+				}
+			}
+			
+			if roundState > 2 && player($i), alive {
+				groundLevelOffset{value: 0; redirectID: player($i), ID;}
+			}
+		}
+	}
+}
